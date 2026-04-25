@@ -57,13 +57,39 @@ The domain sits at the center and depends on nothing external. Adapters and UI b
 
 ## Why Use It on the Frontend
 
-**Testability.** Domain logic is pure TypeScript. You unit-test it with mock objects -- no React rendering, no browser APIs, no HTTP mocking.
+Hexagonal architecture solves six concrete problems that every growing frontend runs into.
 
-**Swappability.** Need to replace localStorage with secure cookies? Write a new adapter. The domain and UI do not change. Need to swap from REST to GraphQL? Same story -- new adapter, same ports.
+**The golden rule:**
 
-**Readability.** A new developer opens the domain folder and immediately understands the business model. They do not have to wade through React hooks to find the business rules.
+```
+UI  --->  Domain  --->  Ports  <---  Adapters
+```
 
-**Longevity.** React changes. State management libraries come and go. The domain layer survives all of it because it has zero framework dependencies.
+Nothing goes backwards. Every decision in this architecture flows from this single rule.
+
+### "I changed the API and 47 files broke"
+
+Only the adapter file changes. The adapter maps the external response shape to internal domain types. Domain logic and UI components never see the raw API response, so they do not break when the backend renames a field or restructures a payload.
+
+### "I can't test this without the whole app running"
+
+The domain is pure TypeScript. Test it with plain functions and mock objects. No browser needed. No React rendering. No HTTP mocking. These tests run in milliseconds and catch real bugs.
+
+### "New dev can't figure out where anything is"
+
+Every module follows the same structure: `types.ts`, `ports.ts`, `use-cases.ts`, `index.ts`. Learn one module, know all 25. A new developer can be productive on day one because there is nothing to discover -- just the same pattern repeated.
+
+### "We need to swap localStorage for secure cookies"
+
+Change one adapter file. Update one line in the composition root. The domain does not know. The UI does not know. The swap is done. This is the entire point of ports and adapters.
+
+### "Forms are a mess -- validation here, API there, state somewhere else"
+
+Our form decomposition enforces a strict hierarchy: Page (~10 lines) calls Form (~30 lines) calls Fields (~20 lines each) with Validation (~5 lines per schema). Each file does exactly one thing. You can review, test, or replace any layer independently.
+
+### "Backend changed the response format"
+
+All responses go through one fetcher (`adapter/api/fetcher.ts`) that handles envelope unwrapping, error mapping, and token management. When the backend changes the response format, it is a one-file fix. Not a codebase-wide grep.
 
 ---
 
@@ -92,11 +118,12 @@ Implements ports with real technology. Each adapter satisfies one or more port i
 
 React components, hooks, pages, and layouts. Consumes domain use cases through the composition root. Handles rendering, routing, and user interaction.
 
-The UI layer is structured with thin pages, extracted forms, reusable fields, and co-located validation:
+The UI layer is structured with thin pages, extracted forms, business fields built on primitives, and co-located validation:
 
+- **Primitives** -- shadcn/ui components in `ui/primitives/`, managed by the shadcn CLI (`components.json` aliases point to `@/ui/primitives`). Low-level building blocks (Button, Input, Label, etc.) that are never used directly in forms
+- **Fields** -- business field components in `ui/fields/` built on top of primitives (InputField, PasswordField, CurrencyField, SearchableSelect, OtpField, SelectField, TextareaField). Each field handles its own label, error display, and accessibility attributes
 - **Pages** -- thin shells (~12 lines) with a heading, a form import, and navigation links
 - **Forms** -- form composition components that import fields and connect to validation schemas
-- **Fields** -- reusable field components (text, email, password, OTP, etc.)
 - **Validation** -- Zod schemas co-located by module, one per form
 - **Components** -- shared UI elements organized by concern (common, feedback)
 
@@ -142,10 +169,19 @@ src/
 │   ├── forms/                       # Form composition
 │   │   └── <module>/
 │   │       └── <form>.tsx           # Imports fields + validation, handles submission
-│   ├── fields/                      # Reusable field components
-│   │   ├── text-field.tsx
-│   │   ├── email-field.tsx
+│   ├── primitives/                   # shadcn/ui primitives (managed by shadcn CLI)
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   └── ...                      # All shadcn components land here
+│   ├── fields/                      # Business fields built on primitives
+│   │   ├── input-field.tsx
 │   │   ├── password-field.tsx
+│   │   ├── currency-field.tsx
+│   │   ├── searchable-select.tsx
+│   │   ├── otp-field.tsx
+│   │   ├── select-field.tsx
+│   │   ├── textarea-field.tsx
 │   │   └── index.ts                 # Barrel export
 │   ├── validation/                  # Zod schemas, one per form
 │   │   └── <module>/
@@ -177,10 +213,10 @@ src/
 This is the single most important rule. Memorize it.
 
 ```
-UI  --->  Domain  <---  Adapters
-           ^
-           |
-       config/container.ts (wires adapters into domain)
+UI  --->  Domain  --->  Ports  <---  Adapters
+                  ^
+                  |
+            config/container.ts (wires adapters into domain)
 ```
 
 In plain terms:
@@ -586,7 +622,7 @@ export function useInvoices() {
 Pages are thin shells. They contain a heading, a form import, and navigation links -- roughly 12 lines. All form logic, field composition, and validation live elsewhere:
 
 - **`ui/forms/<module>/`** -- Form components that compose field components and connect to validation schemas via React Hook Form + Zod
-- **`ui/fields/`** -- Reusable field components (TextField, EmailField, PasswordField, OtpField). Domain-agnostic. Each field handles its own label, error display, and accessibility attributes
+- **`ui/fields/`** -- Business field components built on `ui/primitives/` (InputField, PasswordField, CurrencyField, SearchableSelect, OtpField, SelectField, TextareaField). Each field handles its own label, error display, and accessibility attributes
 - **`ui/validation/<module>/`** -- Zod schemas, one per form. Each file exports the schema and an inferred TypeScript type
 - **`ui/components/common/`** -- Shared components like SubmitButton
 - **`ui/components/feedback/`** -- Error display components like FormError
@@ -734,159 +770,123 @@ Run through the checklist:
 
 ## Testing Strategy
 
-The hexagonal architecture makes testing straightforward because each layer has a clear boundary.
+The hexagonal architecture makes testing straightforward because each layer has a clear boundary. This is how Morphlix tests every frontend project.
 
-### Domain -- Unit Tests (No React)
+### Test File Location
 
-Test use cases by passing mock objects that implement the ports. No rendering, no HTTP, no browser APIs.
+Test files are colocated with their source files. Always.
 
-```typescript
-// domain/billing/__tests__/use-cases.test.ts
+- `use-cases.ts` -> `use-cases.test.ts` (same folder)
+- `auth.ts` -> `auth.test.ts` (same folder)
+- `currency-field.tsx` -> `currency-field.test.tsx` (same folder)
 
-import { BillingUseCases } from '../use-cases';
-import type { BillingApi } from '../ports';
+There is no `__tests__/` directory. If you add a file with logic, you add its test file right next to it.
 
-const mockApi: BillingApi = {
-  listInvoices: vi.fn().mockResolvedValue([
-    { id: '1', status: 'draft', total: 100 },
-  ]),
-  getInvoice: vi.fn(),
-  createInvoice: vi.fn(),
-  markAsPaid: vi.fn(),
-};
+### Test Utilities (`src/test/`)
 
-describe('BillingUseCases', () => {
-  const useCases = new BillingUseCases(mockApi);
+This folder holds helpers, not test files:
 
-  it('lists invoices via the API port', async () => {
-    const result = await useCases.listInvoices();
-    expect(result).toHaveLength(1);
-    expect(mockApi.listInvoices).toHaveBeenCalled();
-  });
+- `setup.ts` -- MSW server lifecycle, DOM cleanup
+- `render.tsx` -- `renderWithProviders()` wraps Redux + TanStack Query + Router
+- `factories/auth.ts` -- `buildUser()`, `buildLoginResult()`, etc.
+- `mocks/server.ts` -- MSW server instance
+- `mocks/handlers/auth.ts` -- API mock handlers with error overrides
+- `index.ts` -- barrel export (`import { renderWithProviders, buildUser, server } from '@/test'`)
 
-  it('rejects invoices with no line items', async () => {
-    await expect(
-      useCases.createInvoice({ customer_id: '1', line_items: [], due_at: '2025-01-01' })
-    ).rejects.toThrow('at least one line item');
-  });
-});
+### E2E Tests
+
+- Live at `e2e/` at project root (not in `src/`)
+- Playwright: Chrome, Firefox, mobile (Pixel 5)
+- Auto-starts dev server via `playwright.config.ts`
+
+### How to Test Each Layer
+
+**1. Domain tests** -- pure TypeScript, mock ports, no React:
+
+```ts
+const mockApi = { login: vi.fn() };
+const useCases = new AuthUseCases(mockApi, mockTokens, mockUser);
+vi.mocked(mockApi.login).mockResolvedValue(buildLoginResult());
+await useCases.login({ email: 'test@test.com', password: 'pass' });
+expect(mockTokens.setTokens).toHaveBeenCalled();
 ```
 
-This is the fastest, most valuable test layer. Invest here first.
+This is the fastest, most valuable test layer. No browser, no rendering, no HTTP. Invest here first.
 
-### Redux Store -- Slice and Thunk Tests
+**2. Redux store tests** -- mock the container, test reducers + thunks:
 
-Test Redux slices by dispatching actions and thunks against a real store instance with mock dependencies. This verifies state transitions without rendering React components.
-
-```typescript
-// ui/store/slices/__tests__/billing.test.ts
-
-import { configureStore } from '@reduxjs/toolkit';
-import billingReducer, { fetchInvoices } from '../billing';
-
-// Mock the container to control use-case behavior
+```ts
 vi.mock('@/config/container', () => ({
-  billingUseCases: {
-    listInvoices: vi.fn().mockResolvedValue([
-      { id: '1', status: 'paid', total: 500 },
-    ]),
-  },
+  authUseCases: { login: vi.fn() }
 }));
 
-describe('billing slice', () => {
-  const createTestStore = () =>
-    configureStore({ reducer: { billing: billingReducer } });
-
-  it('fetches invoices and updates state', async () => {
-    const store = createTestStore();
-    await store.dispatch(fetchInvoices());
-    const state = store.getState().billing;
-    expect(state.invoices).toHaveLength(1);
-    expect(state.isLoading).toBe(false);
-  });
-});
+await store.dispatch(login({ email: 'test@test.com', password: 'pass' }));
+expect(store.getState().auth.isAuthenticated).toBe(true);
 ```
 
-### Adapters -- Integration Tests with MSW
+**3. Component tests** -- always use `renderWithProviders`:
 
-Use Mock Service Worker (MSW) to intercept HTTP requests and verify that adapters serialize requests and deserialize responses correctly.
+```ts
+import { renderWithProviders } from '@/test';
 
-```typescript
-// adapter/api/__tests__/billing.test.ts
-
-import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
-import { BillingApiAdapter } from '../billing';
-
-const server = setupServer(
-  http.get('*/v1/billing/invoices', () =>
-    HttpResponse.json({
-      responseCode: 'EIQ-0000',
-      responseMessage: 'Success',
-      data: [{ id: '1', status: 'paid', total: 500 }],
-    })
-  ),
-);
-
-beforeAll(() => server.listen());
-afterAll(() => server.close());
-
-describe('BillingApiAdapter', () => {
-  const adapter = new BillingApiAdapter();
-
-  it('fetches and returns invoices', async () => {
-    const invoices = await adapter.listInvoices();
-    expect(invoices).toEqual([{ id: '1', status: 'paid', total: 500 }]);
-  });
-});
+const { user } = renderWithProviders(<LoginForm />);
+await user.type(screen.getByLabelText('Email'), 'test@test.com');
+await user.click(screen.getByRole('button', { name: 'Sign In' }));
 ```
 
-### UI -- Component Tests
+**4. Adapter tests** -- MSW intercepts at network level:
 
-Test pages and components with React Testing Library. Mock the bridge hooks to control state. Wrap components in a Redux Provider with a test store when needed.
+```ts
+import { server } from '@/test';
+import { authErrorHandlers } from '@/test/mocks/handlers/auth';
 
-```typescript
-// ui/pages/billing/__tests__/invoices-page.test.tsx
-
-import { render, screen } from '@testing-library/react';
-import { InvoicesPage } from '../invoices-page';
-
-// Mock the bridge hook
-vi.mock('@/ui/hooks/use-billing', () => ({
-  useBilling: () => ({
-    invoices: [{ id: '1', status: 'paid', total: 500 }],
-    isLoading: false,
-    error: null,
-    fetchInvoices: vi.fn(),
-  }),
-}));
-
-describe('InvoicesPage', () => {
-  it('renders invoice list', () => {
-    render(<InvoicesPage />);
-    expect(screen.getByText('500')).toBeInTheDocument();
-  });
-});
+server.use(authErrorHandlers.emailTaken);
+// API now returns 409 for duplicate email
 ```
 
-### Testing Pyramid
+**5. E2E tests** -- Playwright, real browser:
 
-```
-        /\
-       /  \      Component tests (few)
-      /    \     Verifies rendering + interaction
-     /------\
-    /        \   Redux store tests (some)
-   /          \  Verifies state transitions + thunks
-  /   ------   \
- /              \ Adapter integration tests (some)
-/                \ Verifies HTTP serialization
-/------------------\
-/                    \ Domain unit tests (many)
-/______________________\ Verifies business logic
+```ts
+await page.goto('/register');
+await page.getByLabel('Company Name').fill('Acme Corp');
+await page.getByRole('button', { name: 'Create Account' }).click();
 ```
 
-Most tests should be domain unit tests. They are fast, stable, and test the code that matters most. Redux store tests form the next layer -- they verify that thunks correctly coordinate with use cases and that state transitions are correct.
+### Test Factories
+
+Always use factories instead of manually constructing objects.
+
+- `buildUser()` -- returns a default user with sensible defaults. Override what you need: `buildUser({ role: 'finance' })`
+- `buildStaffUser()` -- returns a staff user with a non-owner role
+- `buildLoginResult()` -- returns a complete login response with tokens
+- `buildCompleteResult()` -- returns a registration completion response
+
+Factories live in `src/test/factories/` and are re-exported from `@/test`.
+
+### Coverage Thresholds (enforced in CI)
+
+| Layer | Minimum |
+|-------|---------|
+| Domain (`src/domain/**`) | 90% |
+| Adapters (`src/adapter/**`) | 80% |
+| Store (`src/ui/store/**`) | 80% |
+| Fields (`src/ui/fields/**`) | 70% |
+
+Excluded from coverage: shadcn primitives (`ui/primitives/`), Orval generated code (`adapter/api/generated/`), `main.tsx`.
+
+### Commands
+
+```bash
+npm test              # unit tests (run once)
+npm run test:watch    # watch mode
+npm run test:coverage # unit tests + coverage report
+npm run test:e2e      # Playwright (Chrome, Firefox, mobile)
+npm run test:e2e:ui   # Playwright interactive mode
+```
+
+### The Rule
+
+Every file that has logic gets a test file next to it. Pages are thin shells -- they do not need tests. Forms, fields, store slices, use-cases, and adapters do.
 
 ---
 
@@ -1040,7 +1040,7 @@ ADDING A FEATURE
 
 DEPENDENCY RULE
 ===============
-UI --> Domain <-- Adapters
+UI --> Domain --> Ports <-- Adapters
          ^
          |
    container.ts
@@ -1053,10 +1053,14 @@ No RTK Query:  Explicit decision
 
 TESTING
 =======
-Domain:   Unit test with mock ports (fast, many)
-Store:    Slice/thunk test with real store (medium, some)
-Adapter:  Integration test with MSW (medium, some)
-UI:       Component test with Testing Library (slow, few)
+Domain:   Unit test with mock ports (fast, 90% coverage)
+Store:    Slice/thunk test with mock container (80% coverage)
+Adapter:  Integration test with MSW (80% coverage)
+Fields:   Component test with renderWithProviders (70% coverage)
+E2E:      Playwright (Chrome, Firefox, Pixel 5)
+Files:    Colocated -- use-cases.test.ts next to use-cases.ts
+Helpers:  src/test/ (renderWithProviders, factories, MSW)
+Run:      npm test | npm run test:e2e
 ```
 
 ---

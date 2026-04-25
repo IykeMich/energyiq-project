@@ -7,18 +7,20 @@ This document describes the architecture of the EnergyIQ frontend application. R
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-2. [The Three Layers](#the-three-layers)
-3. [Folder Structure](#folder-structure)
-4. [Dependency Rules](#dependency-rules)
-5. [Tech Stack](#tech-stack)
-6. [Code Generation with Orval](#code-generation-with-orval)
-7. [Composition Root](#composition-root)
-8. [API Response Format](#api-response-format)
-9. [Auth Model](#auth-model)
-10. [Auth Flow](#auth-flow)
-11. [Auth Guards](#auth-guards)
-12. [Route Conventions](#route-conventions)
-13. [How to Add a New Module](#how-to-add-a-new-module)
+2. [Why This Architecture](#why-this-architecture)
+3. [The Three Layers](#the-three-layers)
+4. [Folder Structure](#folder-structure)
+5. [Dependency Rules](#dependency-rules)
+6. [Tech Stack](#tech-stack)
+7. [Code Generation with Orval](#code-generation-with-orval)
+8. [Composition Root](#composition-root)
+9. [API Response Format](#api-response-format)
+10. [Auth Model](#auth-model)
+11. [Auth Flow](#auth-flow)
+12. [Auth Guards](#auth-guards)
+13. [Route Conventions](#route-conventions)
+14. [How to Add a New Module](#how-to-add-a-new-module)
+15. [Testing](#testing)
 
 ---
 
@@ -51,6 +53,56 @@ EnergyIQ Web uses **hexagonal architecture** (also called ports-and-adapters). T
 ```
 
 The **composition root** (`config/container.ts`) is the single place that wires adapters to domain use cases.
+
+**The golden rule:**
+
+```
+UI  --->  Domain  --->  Ports  <---  Adapters
+```
+
+Nothing goes backwards. The UI never imports an adapter. The domain never imports React. Adapters never import UI components. If a dependency arrow points the wrong way, the code is in the wrong layer.
+
+---
+
+## Why This Architecture
+
+Hexagonal is not academic theory. It solves six problems that every growing frontend hits eventually.
+
+### 1. "I changed the API and 47 files broke"
+
+Without boundaries, API response shapes leak into every component, hook, and test. When the backend changes a field name, you are grepping through the entire codebase.
+
+With hexagonal, only the adapter file changes. The adapter maps the external shape to internal domain types. Domain logic and UI components never see the raw API response, so they do not break.
+
+### 2. "I can't test this without the whole app running"
+
+If your business logic lives inside React hooks or Redux thunks that depend on providers, routers, and a running dev server, testing is painful.
+
+The domain layer is pure TypeScript. You test it with plain functions and mock objects. No browser needed. No React rendering. No HTTP mocking. These tests run in milliseconds.
+
+### 3. "New dev can't figure out where anything is"
+
+In an unstructured codebase, every module is organized differently. One developer puts types next to components, another puts them in a shared folder, a third inlines them.
+
+Here, every module follows the same structure: `types.ts`, `ports.ts`, `use-cases.ts`, `index.ts`. Learn one module, know all 25. A new developer can be productive on day one.
+
+### 4. "We need to swap localStorage for secure cookies"
+
+Without ports and adapters, localStorage calls are scattered across components and hooks. Swapping the storage mechanism means touching dozens of files.
+
+With hexagonal, you change one adapter file and update one line in the composition root. The domain does not know. The UI does not know. The swap is done.
+
+### 5. "Forms are a mess -- validation here, API there, state somewhere else"
+
+Fat page components that mix form fields, validation logic, API calls, and error handling are the norm in most React codebases. They are impossible to review, test, or reuse.
+
+Our form decomposition follows a strict hierarchy: Page (~10 lines) calls Form (~30 lines) calls Fields (~20 lines each) with Validation (~5 lines per schema). Each file does exactly one thing. You can review a form change without scrolling past 200 lines of unrelated logic.
+
+### 6. "Backend changed the response format"
+
+When API response parsing is scattered across components, a format change means hunting through the entire UI layer.
+
+All responses go through one fetcher (`adapter/api/fetcher.ts`) that handles envelope unwrapping, error mapping, and token management. When the backend changes the response format, it is a one-file fix.
 
 ---
 
@@ -85,7 +137,8 @@ The UI layer is React. It contains:
 - **Hooks** -- bridge hooks like `useAuth` that wrap Redux dispatch and selectors. Components never import the store directly
 - **Pages** -- thin shells (~12 lines) containing a heading, a form import, and navigation links. Pages do not contain form logic, validation, or complex rendering
 - **Forms** -- form composition components in `ui/forms/{module}/` that import field components and connect to validation schemas
-- **Fields** -- reusable field components in `ui/fields/` (TextField, EmailField, PasswordField, OtpField)
+- **Primitives** -- shadcn/ui components in `ui/primitives/`, managed by the shadcn CLI (`components.json` points to `@/ui/primitives`). These are low-level building blocks (Button, Input, Label, etc.) that are never used directly in forms -- they are wrapped by business fields
+- **Fields** -- business field components in `ui/fields/` built on top of primitives (InputField, PasswordField, CurrencyField, SearchableSelect, OtpField, SelectField, TextareaField)
 - **Validation** -- Zod schemas in `ui/validation/{module}/`, one schema file per form
 - **Components** -- shared components in `ui/components/common/` (SubmitButton) and `ui/components/feedback/` (FormError)
 - **Layouts** -- shared page shells (auth layout, dashboard layout)
@@ -140,11 +193,19 @@ src/
 │   │       ├── register-form.tsx
 │   │       ├── login-form.tsx
 │   │       └── verify-form.tsx
-│   ├── fields/                      # Reusable field components
-│   │   ├── text-field.tsx
-│   │   ├── email-field.tsx
+│   ├── primitives/                   # shadcn/ui primitives (managed by shadcn CLI)
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   └── ...                      # All shadcn components land here
+│   ├── fields/                      # Business fields built on primitives
+│   │   ├── input-field.tsx
 │   │   ├── password-field.tsx
+│   │   ├── currency-field.tsx
+│   │   ├── searchable-select.tsx
 │   │   ├── otp-field.tsx
+│   │   ├── select-field.tsx
+│   │   ├── textarea-field.tsx
 │   │   └── index.ts
 │   ├── validation/                  # Zod schemas, one per form
 │   │   └── auth/
@@ -190,7 +251,7 @@ These are enforced by convention (and should be enforced by lint rules as the pr
 
 *Adapters may import shared infrastructure (e.g., `client.ts`, `fetcher.ts`) but should not import each other's module-specific adapters.
 
-The key rule: **dependencies point inward**. The domain never reaches out. The UI never touches adapters. The composition root is the only file that knows about concrete implementations.
+The key rule: `UI --> Domain --> Ports <-- Adapters`. Dependencies point inward. Nothing goes backwards. The domain never reaches out. The UI never touches adapters. The composition root is the only file that knows about concrete implementations.
 
 ---
 
@@ -642,6 +703,187 @@ Double-check:
 - `ui/hooks/use-inventory.ts` uses `useAppDispatch` and `useAppSelector` from `ui/store/`
 - Pages import from `ui/hooks/` and `ui/forms/` only -- no direct store or adapter access
 - The composition root is the only file that imports adapter classes
+
+---
+
+## Testing
+
+### Test File Location
+
+Test files are colocated with their source files. Always.
+
+- `use-cases.ts` -> `use-cases.test.ts` (same folder)
+- `auth.ts` -> `auth.test.ts` (same folder)
+- `currency-field.tsx` -> `currency-field.test.tsx` (same folder)
+
+There is no `__tests__/` directory. If you add a file with logic, you add its test file right next to it.
+
+### Test File Tree
+
+```
+src/
+├── domain/
+│   ├── auth/
+│   │   ├── use-cases.ts
+│   │   └── use-cases.test.ts            # Domain unit test
+│   └── shared/
+│       ├── errors.ts
+│       └── errors.test.ts
+│
+├── adapter/
+│   ├── api/
+│   │   ├── auth.ts
+│   │   └── auth.test.ts                 # Adapter integration test (MSW)
+│   └── storage/
+│       ├── token.ts
+│       └── token.test.ts
+│
+├── ui/
+│   ├── store/
+│   │   └── slices/
+│   │       ├── auth.ts
+│   │       └── auth.test.ts             # Redux store test
+│   ├── fields/
+│   │   ├── currency-field.tsx
+│   │   └── currency-field.test.tsx       # Component test
+│   └── forms/
+│       └── auth/
+│           ├── login-form.tsx
+│           └── login-form.test.tsx       # Component test
+│
+├── test/                                # Test UTILITIES only (not test files)
+│   ├── setup.ts                         # MSW server lifecycle, DOM cleanup
+│   ├── render.tsx                       # renderWithProviders()
+│   ├── factories/
+│   │   └── auth.ts                      # buildUser(), buildLoginResult(), etc.
+│   ├── mocks/
+│   │   ├── server.ts                    # MSW server instance
+│   │   └── handlers/
+│   │       └── auth.ts                  # API mock handlers with error overrides
+│   └── index.ts                         # Barrel: import { renderWithProviders, buildUser, server } from '@/test'
+│
+e2e/                                     # Playwright E2E tests (project root, not in src/)
+├── auth/
+│   ├── register.spec.ts
+│   └── login.spec.ts
+└── playwright.config.ts
+```
+
+### Test Utilities (`src/test/`)
+
+This folder holds helpers, not test files:
+
+- `setup.ts` -- MSW server lifecycle, DOM cleanup
+- `render.tsx` -- `renderWithProviders()` wraps Redux + TanStack Query + Router
+- `factories/auth.ts` -- `buildUser()`, `buildLoginResult()`, etc.
+- `mocks/server.ts` -- MSW server instance
+- `mocks/handlers/auth.ts` -- API mock handlers with error overrides
+- `index.ts` -- barrel export (`import { renderWithProviders, buildUser, server } from '@/test'`)
+
+### E2E Tests
+
+- Live at `e2e/` at project root (not in `src/`)
+- Playwright: Chrome, Firefox, mobile (Pixel 5)
+- Auto-starts dev server via `playwright.config.ts`
+
+### How to Test Each Layer
+
+**1. Domain tests** -- pure TypeScript, mock ports, no React:
+
+```ts
+// domain/auth/use-cases.test.ts
+
+const mockApi = { login: vi.fn() };
+const auth = new AuthUseCases(mockApi, mockTokens, mockUser);
+vi.mocked(mockApi.login).mockResolvedValue(buildLoginResult());
+await auth.login({ email: 'chioma@megaenergy.com', password: 'pass' });
+expect(mockTokens.setTokens).toHaveBeenCalled();
+```
+
+This is the fastest, most valuable test layer. No browser, no rendering, no HTTP. Invest here first.
+
+**2. Redux store tests** -- mock the container, test reducers + thunks:
+
+```ts
+// ui/store/slices/auth.test.ts
+
+vi.mock('@/config/container', () => ({
+  authUseCases: { login: vi.fn() }
+}));
+
+await store.dispatch(login({ email: 'chioma@megaenergy.com', password: 'pass' }));
+expect(store.getState().auth.isAuthenticated).toBe(true);
+```
+
+**3. Component tests** -- always use `renderWithProviders`:
+
+```ts
+// ui/forms/auth/login-form.test.tsx
+
+import { renderWithProviders } from '@/test';
+
+const { user } = renderWithProviders(<LoginForm />);
+await user.type(screen.getByLabelText('Email'), 'chioma@megaenergy.com');
+await user.click(screen.getByRole('button', { name: 'Sign In' }));
+```
+
+**4. Adapter tests** -- MSW intercepts at network level:
+
+```ts
+// adapter/api/auth.test.ts
+
+import { server } from '@/test';
+import { authErrorHandlers } from '@/test/mocks/handlers/auth';
+
+server.use(authErrorHandlers.emailTaken);
+// API now returns 409 EIQ-1010
+```
+
+**5. E2E tests** -- Playwright, real browser:
+
+```ts
+// e2e/auth/register.spec.ts
+
+await page.goto('/register');
+await page.getByLabel('Company Name').fill('MegaEnergy');
+await page.getByRole('button', { name: 'Create Account' }).click();
+```
+
+### Test Factories
+
+Always use factories instead of manually constructing objects.
+
+- `buildUser()` -- returns a default owner (Chioma at MegaEnergy). Override what you need: `buildUser({ role: 'finance' })`
+- `buildStaffUser()` -- returns a staff user with a non-owner role
+- `buildLoginResult()` -- returns a complete login response with tokens
+- `buildCompleteResult()` -- returns a registration completion response
+
+Factories live in `src/test/factories/` and are re-exported from `@/test`.
+
+### Coverage Thresholds (enforced in CI)
+
+| Layer | Minimum |
+|-------|---------|
+| Domain (`src/domain/**`) | 90% |
+| Adapters (`src/adapter/**`) | 80% |
+| Store (`src/ui/store/**`) | 80% |
+| Fields (`src/ui/fields/**`) | 70% |
+
+Excluded from coverage: shadcn primitives (`ui/primitives/`), Orval generated code (`adapter/api/generated/`), `main.tsx`.
+
+### Commands
+
+```bash
+npm test              # unit tests (run once)
+npm run test:watch    # watch mode
+npm run test:coverage # unit tests + coverage report
+npm run test:e2e      # Playwright (Chrome, Firefox, mobile)
+npm run test:e2e:ui   # Playwright interactive mode
+```
+
+### The Rule
+
+Every file that has logic gets a test file next to it. Pages are thin shells -- they do not need tests. Forms, fields, store slices, use-cases, and adapters do.
 
 ---
 
