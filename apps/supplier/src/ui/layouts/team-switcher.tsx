@@ -1,5 +1,5 @@
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@energyiq/ui';
-import EnergyIQLogo from '@/assets/full-logo-image.png';
+import EnergyIQLogo from '@energyiq/ui/assets/full-logo-image.png';
 import Logo from '@/assets/logo.png';
 
 export function TeamSwitcher() {

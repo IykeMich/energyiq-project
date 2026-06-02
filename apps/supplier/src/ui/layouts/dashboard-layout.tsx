@@ -1,10 +1,15 @@
-import type { CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import { Outlet } from 'react-router-dom';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@energyiq/ui';
 import { AppSidebar } from './app-sidebar';
 import { DefaultHeader } from './default-header';
 
 export function DashboardLayout() {
+  useEffect(() => {
+    document.body.classList.add('app-dark-canvas');
+    return () => document.body.classList.remove('app-dark-canvas');
+  }, []);
+
   return (
     <SidebarProvider
       style={

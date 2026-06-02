@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 import EnergyIQLogo from '../assets/full-logo-image.png';
 
@@ -9,6 +9,11 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
+  useEffect(() => {
+    document.body.classList.add('app-dark-canvas');
+    return () => document.body.classList.remove('app-dark-canvas');
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#121212] relative">
       <img
