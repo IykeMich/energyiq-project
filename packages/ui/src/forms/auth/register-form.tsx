@@ -1,17 +1,63 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff } from 'lucide-react';
+import { cn } from '@energyiq/shared';
 import { useAuth } from '../../hooks/use-auth';
 import { registerSchema, type RegisterFormData } from '../../validation/auth/register';
-import { InputField, PasswordField } from '../../fields';
-import { FormError } from '../../components/feedback/form-error';
-import { Button } from '../../primitives/button';
+
+const inputBaseClass =
+  'w-full h-[56px] rounded-full bg-[#FFFFFF1A] px-6 text-white placeholder:text-gray-500 ' +
+  'focus:outline-none focus:ring-2 focus:ring-[#FBC02D]/40 transition-colors';
+
+interface DarkFieldProps {
+  id: string;
+  label: string;
+  placeholder?: string;
+  type?: 'text' | 'email';
+  optional?: boolean;
+  errorMessage?: string;
+  inputProps: UseFormRegisterReturn;
+}
+
+function DarkField({
+  id,
+  label,
+  placeholder,
+  type = 'text',
+  optional,
+  errorMessage,
+  inputProps,
+}: DarkFieldProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="text-sm font-normal text-white">
+        {label}
+        {optional && <span className="text-gray-500 ml-1 text-xs">(optional)</span>}
+      </label>
+      <input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        {...inputProps}
+        className={cn(inputBaseClass, errorMessage && 'ring-2 ring-red-500')}
+      />
+      {errorMessage && <p className="text-red-500 text-xs ml-6">{errorMessage}</p>}
+    </div>
+  );
+}
 
 export function RegisterForm() {
   const navigate = useNavigate();
   const { initiate, isLoading, error, clearError } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<RegisterFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       company_name: '',
@@ -44,32 +90,105 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <FormError message={error} />
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-8">
+      {error && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          {error}
+        </div>
+      )}
 
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold mb-2">Company Information</legend>
+      <fieldset className="flex flex-col gap-4">
+        <legend className="text-sm font-semibold text-white mb-2">Company Information</legend>
 
-        <InputField control={form.control} name="company_name" label="Company Name" placeholder="MegaEnergy Ltd" />
-        <InputField control={form.control} name="company_email" label="Company Email" type="email" placeholder="info@megaenergy.com" optional />
+        <DarkField
+          id="company_name"
+          label="Company Name"
+          placeholder="MegaEnergy Ltd"
+          inputProps={register('company_name')}
+          errorMessage={errors.company_name?.message}
+        />
+        <DarkField
+          id="company_email"
+          label="Company Email"
+          type="email"
+          optional
+          placeholder="info@megaenergy.com"
+          inputProps={register('company_email')}
+          errorMessage={errors.company_email?.message}
+        />
 
-        <div className="grid grid-cols-2 gap-4">
-          <InputField control={form.control} name="business_type" label="Business Type" placeholder="LPG Distribution" />
-          <InputField control={form.control} name="registration_number" label="Registration No." placeholder="RC123456" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DarkField
+            id="business_type"
+            label="Business Type"
+            placeholder="LPG Distribution"
+            inputProps={register('business_type')}
+            errorMessage={errors.business_type?.message}
+          />
+          <DarkField
+            id="registration_number"
+            label="Registration No."
+            placeholder="RC123456"
+            inputProps={register('registration_number')}
+            errorMessage={errors.registration_number?.message}
+          />
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold mb-2">Account Owner</legend>
+      <fieldset className="flex flex-col gap-4">
+        <legend className="text-sm font-semibold text-white mb-2">Account Owner</legend>
 
-        <InputField control={form.control} name="account_name" label="Your Name" placeholder="Chioma Okonkwo" />
-        <InputField control={form.control} name="account_email" label="Email" type="email" placeholder="chioma@megaenergy.com" />
-        <PasswordField control={form.control} name="password" label="Password" placeholder="Min 12 characters" />
+        <DarkField
+          id="account_name"
+          label="Your Name"
+          placeholder="Chioma Okonkwo"
+          inputProps={register('account_name')}
+          errorMessage={errors.account_name?.message}
+        />
+        <DarkField
+          id="account_email"
+          label="Email"
+          type="email"
+          placeholder="chioma@megaenergy.com"
+          inputProps={register('account_email')}
+          errorMessage={errors.account_email?.message}
+        />
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="text-sm font-normal text-white">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Min 12 characters"
+              autoComplete="new-password"
+              {...register('password')}
+              className={cn(inputBaseClass, 'pr-14', errors.password && 'ring-2 ring-red-500')}
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-red-500 text-xs ml-6">{errors.password.message}</p>
+          )}
+        </div>
       </fieldset>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
         {isLoading ? 'Creating account...' : 'Create Account'}
-      </Button>
+      </button>
     </form>
   );
 }

@@ -144,11 +144,10 @@ body {
   }
 }
 
-/* Match energyiq's dark canvas — kills the white over-scroll bounce on dashboard pages.
-   Applied to html + body directly (not via the `--background` token) so AuthLayout's
-   `bg-background` panel still resolves to its own value. */
-html,
-body {
+/* Scoped dark canvas — attached to `document.body` by the dashboard + auth layouts via
+   `useEffect`. Avoids surprising future light-themed pages with a global override while
+   still killing the white over-scroll bounce wherever the dark layouts mount. */
+.app-dark-canvas {
   background-color: #121212;
 }
 
