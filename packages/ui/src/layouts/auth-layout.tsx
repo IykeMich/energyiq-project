@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
-import EnergyIQLogo from '../assets/full-logo-image.png';
+import EnergyIQLogo from '../assets/auth-page-logo.png';
 
 interface AuthLayoutProps {
   title?: string;
@@ -19,22 +19,26 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
       <img
         src={EnergyIQLogo}
         alt="EnergyIQ"
-        className="absolute top-6 right-6 sm:top-10 sm:right-10 h-8 sm:h-10 z-10"
+        className="absolute top-6 right-6 lg:right-40 sm:top-10 sm:right-10 h-8 sm:h-10 z-10"
       />
 
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-24 sm:py-32">
-        <div className="w-full max-w-[640px]">
+      <div className="min-h-screen flex flex-col justify-center px-6 py-24 sm:py-32 lg:px-56 lg:py-24">
+        <div className="w-full mx-auto max-w-160 lg:max-w-none">
           {(title || subtitle) && (
             <div className="mb-10 space-y-2">
               {title && (
-                <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+                <h1 className="font-semibold text-4xl leading-none text-white">
                   {title}
                 </h1>
               )}
-              {subtitle && <p className="text-sm text-gray-400">{subtitle}</p>}
+              {subtitle && (
+                <p className="font-medium text-lg leading-none text-[#FFFFFFCC]">{subtitle}</p>
+              )}
             </div>
           )}
-          {children ?? <Outlet />}
+          <div className="w-full mx-auto lg:max-w-218.75">
+            {children ?? <Outlet />}
+          </div>
         </div>
       </div>
     </div>
