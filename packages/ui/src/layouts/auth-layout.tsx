@@ -1,42 +1,35 @@
+import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
+import EnergyIQLogo from '../assets/full-logo-image.png';
 
-export function AuthLayout() {
+interface AuthLayoutProps {
+  title?: string;
+  subtitle?: string;
+  children?: ReactNode;
+}
+
+export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex">
-      {/* Left: brand panel — fixed width, doesn't stretch */}
-      <div className="hidden lg:flex lg:w-[480px] bg-[#1E3A5F] text-white flex-col justify-center px-12 shrink-0">
-        <div>
-          <h1 className="text-3xl font-bold mb-3">EnergyIQ</h1>
-          <div className="w-10 h-0.5 bg-white/30 mb-6" />
-          <p className="text-base text-white/70 leading-relaxed">
-            Digitize and automate the entire downstream energy value chain — from
-            wholesale trade to retail operations to financial intelligence.
-          </p>
-          <ul className="mt-8 space-y-3 text-sm text-white/60">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
-              Real-time supply chain visibility
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
-              Automated financial reconciliation
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
-              Bank-grade transaction integrity
-            </li>
-          </ul>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#121212] relative">
+      <img
+        src={EnergyIQLogo}
+        alt="EnergyIQ"
+        className="absolute top-6 right-6 sm:top-10 sm:right-10 h-8 sm:h-10 z-10"
+      />
 
-      {/* Right: auth form — centered, constrained */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-background">
-        <div className="w-full max-w-[400px]">
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8">
-            <h1 className="text-2xl font-bold text-[#1E3A5F]">EnergyIQ</h1>
-          </div>
-          <Outlet />
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-24 sm:py-32">
+        <div className="w-full max-w-[640px]">
+          {(title || subtitle) && (
+            <div className="mb-10 space-y-2">
+              {title && (
+                <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+                  {title}
+                </h1>
+              )}
+              {subtitle && <p className="text-sm text-gray-400">{subtitle}</p>}
+            </div>
+          )}
+          {children ?? <Outlet />}
         </div>
       </div>
     </div>

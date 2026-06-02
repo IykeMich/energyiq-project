@@ -1,5 +1,5 @@
 import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom';
-import { AuthLayout, DashboardLayout } from '@energyiq/ui';
+import { DashboardLayout } from '@energyiq/ui';
 import { BrandingProvider } from '@energyiq/branding';
 import { RequireAuth, RedirectIfAuth } from './auth-guard';
 import { RegisterPage } from '@/ui/pages/auth/register-page';
@@ -29,17 +29,13 @@ export const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/login" replace /> },
 
       // Public auth routes — redirect to dashboard if already logged in.
+      // Each auth page wraps itself with <AuthLayout title="..." subtitle="...">.
       {
         element: <RedirectIfAuth />,
         children: [
-          {
-            element: <AuthLayout />,
-            children: [
-              { path: '/login', element: <LoginPage /> },
-              { path: '/register', element: <RegisterPage /> },
-              { path: '/verify', element: <VerifyPage /> },
-            ],
-          },
+          { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
+          { path: '/verify', element: <VerifyPage /> },
         ],
       },
 

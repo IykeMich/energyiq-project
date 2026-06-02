@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/montserrat";
 
 @source "../../ui/src/**/*.{ts,tsx}";
 @source "../../branding/src/**/*.{ts,tsx}";
@@ -38,13 +38,13 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar: #121212;
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #FBC02D;
+  --sidebar-primary-foreground: #121212;
+  --sidebar-accent: #FBC02D;
+  --sidebar-accent-foreground: #121212;
+  --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -57,7 +57,7 @@ body {
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: 'Montserrat Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -122,12 +122,12 @@ body {
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: #121212;
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #FBC02D;
+  --sidebar-primary-foreground: #121212;
+  --sidebar-accent: #FBC02D;
+  --sidebar-accent-foreground: #121212;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
@@ -141,5 +141,39 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Match energyiq's dark canvas — kills the white over-scroll bounce on dashboard pages.
+   Applied to html + body directly (not via the `--background` token) so AuthLayout's
+   `bg-background` panel still resolves to its own value. */
+html,
+body {
+  background-color: #121212;
+}
+
+/* Gold (#FBC02D) active state for sidebar menu buttons — matches the energyiq look. */
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: #FBC02D !important;
+  color: #121212 !important;
+}
+[data-sidebar="menu-button"][data-active="true"] svg {
+  color: #121212 !important;
+  stroke: #121212 !important;
+}
+[data-sidebar="menu-button"][data-active="true"] svg path {
+  stroke: #121212 !important;
+}
+
+@layer utilities {
+  .tap-effect {
+    @apply cursor-pointer transition duration-150 ease-in-out transform active:scale-95;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

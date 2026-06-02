@@ -93,6 +93,24 @@ export const authSlice = createSlice({
       state.loginType = s.loginType;
       state.isAuthenticated = s.isAuthenticated;
     },
+    // TEMP: scaffolding for the bypassed login flow used by LoginForm.
+    // Remove this reducer (and its dispatch in packages/ui/src/forms/auth/login-form.tsx)
+    // once the real auth endpoint lands.
+    tempBypassLogin(state) {
+      state.isAuthenticated = true;
+      state.loginType = 'account';
+      state.slug = 'demo';
+      state.user = {
+        id: 'temp-user',
+        name: 'Demo Supplier',
+        email: 'demo@energyiq.com',
+        role: 'owner',
+        entity_type: 'supplier',
+        entity_id: 'temp-supplier',
+        account_number: '0000000000',
+        slug: 'demo',
+      };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -155,4 +173,4 @@ export const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, hydrate } = authSlice.actions;
+export const { logout, clearError, hydrate, tempBypassLogin } = authSlice.actions;

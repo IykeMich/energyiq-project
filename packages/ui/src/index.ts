@@ -1,17 +1,24 @@
 // Primitives (shadcn/Base UI)
+export * from './primitives/avatar';
 export * from './primitives/badge';
 export * from './primitives/button';
+export * from './primitives/collapsible';
 export * from './primitives/command';
 export * from './primitives/dialog';
+export * from './primitives/dropdown-menu';
 export * from './primitives/input';
 export * from './primitives/input-group';
 export * from './primitives/input-otp';
 export * from './primitives/label';
+export * from './primitives/notification-badge';
 export * from './primitives/popover';
 export * from './primitives/scroll-area';
 export * from './primitives/select';
 export * from './primitives/separator';
+export * from './primitives/sheet';
+export * from './primitives/sidebar';
 export * from './primitives/textarea';
+export * from './primitives/tooltip';
 
 // Business fields
 export * from './fields';

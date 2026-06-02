@@ -1,11 +1,11 @@
 import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom';
-import { AuthLayout, DashboardLayout } from '@energyiq/ui';
 import { BrandingProvider } from '@energyiq/branding';
 import { RequireAuth, RedirectIfAuth } from './auth-guard';
 import { RegisterPage } from '@/ui/pages/auth/register-page';
 import { VerifyPage } from '@/ui/pages/auth/verify-page';
 import { LoginPage } from '@/ui/pages/auth/login-page';
 import { DashboardPage } from '@/ui/pages/dashboard/dashboard-page';
+import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Slug-aware routes: every authenticated path is /:slug/<page>.
 // Public auth routes (/login, /register, /verify) are tenant-agnostic until
@@ -29,17 +29,13 @@ export const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/login" replace /> },
 
       // Public auth routes — redirect to dashboard if already logged in.
+      // Each auth page wraps itself with <AuthLayout title="..." subtitle="...">.
       {
         element: <RedirectIfAuth />,
         children: [
-          {
-            element: <AuthLayout />,
-            children: [
-              { path: '/login', element: <LoginPage /> },
-              { path: '/register', element: <RegisterPage /> },
-              { path: '/verify', element: <VerifyPage /> },
-            ],
-          },
+          { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
+          { path: '/verify', element: <VerifyPage /> },
         ],
       },
 
