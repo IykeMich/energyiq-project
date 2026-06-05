@@ -37,6 +37,7 @@ export { useAuth } from './hooks/use-auth';
 export { LoginForm } from './forms/auth/login-form';
 export { RegisterForm } from './forms/auth/register-form';
 export { VerifyForm } from './forms/auth/verify-form';
+export { DistributorForm } from './forms/auth/distributor-form';
 
 // Validation schemas
 export * from './validation/auth/login';
