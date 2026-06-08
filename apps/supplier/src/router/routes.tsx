@@ -12,6 +12,7 @@ import { ProductListPage } from '@/ui/pages/product/product-list-page';
 import { AddProductPage } from '@/ui/pages/product/add-product-page';
 import { CategoryListPage } from '@/ui/pages/product/category-list-page';
 import { UnitListPage } from '@/ui/pages/product/unit-list-page';
+import { DistributorListPage } from '@/ui/pages/distributor/distributor-list-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },
               { path: '/:slug/products/categories', element: <CategoryListPage /> },
               { path: '/:slug/products/units', element: <UnitListPage /> },
+              { path: '/:slug/distributors', element: <DistributorListPage /> },
             ],
           },
         ],
