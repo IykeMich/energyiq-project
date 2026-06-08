@@ -3,7 +3,7 @@ import { AuthLayout, RegisterForm } from '@energyiq/ui';
 
 export function RegisterPage() {
   return (
-    <AuthLayout title="Create your account" subtitle="Set up your organization on EnergyIQ">
+    <AuthLayout title="Create your Account" subtitle="Enter your company detailsto get started with real-time insights">
       <RegisterForm />
 
       <p className="text-center text-sm text-gray-400 mt-6">

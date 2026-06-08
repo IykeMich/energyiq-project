@@ -25,6 +25,9 @@ export * from './fields';
 
 // Generic components
 export { FormError } from './components/feedback/form-error';
+export { SectionHeader } from './components/section-header';
+export { Modal, type ModalSize } from './components/modal';
+export { DataGrid, type DataGridProps, type ColDef, type GridOptions } from './components/data-grid/data-grid';
 
 // Layouts
 export { AuthLayout } from './layouts/auth-layout';
@@ -37,6 +40,7 @@ export { useAuth } from './hooks/use-auth';
 export { LoginForm } from './forms/auth/login-form';
 export { RegisterForm } from './forms/auth/register-form';
 export { VerifyForm } from './forms/auth/verify-form';
+export { DistributorForm } from './forms/auth/distributor-form';
 
 // Validation schemas
 export * from './validation/auth/login';

@@ -6,6 +6,7 @@ import { VerifyPage } from '@/ui/pages/auth/verify-page';
 import { LoginPage } from '@/ui/pages/auth/login-page';
 import { DashboardPage } from '@/ui/pages/dashboard/dashboard-page';
 import { OrdersPage } from '@/ui/pages/orders/orders-page';
+import { TankMonitoringPage } from '@/ui/pages/inventory/tank-monitoring/tank-monitoring-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Authenticated routes live under flat paths (/dashboard, /distributors, …).
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/dashboard', element: <DashboardPage /> },
               { path: '/orders', element: <OrdersPage /> },
+              { path: '/inventory/tank-monitoring', element: <TankMonitoringPage /> },
             ],
           },
         ],
