@@ -37,3 +37,78 @@ export function formatStock(p: Product): string {
   const formatted = p.totalStock.toLocaleString();
   return p.unit === 'pcs' ? `${formatted}pcs` : `${formatted}${p.unit}`;
 }
+
+// ───────── New Product (wizard) ─────────
+
+export const CATEGORY_OPTIONS = ['Fuel', 'Lubricant', 'Spare Parts', 'Additive'] as const;
+export const TYPE_OPTIONS = ['Single Product', 'Bundle', 'Service'] as const;
+export const UNIT_OPTIONS = ['Liters (L)', 'Pieces (pcs)', 'Kilograms (Kg)'] as const;
+export const PACKAGING_OPTIONS = ['Bulk Tanker', 'Drums', '20L Kegs', 'Pallets'] as const;
+export const PRICE_TYPE_OPTIONS = ['Fixed Pricing', 'Tiered Pricing', 'Cost-Plus'] as const;
+export const CURRENCY_OPTIONS = ['NGN', 'USD'] as const;
+export const PRICING_TIER_OPTIONS = ['Bronze', 'Silver', 'Gold'] as const;
+export const TAX_OPTIONS = ['VAT 7.5%', 'Tax Exempt', 'Reduced VAT 5%'] as const;
+export const WAREHOUSE_OPTIONS = [
+  { id: 'wh-lagos-main', name: 'Lagos Main Depot', availableStockL: 240_000 },
+  { id: 'wh-lekki', name: 'Lekki Tank Farm', availableStockL: 180_000 },
+  { id: 'wh-awka', name: 'Awka Central Depot', availableStockL: 120_000 },
+  { id: 'wh-abuja', name: 'Abuja Storage Facility', availableStockL: 95_000 },
+  { id: 'wh-ph', name: 'Port Harcourt Depot', availableStockL: 150_000 },
+] as const;
+export const STORAGE_LOCATION_OPTIONS = ['Tank-A1', 'Tank-A2', 'Tank-B1', 'Tank-B2', 'Bay-1', 'Bay-2'] as const;
+
+export type VisibilityOption = 'all' | 'tier' | 'selected';
+export type ApprovalWorkflowOption = 'auto' | 'manual' | 'scheduled';
+export type AutomationOption = 'publish-now' | 'schedule' | 'save-draft' | 'submit-review';
+
+export interface WarehouseAllocationDraft {
+  id: string;
+  warehouseLocation: string;
+  allocatedQuantity: string;
+  storageLocation: string;
+}
+
+export interface NewProductDraft {
+  // Step 1 / Basic Info
+  name: string;
+  category: string;
+  type: string;
+  measuringUnit: string;
+  packagingType: string;
+  description: string;
+  // Step 1 / Pricing
+  priceType: string;
+  sellingPrice: string;
+  currency: string;
+  pricingTier: string;
+  taxConfiguration: string;
+  // Step 1 / Warehouse Allocation
+  warehouseAllocations: WarehouseAllocationDraft[];
+  // Step 2
+  visibility: VisibilityOption;
+  approvalWorkflow: ApprovalWorkflowOption;
+  // Step 3
+  automationOption: AutomationOption;
+}
+
+export function emptyDraft(): NewProductDraft {
+  return {
+    name: '',
+    category: '',
+    type: 'Single Product',
+    measuringUnit: '',
+    packagingType: '',
+    description: '',
+    priceType: 'Fixed Pricing',
+    sellingPrice: '',
+    currency: 'NGN',
+    pricingTier: '',
+    taxConfiguration: '',
+    warehouseAllocations: [
+      { id: 'wa-1', warehouseLocation: '', allocatedQuantity: '', storageLocation: '' },
+    ],
+    visibility: 'all',
+    approvalWorkflow: 'auto',
+    automationOption: 'publish-now',
+  };
+}

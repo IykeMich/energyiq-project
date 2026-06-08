@@ -9,6 +9,7 @@ import { TankMonitoringPage } from '@/ui/pages/inventory/tank-monitoring/tank-mo
 import { OrderListPage } from '@/ui/pages/order/order-list-page';
 import { OrderDetailPage } from '@/ui/pages/order/order-detail-page';
 import { ProductListPage } from '@/ui/pages/product/product-list-page';
+import { AddProductPage } from '@/ui/pages/product/add-product-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Slug-aware routes: every authenticated path is /:slug/<page>.
@@ -55,6 +56,8 @@ export const router = createBrowserRouter([
               { path: '/:slug/orders', element: <OrderListPage /> },
               { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
               { path: '/:slug/products', element: <ProductListPage /> },
+              { path: '/:slug/products/new', element: <AddProductPage /> },
+              { path: '/:slug/products/:id/edit', element: <AddProductPage /> },
             ],
           },
         ],
