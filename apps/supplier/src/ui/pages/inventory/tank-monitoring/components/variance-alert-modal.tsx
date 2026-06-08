@@ -31,13 +31,13 @@ export function VarianceAlertModal({
       size="md"
     >
       <div className="flex flex-col gap-6">
-        <p className="text-sm text-[#FAFAFA]">
+        <p className="text-sm text-foreground">
           Stock variance flagged - Actual reading differs from expected. Review before confirming.
         </p>
 
-        <div className="border-t border-[#616161B2] pt-5">
-          <p className="text-sm font-semibold text-[#FAFAFA] mb-4">Variance Details:</p>
-          <dl className="flex flex-col gap-2.5 text-sm text-[#FAFAFA]">
+        <div className="border-t border-border-subtle pt-5">
+          <p className="text-sm font-semibold text-foreground mb-4">Variance Details:</p>
+          <dl className="flex flex-col gap-2.5 text-sm text-foreground">
             <div className="flex items-center justify-between">
               <dt>Tank affected:</dt>
               <dd className="font-semibold">{tankAffected}</dd>
@@ -52,7 +52,7 @@ export function VarianceAlertModal({
             </div>
             <div className="flex items-center justify-between">
               <dt>Difference:</dt>
-              <dd className="font-semibold text-[#D30A0A]">
+              <dd className="font-semibold text-danger">
                 {sign}
                 {Math.abs(diff).toLocaleString()} L
               </dd>
@@ -64,14 +64,14 @@ export function VarianceAlertModal({
           <button
             type="button"
             onClick={onReenter}
-            className="h-[53px] rounded-[28px] border border-[#9E9E9E] text-[#FAFAFA] font-semibold"
+            className="h-[53px] rounded-[28px] border border-border-strong text-foreground font-semibold"
           >
             Re-enter reading
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="h-[53px] rounded-[28px] bg-[#FBC02D] text-[#121212] font-semibold"
+            className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold"
           >
             Confirm Reading
           </button>
