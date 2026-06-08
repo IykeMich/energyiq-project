@@ -12,13 +12,12 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
-// Redirects to the tenant-scoped dashboard if already authenticated.
-// Falls back to 'demo' to match the TEMP login bypass in @energyiq/ui's LoginForm.
+// Redirects to dashboard if already authenticated.
 export function RedirectIfAuth() {
-  const { isAuthenticated, slug } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to={`/${slug ?? 'demo'}/dashboard`} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

@@ -5,15 +5,12 @@ import { RegisterPage } from '@/ui/pages/auth/register-page';
 import { VerifyPage } from '@/ui/pages/auth/verify-page';
 import { LoginPage } from '@/ui/pages/auth/login-page';
 import { DashboardPage } from '@/ui/pages/dashboard/dashboard-page';
+import { OrdersPage } from '@/ui/pages/orders/orders-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
-// Slug-aware routes: every authenticated path is /:slug/<page>.
-// Public auth routes (/login, /register, /verify) are tenant-agnostic until
-// the user hits the supplier subdomain, after which they're redirected into
-// /:slug/dashboard.
-//
-// BrandingProvider lives at the root so it watches useLocation and applies
-// the right CSS vars whenever the slug changes.
+// Authenticated routes live under flat paths (/dashboard, /distributors, …).
+// Public auth routes (/login, /register, /verify) are reachable until the user
+// logs in, after which they're redirected into /dashboard.
 function Root() {
   return (
     <BrandingProvider>
@@ -39,14 +36,15 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Protected routes under /:slug/* — redirect to login if not authed.
+      // Protected routes — redirect to login if not authed.
       {
         element: <RequireAuth />,
         children: [
           {
             element: <DashboardLayout />,
             children: [
-              { path: '/:slug/dashboard', element: <DashboardPage /> },
+              { path: '/dashboard', element: <DashboardPage /> },
+              { path: '/orders', element: <OrdersPage /> },
             ],
           },
         ],

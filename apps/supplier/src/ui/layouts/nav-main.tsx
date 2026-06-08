@@ -21,6 +21,8 @@ export interface NavItem {
   url: string;
   icon?: LucideIcon;
   isActive?: boolean;
+  /** Renders the item in the gold accent color (e.g. Log Out), regardless of active state. */
+  accent?: boolean;
   badge?: number;
   /** Optional: paths that should keep this nav item active (e.g. child routes). */
   activePaths?: string[];
@@ -71,13 +73,17 @@ export function NavMain({ items, extraClass, containerExtraClass }: NavMainProps
                       {item.icon && (
                         <item.icon
                           className={`transition-colors ${
-                            isActivePath ? 'stroke-white' : 'text-gray-400 stroke-gray-400'
+                            item.accent
+                              ? 'text-[#FBC02D] stroke-[#FBC02D]'
+                              : isActivePath
+                                ? 'stroke-white'
+                                : 'text-gray-400 stroke-gray-400'
                           } ${isActivePath && state === 'collapsed' ? '-ml-1' : ''}`}
                         />
                       )}
                       <span
                         className={`text-sm font-normal leading-6 transition-colors ${
-                          !isActivePath ? 'text-gray-400' : ''
+                          item.accent ? 'text-[#FBC02D]' : !isActivePath ? 'text-gray-400' : ''
                         }`}
                       >
                         {item.title}

@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, tempBypassLogin } from '@energyiq/store';
 import { cn } from '@energyiq/shared';
-import { useAuth } from '../../hooks/use-auth';
 import { loginSchema, type LoginFormData } from '../../validation/auth/login';
 
 const inputBaseClass =
@@ -15,7 +14,6 @@ const inputBaseClass =
 export function LoginForm() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { slug } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -31,15 +29,15 @@ export function LoginForm() {
 
   const rememberMe = watch('rememberMe');
 
-  // TEMP: auth endpoint bypassed — fake a logged-in state, then navigate to the
-  // slug-aware dashboard. The commented `onSubmit` below restores the real flow.
+  // TEMP: auth endpoint bypassed — fake a logged-in state, then navigate to
+  // /dashboard. The commented `onSubmit` below restores the real flow.
   const onSubmit = () => {
     dispatch(tempBypassLogin());
-    navigate(`/${slug ?? 'demo'}/dashboard`);
+    navigate('/dashboard');
   };
   // const onSubmit = async (data: LoginFormData) => {
   //   const success = await login({ email: data.email, password: data.password });
-  //   if (success) navigate(`/${slug}/dashboard`);
+  //   if (success) navigate('/dashboard');
   // };
 
   return (
