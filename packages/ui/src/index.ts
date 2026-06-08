@@ -25,6 +25,8 @@ export * from './fields';
 
 // Generic components
 export { FormError } from './components/feedback/form-error';
+export { SectionHeader } from './components/section-header';
+export { DataGrid, type DataGridProps, type ColDef, type GridOptions } from './components/data-grid/data-grid';
 
 // Layouts
 export { AuthLayout } from './layouts/auth-layout';

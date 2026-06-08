@@ -1,15 +1,15 @@
-import { DashboardKpiCard } from './dashboard-kpi-card';
-import { DashboardSectionHeader } from './dashboard-section-header';
-import { DashboardFinancialSnapshot } from './dashboard-financial-snapshot';
-import { DashboardQuickActionCard } from './dashboard-quick-action-card';
-import { DashboardSalesTrendChart } from './dashboard-sales-trend-chart';
-import { DashboardInventoryStatusChart } from './dashboard-inventory-status-chart';
+import { SectionHeader } from '@energyiq/ui';
+import { DashboardKpiCard } from './components/kpi-card';
+import { DashboardFinancialSnapshot } from './components/financial-snapshot';
+import { DashboardQuickActionCard } from './components/quick-action-card';
+import { DashboardSalesTrendChart } from './components/sales-trend-chart';
+import { DashboardInventoryStatusChart } from './components/inventory-status-chart';
 import {
   KPI_MOCKS,
   RECENT_ACTIVITY_MOCKS,
   FINANCIAL_ACCOUNT_MOCKS,
   QUICK_ACTION_MOCKS,
-} from './dashboard-mocks';
+} from './mocks';
 
 export function DashboardPage() {
   return (
@@ -41,7 +41,7 @@ export function DashboardPage() {
 
         {/* Recent Activity */}
         <div className="bg-[#6161611A] hover:border hover:border-[#616161B2] rounded-2xl pt-6 px-6 pb-0! flex-1 lg:max-h-[445px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-          <DashboardSectionHeader title="Recent Activity" actionLink={{ label: 'See all', href: '#' }} />
+          <SectionHeader title="Recent Activity" actionLink={{ label: 'See all', href: '#' }} />
           <div className="space-y-4 max-h-[350px]! overflow-y-auto mt-6 lg:mt-8">
             {RECENT_ACTIVITY_MOCKS.map((activity, index) => {
               const isLast = index === RECENT_ACTIVITY_MOCKS.length - 1;
@@ -75,7 +75,7 @@ export function DashboardPage() {
             accounts={FINANCIAL_ACCOUNT_MOCKS}
           />
           <div className="bg-[#27272A] rounded-2xl p-6 shadow-sm">
-            <DashboardSectionHeader title="Inventory Status" actionLink={{ label: 'Manage', href: '#' }} />
+            <SectionHeader title="Inventory Status" actionLink={{ label: 'Manage', href: '#' }} />
             <DashboardInventoryStatusChart />
           </div>
         </div>
@@ -85,7 +85,7 @@ export function DashboardPage() {
             <DashboardSalesTrendChart />
           </div>
           <div className="bg-[#27272A] rounded-2xl p-6 shadow-sm">
-            <DashboardSectionHeader title="Quick Actions" />
+            <SectionHeader title="Quick Actions" />
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 mb-6">
               {QUICK_ACTION_MOCKS.map((action, index) => (
                 <DashboardQuickActionCard

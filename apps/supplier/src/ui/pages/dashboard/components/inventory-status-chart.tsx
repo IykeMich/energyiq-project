@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { cn } from '@energyiq/shared';
-import { TOP_PRODUCTS_MOCK, LOW_STOCK_MOCKS } from './dashboard-mocks';
+import { TOP_PRODUCTS_MOCK, LOW_STOCK_MOCKS } from '../mocks';
 
 interface InventoryTooltipProps {
   active?: boolean;

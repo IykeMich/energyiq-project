@@ -9,8 +9,8 @@ import {
   Tooltip,
 } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@energyiq/ui';
-import type { SalesPointMock } from './dashboard-mocks';
-import { SALES_TREND_MOCK, SALES_TREND_REGIONS, SALES_TREND_TIMES, SALES_TREND_PRODUCTS } from './dashboard-mocks';
+import type { SalesPointMock } from '../mocks';
+import { SALES_TREND_MOCK, SALES_TREND_REGIONS, SALES_TREND_TIMES, SALES_TREND_PRODUCTS } from '../mocks';
 
 const Y_TICKS = [5, 10, 15, 20, 25];
 const formatYAxis = (value: number) => `${value}M`;
