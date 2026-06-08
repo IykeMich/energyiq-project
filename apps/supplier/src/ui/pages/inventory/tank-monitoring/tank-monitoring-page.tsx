@@ -8,7 +8,7 @@ import { TankCard } from './components/tank-card';
 import { RecordDipForm } from './components/record-dip-form';
 import { VarianceAlertModal } from './components/variance-alert-modal';
 import { ReenterReadingModal } from './components/reenter-reading-modal';
-import { DipSuccessModal, type DipSuccessDetail } from './components/dip-success-modal';
+import { SuccessModal, type SuccessModalDetail } from '@energyiq/ui';
 import { SavingOverlay } from './components/saving-overlay';
 import { NoConnectionBanner } from './components/no-connection-banner';
 
@@ -16,7 +16,7 @@ interface SuccessState {
   open: boolean;
   title: string;
   subtitle: string;
-  details: DipSuccessDetail[];
+  details: SuccessModalDetail[];
   primaryLabel: string;
   secondaryLabel?: string;
 }
@@ -186,7 +186,7 @@ export function TankMonitoringPage() {
         onSave={handleReenterSave}
       />
 
-      <DipSuccessModal
+      <SuccessModal
         open={success.open}
         onOpenChange={(open) => !open && closeSuccess()}
         title={success.title}
