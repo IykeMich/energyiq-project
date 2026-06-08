@@ -91,6 +91,55 @@ export interface NewProductDraft {
   automationOption: AutomationOption;
 }
 
+// ───────── Categories ─────────
+
+export interface ProductCategoryRow {
+  id: string;
+  name: string;
+  description: string;
+  numberOfProducts: number;
+  status: 'active' | 'inactive';
+}
+
+export const CATEGORIES_DATA: ProductCategoryRow[] = [
+  { id: 'cat-fuel',      name: 'Fuel',        description: 'Fuel-based products',     numberOfProducts: 3, status: 'active' },
+  { id: 'cat-lubricant', name: 'Lubricant',   description: 'Engine oils & additives', numberOfProducts: 1, status: 'active' },
+  { id: 'cat-spare',     name: 'Spare Parts', description: 'Non-liquid items',        numberOfProducts: 1, status: 'active' },
+  { id: 'cat-additive',  name: 'Additive',    description: 'Non-liquid items',        numberOfProducts: 1, status: 'active' },
+  { id: 'cat-chemical',  name: 'Chemicals',   description: 'Non-liquid items',        numberOfProducts: 1, status: 'active' },
+];
+
+export function emptyCategory(): Omit<ProductCategoryRow, 'id'> {
+  return { name: '', description: '', numberOfProducts: 0, status: 'active' };
+}
+
+// ───────── Units of Measure ─────────
+
+export interface ProductUnitRow {
+  id: string;
+  name: string;
+  description: string;
+  type: 'Volume' | 'Count' | 'Weight';
+  shortCode: string;
+}
+
+export const UNITS_DATA: ProductUnitRow[] = [
+  { id: 'unit-litre',   name: 'Litre',       description: 'Used for fuel & chemicals', type: 'Volume', shortCode: 'L' },
+  { id: 'unit-pieces',  name: 'Pieces',      description: 'Physical components',       type: 'Count',  shortCode: 'pcs' },
+  { id: 'unit-kg',      name: 'Kilogram',    description: 'Powders & solids',          type: 'Weight', shortCode: 'kg' },
+  { id: 'unit-pack',    name: 'Pack',        description: 'Packaged goods',            type: 'Count',  shortCode: 'pcks' },
+  { id: 'unit-ml',      name: 'Milliliters', description: 'Non-liquid items',          type: 'Volume', shortCode: 'ml' },
+  { id: 'unit-barrel',  name: 'Barrels',     description: 'Non-liquid items',          type: 'Volume', shortCode: 'bbl' },
+];
+
+export const UNIT_TYPE_OPTIONS = ['Volume', 'Count', 'Weight'] as const;
+
+export function emptyUnit(): Omit<ProductUnitRow, 'id'> {
+  return { name: '', description: '', type: 'Volume', shortCode: '' };
+}
+
+// ───────── New Product Draft ─────────
+
 export function emptyDraft(): NewProductDraft {
   return {
     name: '',

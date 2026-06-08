@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   Package,
+  Warehouse,
   ShoppingCart,
   DollarSign,
   MessageSquare,
@@ -37,8 +38,19 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
 
   const navMainItems: NavItem[] = [
     { title: 'Dashboard', url: `/${slug}/dashboard`, icon: LayoutDashboard },
+    {
+      title: 'Products',
+      url: `/${slug}/products`,
+      icon: Package,
+      activePaths: [`/${slug}/products`],
+      items: [
+        { title: 'Catalog', url: `/${slug}/products` },
+        { title: 'Categories', url: `/${slug}/products/categories` },
+        { title: 'Units of Measure', url: `/${slug}/products/units` },
+      ],
+    },
     { title: 'Distributors', url: `/${slug}/distributors`, icon: Users },
-    { title: 'Inventory', url: `/${slug}/inventory`, icon: Package },
+    { title: 'Inventory', url: `/${slug}/inventory`, icon: Warehouse },
     { title: 'Orders', url: `/${slug}/orders`, icon: ShoppingCart },
     { title: 'Financials', url: `/${slug}/financials`, icon: DollarSign },
     { title: 'Complaints', url: `/${slug}/complaints`, icon: MessageSquare },

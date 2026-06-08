@@ -10,6 +10,8 @@ import { OrderListPage } from '@/ui/pages/order/order-list-page';
 import { OrderDetailPage } from '@/ui/pages/order/order-detail-page';
 import { ProductListPage } from '@/ui/pages/product/product-list-page';
 import { AddProductPage } from '@/ui/pages/product/add-product-page';
+import { CategoryListPage } from '@/ui/pages/product/category-list-page';
+import { UnitListPage } from '@/ui/pages/product/unit-list-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Slug-aware routes: every authenticated path is /:slug/<page>.
@@ -58,6 +60,8 @@ export const router = createBrowserRouter([
               { path: '/:slug/products', element: <ProductListPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },
+              { path: '/:slug/products/categories', element: <CategoryListPage /> },
+              { path: '/:slug/products/units', element: <UnitListPage /> },
             ],
           },
         ],
