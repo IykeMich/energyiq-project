@@ -46,6 +46,28 @@
   --sidebar-accent-foreground: #121212;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Brand accent — theme-invariant; tenants override via BrandingProvider. */
+  --brand-accent: #FBC02D;
+  --brand-accent-foreground: #121212;
+
+  /* Status semantics (light values). Same name in both themes — values shift in .dark. */
+  --success: #2E7D32;
+  --success-foreground: #FFFFFF;
+  --warning: #FF6F00;
+  --warning-foreground: #121212;
+  --danger: #D30A0A;
+  --danger-foreground: #FFFFFF;
+
+  /* Surfaces — page canvas, cards, modal popups, overlay backdrop. */
+  --surface-canvas: oklch(1 0 0);
+  --surface-card: rgba(0, 0, 0, 0.04);
+  --surface-modal: #FFFFFF;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Border weights — strong = visible separators, subtle = hairlines. */
+  --border-strong: rgba(0, 0, 0, 0.25);
+  --border-subtle: rgba(0, 0, 0, 0.08);
 }
 
 body {
@@ -89,6 +111,23 @@ body {
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+
+  /* EnergyIQ semantic colors — referenced as bg-brand, text-success, bg-warning/30 etc. */
+  --color-brand: var(--brand-accent);
+  --color-brand-foreground: var(--brand-accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-surface-canvas: var(--surface-canvas);
+  --color-surface-card: var(--surface-card);
+  --color-surface-modal: var(--surface-modal);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-border-strong: var(--border-strong);
+  --color-border-subtle: var(--border-subtle);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -130,6 +169,22 @@ body {
   --sidebar-accent-foreground: #121212;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Status overrides for dark UI — slightly desaturated for dark canvas. */
+  --success: #388E3C;
+  --success-foreground: #FFFFFF;
+  --warning: #FB8C1C;
+  --warning-foreground: #121212;
+  --danger: #D30A0A;
+  --danger-foreground: #FFFFFF;
+
+  --surface-canvas: #121212;
+  --surface-card: rgba(97, 97, 97, 0.1);
+  --surface-modal: #1F1F1F;
+  --surface-overlay: rgba(0, 0, 0, 0.7);
+
+  --border-strong: #9E9E9E;
+  --border-subtle: rgba(97, 97, 97, 0.7);
 }
 
 @layer base {
@@ -148,20 +203,21 @@ body {
    `useEffect`. Avoids surprising future light-themed pages with a global override while
    still killing the white over-scroll bounce wherever the dark layouts mount. */
 .app-dark-canvas {
-  background-color: #121212;
+  background-color: var(--surface-canvas);
 }
 
-/* Gold (#FBC02D) active state for sidebar menu buttons — matches the energyiq look. */
+/* Gold active state for sidebar menu buttons — token-driven so tenant overrides via
+   BrandingProvider take effect automatically. */
 [data-sidebar="menu-button"][data-active="true"] {
-  background-color: #FBC02D !important;
-  color: #121212 !important;
+  background-color: var(--brand-accent) !important;
+  color: var(--brand-accent-foreground) !important;
 }
 [data-sidebar="menu-button"][data-active="true"] svg {
-  color: #121212 !important;
-  stroke: #121212 !important;
+  color: var(--brand-accent-foreground) !important;
+  stroke: var(--brand-accent-foreground) !important;
 }
 [data-sidebar="menu-button"][data-active="true"] svg path {
-  stroke: #121212 !important;
+  stroke: var(--brand-accent-foreground) !important;
 }
 
 @layer utilities {

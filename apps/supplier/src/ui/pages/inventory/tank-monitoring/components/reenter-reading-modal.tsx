@@ -39,9 +39,9 @@ export function ReenterReadingModal({
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-[#FAFAFA]">Tank:</label>
+          <label className="text-sm text-foreground">Tank:</label>
           <Select value={tankId} onValueChange={(v) => setTankId(v ?? '')}>
-            <SelectTrigger className="bg-[#6161611A] border-[#9E9E9E] h-[52px] rounded-[12px] text-[#FAFAFA] px-5">
+            <SelectTrigger className="bg-surface-card border-border-strong h-[52px] rounded-[12px] text-foreground px-5">
               <SelectValue placeholder="Select a tank" />
             </SelectTrigger>
             <SelectContent>
@@ -55,7 +55,7 @@ export function ReenterReadingModal({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-[#FAFAFA]">Litres:</label>
+          <label className="text-sm text-foreground">Litres:</label>
           <input
             type="number"
             inputMode="numeric"
@@ -63,7 +63,7 @@ export function ReenterReadingModal({
             value={litres}
             onChange={(e) => setLitres(e.target.value)}
             placeholder="Enter new reading"
-            className="bg-[#6161611A] border border-[#9E9E9E] h-[52px] rounded-[12px] px-5 text-[#FAFAFA] placeholder:text-[#9E9E9E] outline-none focus:border-[#FBC02D]"
+            className="bg-surface-card border border-border-strong h-[52px] rounded-[12px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand"
           />
         </div>
 
@@ -72,7 +72,7 @@ export function ReenterReadingModal({
             type="button"
             onClick={() => canSave && onSave({ tankId, litres: Number(litres) })}
             disabled={!canSave}
-            className="h-[53px] rounded-[28px] bg-[#FBC02D] text-[#121212] font-semibold px-12 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save
           </button>

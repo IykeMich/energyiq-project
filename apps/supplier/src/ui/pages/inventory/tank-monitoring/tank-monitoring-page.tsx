@@ -8,7 +8,7 @@ import { TankCard } from './components/tank-card';
 import { RecordDipForm } from './components/record-dip-form';
 import { VarianceAlertModal } from './components/variance-alert-modal';
 import { ReenterReadingModal } from './components/reenter-reading-modal';
-import { DipSuccessModal, type DipSuccessDetail } from './components/dip-success-modal';
+import { SuccessModal, type SuccessModalDetail } from '@energyiq/ui';
 import { SavingOverlay } from './components/saving-overlay';
 import { NoConnectionBanner } from './components/no-connection-banner';
 
@@ -16,7 +16,7 @@ interface SuccessState {
   open: boolean;
   title: string;
   subtitle: string;
-  details: DipSuccessDetail[];
+  details: SuccessModalDetail[];
   primaryLabel: string;
   secondaryLabel?: string;
 }
@@ -129,12 +129,12 @@ export function TankMonitoringPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-[31px] h-[31px] rounded-full border border-[#9E9E9E] flex items-center justify-center text-[#FAFAFA]"
+          className="w-[31px] h-[31px] rounded-full border border-border-strong flex items-center justify-center text-foreground"
           aria-label="Back"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <h1 className="text-2xl font-semibold text-[#FAFAFA]">Tank Monitoring</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Tank Monitoring</h1>
       </header>
 
       {!isOnline && <NoConnectionBanner onRetry={() => setIsOnline(navigator.onLine)} />}
@@ -146,12 +146,12 @@ export function TankMonitoringPage() {
 
       <TankSummaryStats summary={TANK_SUMMARY_MOCK} />
 
-      <div className="border border-[#616161B2] rounded-[48px] p-6 md:p-9 flex flex-col gap-6">
+      <div className="border border-border-subtle rounded-[48px] p-6 md:p-9 flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#FAFAFA]">Tank Levels</h2>
+          <h2 className="text-base font-semibold text-foreground">Tank Levels</h2>
           <button
             type="button"
-            className="text-sm text-[#FBC02D] underline font-semibold"
+            className="text-sm text-brand underline font-semibold"
           >
             Dip Reading History
           </button>
@@ -163,7 +163,7 @@ export function TankMonitoringPage() {
           ))}
         </div>
 
-        <div className="border-t border-[#616161B2] -mx-6 md:-mx-9 my-2" />
+        <div className="border-t border-border-subtle -mx-6 md:-mx-9 my-2" />
 
         <RecordDipForm tanks={TANKS_MOCK} onSave={handleFormSave} />
       </div>
@@ -186,7 +186,7 @@ export function TankMonitoringPage() {
         onSave={handleReenterSave}
       />
 
-      <DipSuccessModal
+      <SuccessModal
         open={success.open}
         onOpenChange={(open) => !open && closeSuccess()}
         title={success.title}

@@ -3,33 +3,27 @@ import type { Tank, TankStatus } from '../mocks';
 
 const STATUS_THEME: Record<
   TankStatus,
-  {
-    badgeBg: string;
-    badgeText: string;
-    barTrack: string;
-    barFill: string;
-    label: string;
-  }
+  { badgeBg: string; badgeText: string; barTrack: string; barFill: string; label: string }
 > = {
   adequate: {
-    badgeBg: 'bg-[#388E3C33]',
-    badgeText: 'text-[#388E3C]',
-    barTrack: 'bg-[#388E3C66]',
-    barFill: 'bg-[#388E3C]',
+    badgeBg: 'bg-success/20',
+    badgeText: 'text-success',
+    barTrack: 'bg-success/40',
+    barFill: 'bg-success',
     label: 'Adequate',
   },
   warning: {
-    badgeBg: 'bg-[#FB8C1C33]',
-    badgeText: 'text-[#FB8C1C]',
-    barTrack: 'bg-[#FB8C1C33]',
-    barFill: 'bg-[#FB8C1C]',
+    badgeBg: 'bg-warning/20',
+    badgeText: 'text-warning',
+    barTrack: 'bg-warning/20',
+    barFill: 'bg-warning',
     label: 'Warning',
   },
   critical: {
-    badgeBg: 'bg-[#D30A0A33]',
-    badgeText: 'text-[#D30A0A]',
-    barTrack: 'bg-[#D30A0A33]',
-    barFill: 'bg-[#D30A0A]',
+    badgeBg: 'bg-danger/20',
+    badgeText: 'text-danger',
+    barTrack: 'bg-danger/20',
+    barFill: 'bg-danger',
     label: 'Critical',
   },
 };
@@ -45,11 +39,11 @@ export function TankCard({ tank, onOrderRefill }: TankCardProps) {
   const orderRefillUrgent = tank.status === 'critical' || tank.status === 'warning';
 
   return (
-    <div className="bg-[#6161611A] border border-[#9E9E9E] rounded-[28px] px-7 py-6 flex flex-col gap-3">
+    <div className="bg-surface-card border border-border-strong rounded-[28px] px-7 py-6 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <h3 className="text-base font-semibold text-[#FAFAFA]">{tank.name}</h3>
-          <p className="text-xs text-[#FAFAFA] font-normal">
+          <h3 className="text-base font-semibold text-foreground">{tank.name}</h3>
+          <p className="text-xs text-foreground font-normal">
             {tank.location}. {tank.product} · {tank.capacityL.toLocaleString()} L cap.
           </p>
         </div>
@@ -72,7 +66,7 @@ export function TankCard({ tank, onOrderRefill }: TankCardProps) {
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-y-2">
-        <div className="flex items-center gap-x-8 gap-y-2 flex-wrap text-xs text-[#FAFAFA]">
+        <div className="flex items-center gap-x-8 gap-y-2 flex-wrap text-xs text-foreground">
           <p>
             Stock: <span className="font-semibold">{tank.stockL.toLocaleString()} L</span>
           </p>
@@ -89,8 +83,8 @@ export function TankCard({ tank, onOrderRefill }: TankCardProps) {
         type="button"
         onClick={() => onOrderRefill?.(tank.id)}
         className={cn(
-          'self-start rounded-[2px] px-2.5 py-1 text-xs font-medium text-[#121212]',
-          orderRefillUrgent ? 'bg-[#FBC02D]' : 'bg-[#FBC02D33]',
+          'self-start rounded-[2px] px-2.5 py-1 text-xs font-medium text-brand-foreground',
+          orderRefillUrgent ? 'bg-brand' : 'bg-brand/20',
         )}
       >
         Order Refill

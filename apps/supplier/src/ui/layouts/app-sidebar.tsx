@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   Package,
+  Warehouse,
   ShoppingCart,
   DollarSign,
   MessageSquare,
@@ -28,27 +29,40 @@ import { NavMain, type NavItem } from './nav-main';
 import { TeamSwitcher } from './team-switcher';
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
-  const { user } = useAuth();
+  const { user, slug: stateSlug } = useAuth();
+  const slug = user?.slug ?? stateSlug ?? 'demo';
 
   const displayName = user?.name?.trim() ? user.name : 'Andrew Franklin';
   const displayEmail = user?.email?.trim() ? user.email : 'andrewfran@gmail.com';
   const initials = getInitials(displayName);
 
   const navMainItems: NavItem[] = [
-    { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-    { title: 'Distributors', url: '/distributors', icon: Users },
-    { title: 'Inventory', url: '/inventory', icon: Package },
-    { title: 'Orders', url: '/orders', icon: ShoppingCart },
-    { title: 'Financials', url: '/financials', icon: DollarSign },
-    { title: 'Complaints', url: '/complaints', icon: MessageSquare },
-    { title: 'Analytics', url: '/analytics', icon: BarChart3 },
-    { title: 'Documents', url: '/documents', icon: FileText },
-    { title: 'Employees', url: '/employees', icon: UserCog },
+    { title: 'Dashboard', url: `/${slug}/dashboard`, icon: LayoutDashboard },
+    {
+      title: 'Products',
+      url: `/${slug}/products`,
+      icon: Package,
+      activePaths: [`/${slug}/products`],
+      items: [
+        { title: 'Catalog', url: `/${slug}/products` },
+        { title: 'Categories', url: `/${slug}/products/categories` },
+        { title: 'Units of Measure', url: `/${slug}/products/units` },
+      ],
+    },
+    { title: 'Distributors', url: `/${slug}/distributors`, icon: Users },
+    { title: 'Inventory', url: `/${slug}/inventory`, icon: Warehouse },
+    { title: 'Orders', url: `/${slug}/orders`, icon: ShoppingCart },
+    { title: 'Financials', url: `/${slug}/financials`, icon: DollarSign },
+    { title: 'Complaints', url: `/${slug}/complaints`, icon: MessageSquare },
+    { title: 'Analytics', url: `/${slug}/analytics`, icon: BarChart3 },
+    { title: 'Documents', url: `/${slug}/documents`, icon: FileText },
+    { title: 'Employees', url: `/${slug}/employees`, icon: UserCog },
+    { title: 'Sophia', url: `/${slug}/sophia`, icon: UserCog },
   ];
 
   const navSecondaryItems: NavItem[] = [
-    { title: 'Settings', url: '/settings', icon: Settings },
-    { title: 'Log Out', url: '/logout', icon: LogOut, accent: true },
+    { title: 'Settings', url: `/${slug}/settings`, icon: Settings },
+    { title: 'Log out', url: '/logout', icon: LogOut },
   ];
 
   return (

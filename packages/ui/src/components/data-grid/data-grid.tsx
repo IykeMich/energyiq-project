@@ -11,17 +11,18 @@ import { cn } from '@energyiq/shared';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+// Theme params reference CSS variables so the grid re-themes automatically when
+// the .dark class toggles (or tenant branding overrides --brand-accent).
 const energyiqTheme = themeQuartz.withParams({
   fontFamily: "'Montserrat Variable', sans-serif",
-  backgroundColor: '#1F1F1F',
-  foregroundColor: '#FFFFFF',
-  headerBackgroundColor: '#121212',
-  headerTextColor: '#FFFFFF',
-  rowHoverColor: 'rgba(251, 192, 45, 0.08)',
-  selectedRowBackgroundColor: 'rgba(251, 192, 45, 0.16)',
-  accentColor: '#FBC02D',
-  borderColor: 'rgba(255, 255, 255, 0.08)',
-  rowBorder: { color: 'rgba(255, 255, 255, 0.06)' },
+  backgroundColor: 'var(--surface-modal)',
+  foregroundColor: 'var(--foreground)',
+  headerBackgroundColor: 'var(--surface-canvas)',
+  headerTextColor: 'var(--foreground)',
+  rowHoverColor: 'color-mix(in oklab, var(--brand-accent) 8%, transparent)',
+  selectedRowBackgroundColor: 'color-mix(in oklab, var(--brand-accent) 16%, transparent)',
+  accentColor: 'var(--brand-accent)',
+  borderColor: 'var(--border-subtle)',
 });
 
 export interface DataGridProps<TData> extends AgGridReactProps<TData> {

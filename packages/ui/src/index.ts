@@ -27,6 +27,13 @@ export * from './fields';
 export { FormError } from './components/feedback/form-error';
 export { SectionHeader } from './components/section-header';
 export { Modal, type ModalSize } from './components/modal';
+export { ConfirmDialog, type ConfirmIntent } from './components/confirm-dialog';
+export {
+  SuccessModal,
+  type SuccessModalDetail,
+  type SuccessModalAction,
+} from './components/success-modal';
+export { WizardStepPills, type WizardStepPillsProps } from './components/wizard-step-pills';
 export { DataGrid, type DataGridProps, type ColDef, type GridOptions } from './components/data-grid/data-grid';
 
 // Layouts

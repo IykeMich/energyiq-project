@@ -5,13 +5,18 @@ import { RegisterPage } from '@/ui/pages/auth/register-page';
 import { VerifyPage } from '@/ui/pages/auth/verify-page';
 import { LoginPage } from '@/ui/pages/auth/login-page';
 import { DashboardPage } from '@/ui/pages/dashboard/dashboard-page';
-import { OrdersPage } from '@/ui/pages/orders/orders-page';
 import { TankMonitoringPage } from '@/ui/pages/inventory/tank-monitoring/tank-monitoring-page';
+import { OrderListPage } from '@/ui/pages/order/order-list-page';
+import { OrderDetailPage } from '@/ui/pages/order/order-detail-page';
+import { ProductListPage } from '@/ui/pages/product/product-list-page';
+import { AddProductPage } from '@/ui/pages/product/add-product-page';
+import { CategoryListPage } from '@/ui/pages/product/category-list-page';
+import { UnitListPage } from '@/ui/pages/product/unit-list-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
-// Authenticated routes live under flat paths (/dashboard, /distributors, …).
+// Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
 // Public auth routes (/login, /register, /verify) are reachable until the user
-// logs in, after which they're redirected into /dashboard.
+// logs in, after which they're redirected into the dashboard.
 function Root() {
   return (
     <BrandingProvider>
@@ -44,9 +49,15 @@ export const router = createBrowserRouter([
           {
             element: <DashboardLayout />,
             children: [
-              { path: '/dashboard', element: <DashboardPage /> },
-              { path: '/orders', element: <OrdersPage /> },
-              { path: '/inventory/tank-monitoring', element: <TankMonitoringPage /> },
+              { path: '/:slug/dashboard', element: <DashboardPage /> },
+              { path: '/:slug/inventory/tank-monitoring', element: <TankMonitoringPage /> },
+              { path: '/:slug/orders', element: <OrderListPage /> },
+              { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
+              { path: '/:slug/products', element: <ProductListPage /> },
+              { path: '/:slug/products/new', element: <AddProductPage /> },
+              { path: '/:slug/products/:id/edit', element: <AddProductPage /> },
+              { path: '/:slug/products/categories', element: <CategoryListPage /> },
+              { path: '/:slug/products/units', element: <UnitListPage /> },
             ],
           },
         ],
