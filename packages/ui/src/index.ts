@@ -33,6 +33,7 @@ export {
   type SuccessModalDetail,
   type SuccessModalAction,
 } from './components/success-modal';
+export { WizardStepPills, type WizardStepPillsProps } from './components/wizard-step-pills';
 export { DataGrid, type DataGridProps, type ColDef, type GridOptions } from './components/data-grid/data-grid';
 
 // Layouts

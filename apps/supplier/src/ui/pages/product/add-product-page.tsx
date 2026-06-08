@@ -6,6 +6,8 @@ import { emptyDraft, type NewProductDraft } from './mocks';
 import { StepProductDetails } from './components/step-product-details';
 import { StepDistributorAccess } from './components/step-distributor-access';
 import { StepReview } from './components/step-review';
+import { ScheduleActivationModal } from './components/schedule-activation-modal';
+import { ComplianceOfficerModal } from './components/compliance-officer-modal';
 
 const TOTAL_STEPS = 3;
 
@@ -21,12 +23,22 @@ export function AddProductPage() {
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<NewProductDraft>(emptyDraft());
   const [successOpen, setSuccessOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [officerOpen, setOfficerOpen] = useState(false);
 
   const patch = (next: Partial<NewProductDraft>) => setDraft((prev) => ({ ...prev, ...next }));
 
   const handleNext = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
-  const handlePublish = () => setSuccessOpen(true);
+  const handlePublish = () => {
+    if (draft.automationOption === 'schedule') {
+      setScheduleOpen(true);
+    } else if (draft.automationOption === 'submit-review') {
+      setOfficerOpen(true);
+    } else {
+      setSuccessOpen(true);
+    }
+  };
   const handleSaveDraft = () => setSuccessOpen(true);
 
   return (
@@ -90,6 +102,24 @@ export function AddProductPage() {
         Step <span className="font-bold text-brand">{step}</span> of {TOTAL_STEPS}
         <span className="text-muted-foreground"> · {STEP_LABELS[step]}</span>
       </p>
+
+      <ScheduleActivationModal
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        onSchedule={() => {
+          setScheduleOpen(false);
+          setSuccessOpen(true);
+        }}
+      />
+
+      <ComplianceOfficerModal
+        open={officerOpen}
+        onOpenChange={setOfficerOpen}
+        onAssign={() => {
+          setOfficerOpen(false);
+          setSuccessOpen(true);
+        }}
+      />
 
       <SuccessModal
         open={successOpen}

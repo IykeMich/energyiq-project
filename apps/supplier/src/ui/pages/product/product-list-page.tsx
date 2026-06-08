@@ -5,6 +5,7 @@ import { PRODUCTS_MOCK, formatStock, type Product } from './mocks';
 import { ProductStatusBadge } from './components/product-status-badge';
 import { ProductFilterBar } from './components/product-filter-bar';
 import { ProductActionsCell } from './components/product-actions-cell';
+import { AssignWarehouseWizardModal } from './components/assign-warehouse-wizard-modal';
 
 const NGN = new Intl.NumberFormat('en-NG');
 
@@ -13,6 +14,7 @@ export function ProductListPage() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>(PRODUCTS_MOCK);
+  const [assignWarehouseOpen, setAssignWarehouseOpen] = useState(false);
 
   const columnDefs = useMemo<ColDef<Product>[]>(
     () => [
@@ -80,7 +82,7 @@ export function ProductListPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate(`/${slug}/products/assign-warehouse`)}
+            onClick={() => setAssignWarehouseOpen(true)}
             className="h-[46px] px-6 rounded-full border border-brand text-brand font-semibold text-sm"
           >
             Assign to Warehouse
@@ -104,6 +106,11 @@ export function ProductListPage() {
         rowHeight={56}
         suppressRowClickSelection
         className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden"
+      />
+
+      <AssignWarehouseWizardModal
+        open={assignWarehouseOpen}
+        onOpenChange={setAssignWarehouseOpen}
       />
 
       <ConfirmDialog

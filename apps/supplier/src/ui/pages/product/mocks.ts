@@ -57,6 +57,24 @@ export const WAREHOUSE_OPTIONS = [
 ] as const;
 export const STORAGE_LOCATION_OPTIONS = ['Tank-A1', 'Tank-A2', 'Tank-B1', 'Tank-B2', 'Bay-1', 'Bay-2'] as const;
 
+export interface WarehouseAssignTarget {
+  id: string;
+  name: string;
+  location: string;
+  usedL: number;
+  capacityL: number;
+}
+
+export const WAREHOUSES_FOR_ASSIGN: WarehouseAssignTarget[] = [
+  { id: 'wh-lagos-central', name: 'Lagos Central Depot',     location: 'Lagos Island, Lagos',      usedL: 3_200,  capacityL: 5_000 },
+  { id: 'wh-lekki',         name: 'Lekki Tank Farm',         location: 'Lekki, Lagos',             usedL: 7_400,  capacityL: 10_000 },
+  { id: 'wh-awka',          name: 'Awka Central Depot',      location: 'Awka, Anambra State',      usedL: 8_300,  capacityL: 10_000 },
+  { id: 'wh-abuja',         name: 'Abuja Storage Facility',  location: 'Wuse, Abuja',              usedL: 8_300,  capacityL: 10_000 },
+  { id: 'wh-ph',            name: 'Port Harcourt Depot',     location: 'Port Harcourt, Rivers State', usedL: 8_300, capacityL: 10_000 },
+];
+
+export const COMPLIANCE_OFFICERS = ['Joshua Obi', 'Amaka Eze', 'Tunde Bakare', 'Sarah Adeleke'] as const;
+
 export type VisibilityOption = 'all' | 'tier' | 'selected';
 export type ApprovalWorkflowOption = 'auto' | 'manual' | 'scheduled';
 export type AutomationOption = 'publish-now' | 'schedule' | 'save-draft' | 'submit-review';
