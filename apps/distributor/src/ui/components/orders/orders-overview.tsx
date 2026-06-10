@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { OrdersSearchBar } from './orders-search-bar';
 import { OrdersActionButton } from './orders-action-button';
 import { OrdersStatusTracker } from './orders-status-tracker';
@@ -13,6 +15,8 @@ import { ORDERS_MOCK } from './orders-mocks';
  * for now; swap `ORDERS_MOCK` for the orders query hook once the endpoint lands.
  */
 export function OrdersOverview() {
+  const navigate = useNavigate();
+  const { slug = '' } = useParams<{ slug: string }>();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
 
@@ -30,9 +34,10 @@ export function OrdersOverview() {
 
   return (
     <section className="flex flex-col gap-6">
-      {/* Header row: order search */}
-      <OrdersSearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-      <div className="h-0.5 w-full bg-[#D9D9D9]" />
+      {/* Order search replaces the default title in the layout header (dynamic per page). */}
+      <PageHeaderContent>
+        <OrdersSearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      </PageHeaderContent>
 
       {/* Title row: heading on the left, primary action on the right */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -40,20 +45,26 @@ export function OrdersOverview() {
           <h1 className="text-2xl font-semibold text-[#FAFAFA]">Orders</h1>
           <p className="mt-1 text-sm text-[#FAFAFA]">View and manage all your past orders</p>
         </header>
-        <OrdersActionButton label="New Order" icon={Plus} />
       </div>
 
       {/* Tracker band: status tracker on the left, invite action on the right */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <OrdersStatusTracker className="w-full lg:max-w-[600px]" />
-        <OrdersActionButton label="Invite Distributor" />
+        <OrdersActionButton
+          label="New Order"
+          icon={Plus}
+          onClick={() => navigate(`/${slug}/orders/new`)}
+        />
       </div>
 
       {/* Table card: status tabs, filter chips, then the orders table */}
       <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
         <OrdersStatusTabs activeLabel={activeTab} onChange={setActiveTab} />
         <OrdersFilterChips />
-        <OrdersTable orders={filteredOrders} />
+        <OrdersTable
+          orders={filteredOrders}
+          onViewDetails={(order) => navigate(`/${slug}/orders/${order.id}`)}
+        />
       </div>
     </section>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
@@ -9,7 +9,6 @@ import {
   registerSchema,
   type RegisterFormData,
 } from '../../validation/auth/register';
-import { UploadCloud } from 'lucide-react';
 const steps = [
   'Company Information',
   'Account Setup',
@@ -20,14 +19,14 @@ const steps = [
 export function RegisterForm() {
   const navigate = useNavigate();
 
-  const { initiate, isLoading, error, clearError } = useAuth();
+  const { initiate, isLoading, clearError } = useAuth();
 const [otp, setOtp] = useState(['', '', '', '', '', '']);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [documents, setDocuments] = useState({
+  const [documents] = useState({
   cac: null as File | null,
   tax: null as File | null,
   directorId: null as File | null,

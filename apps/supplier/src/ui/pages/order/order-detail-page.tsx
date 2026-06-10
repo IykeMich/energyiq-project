@@ -83,7 +83,7 @@ export function OrderDetailPage() {
             type="button"
             onClick={() => navigate(`/${slug}/orders`)}
             aria-label="Back to orders"
-            className="w-[31px] h-[31px] rounded-full bg-brand text-brand-foreground flex items-center justify-center"
+            className="w-7.75 h-7.75 rounded-full bg-brand text-brand-foreground flex items-center justify-center"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -116,14 +116,14 @@ export function OrderDetailPage() {
                 <button
                   type="button"
                   onClick={() => setModal('modify')}
-                  className="h-[53px] rounded-[28px] border border-brand text-brand font-semibold"
+                  className="h-13.25 rounded-[28px] border border-brand text-brand font-semibold"
                 >
                   Modify Order
                 </button>
                 <button
                   type="button"
                   onClick={() => setModal('reject')}
-                  className="h-[53px] rounded-[28px] border border-danger text-danger font-semibold"
+                  className="h-13.25 rounded-[28px] border border-danger text-danger font-semibold"
                 >
                   Reject Order
                 </button>
@@ -131,14 +131,14 @@ export function OrderDetailPage() {
               <button
                 type="button"
                 onClick={() => setModal('confirmApprove')}
-                className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold"
+                className="h-13.25 rounded-[28px] bg-brand text-brand-foreground font-semibold"
               >
-                Approve Order
+                Approve Order Biko
               </button>
               <button
                 type="button"
                 onClick={() => setModal('addProduct')}
-                className="h-[53px] rounded-[28px] bg-foreground/10 text-foreground font-semibold"
+                className="h-13.25 rounded-[28px] bg-foreground/10 text-foreground font-semibold"
               >
                 Add Product
               </button>

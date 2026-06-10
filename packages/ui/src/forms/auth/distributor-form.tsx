@@ -151,7 +151,7 @@ const [documents, setDocuments] = useState({
   }));
 };
 
-  const onSubmit = async (data: DistributorFormData) => {
+  const onSubmit = async (_data: DistributorFormData) => {
     clearError();
 
     // if (currentStep === 1) {

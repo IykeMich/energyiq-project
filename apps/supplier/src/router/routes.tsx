@@ -6,8 +6,6 @@ import { VerifyPage } from '@/ui/pages/auth/verify-page';
 import { LoginPage } from '@/ui/pages/auth/login-page';
 import { DashboardPage } from '@/ui/pages/dashboard/dashboard-page';
 import { TankMonitoringPage } from '@/ui/pages/inventory/tank-monitoring/tank-monitoring-page';
-import { OrderListPage } from '@/ui/pages/order/order-list-page';
-import { OrderDetailPage } from '@/ui/pages/order/order-detail-page';
 import { ProductListPage } from '@/ui/pages/product/product-list-page';
 import { AddProductPage } from '@/ui/pages/product/add-product-page';
 import { CategoryListPage } from '@/ui/pages/product/category-list-page';
@@ -52,8 +50,6 @@ export const router = createBrowserRouter([
             children: [
               { path: '/:slug/dashboard', element: <DashboardPage /> },
               { path: '/:slug/inventory/tank-monitoring', element: <TankMonitoringPage /> },
-              { path: '/:slug/orders', element: <OrderListPage /> },
-              { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
               { path: '/:slug/products', element: <ProductListPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },

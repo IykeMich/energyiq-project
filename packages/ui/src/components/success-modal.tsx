@@ -21,11 +21,36 @@ interface SuccessModalProps {
   highlight?: { label: string; value: string };
   /** Multiple label/value rows in a card (e.g. dip details). */
   details?: SuccessModalDetail[];
+  /** Muted note shown below the highlight/details (e.g. an SLA reminder). */
+  footerNote?: ReactNode;
   primaryAction?: SuccessModalAction;
   secondaryAction?: SuccessModalAction;
   /** 'row' (side by side) or 'stack' (full-width, stacked). Defaults to 'row'. */
   buttonLayout?: 'row' | 'stack';
+  /** Badge colour: 'success' (green, default) or 'brand' (gold). */
+  tone?: 'success' | 'brand';
 }
+
+/** Concentric badge ring + icon classes per tone. */
+const TONE_CLASSES: Record<NonNullable<SuccessModalProps['tone']>, {
+  outer: string;
+  middle: string;
+  inner: string;
+  icon: string;
+}> = {
+  success: {
+    outer: 'bg-success/20',
+    middle: 'bg-success/40',
+    inner: 'bg-success',
+    icon: 'text-success-foreground',
+  },
+  brand: {
+    outer: 'bg-brand/20',
+    middle: 'bg-brand/40',
+    inner: 'bg-brand',
+    icon: 'text-brand-foreground',
+  },
+};
 
 export function SuccessModal({
   open,
@@ -34,17 +59,21 @@ export function SuccessModal({
   subtitle,
   highlight,
   details,
+  footerNote,
   primaryAction,
   secondaryAction,
   buttonLayout = 'row',
+  tone = 'success',
 }: SuccessModalProps) {
+  const badge = TONE_CLASSES[tone];
+
   return (
     <Modal open={open} onOpenChange={onOpenChange} size="sm">
       <div className="flex flex-col items-center gap-2 -mt-4">
-        <div className="w-[68px] h-[68px] rounded-full bg-success/20 flex items-center justify-center">
-          <div className="w-[55px] h-[55px] rounded-full bg-success/40 flex items-center justify-center">
-            <div className="w-[44px] h-[44px] rounded-full bg-success flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-success-foreground" />
+        <div className={`w-[68px] h-[68px] rounded-full ${badge.outer} flex items-center justify-center`}>
+          <div className={`w-[55px] h-[55px] rounded-full ${badge.middle} flex items-center justify-center`}>
+            <div className={`w-[44px] h-[44px] rounded-full ${badge.inner} flex items-center justify-center`}>
+              <CheckCircle2 className={`w-7 h-7 ${badge.icon}`} />
             </div>
           </div>
         </div>
@@ -70,6 +99,10 @@ export function SuccessModal({
             ))}
           </dl>
         </div>
+      )}
+
+      {footerNote && (
+        <p className="mt-4 text-center text-sm text-foreground/70">{footerNote}</p>
       )}
 
       {(primaryAction || secondaryAction) && (

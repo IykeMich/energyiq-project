@@ -24,6 +24,15 @@ export function DistributorListPage() {
   const columnDefs = useMemo<ColDef<Distributor>[]>(
     () => [
       {
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 48,
+        flex: 0,
+        sortable: false,
+        filter: false,
+        resizable: false,
+      },
+      {
         field: 'name',
         headerName: 'Distributor',
         minWidth: 200,
@@ -110,6 +119,8 @@ export function DistributorListPage() {
         rowData={DISTRIBUTORS_MOCK}
         columnDefs={columnDefs}
         rowHeight={64}
+        rowSelection="multiple"
+        suppressRowClickSelection
         onRowClicked={(e) => e.data && navigate(`/${slug}/distributors/${e.data.id}`)}
         className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
       />
