@@ -22,9 +22,9 @@ export function DashboardLayout() {
         }
       >
         <AppSidebar />
-        <SidebarInset className="bg-surface-canvas">
+        <SidebarInset className="bg-surface-canvas min-w-0">
           <LayoutHeader />
-          <div className="flex flex-1 flex-col gap-4 py-4 px-4 lg:px-8 bg-surface-canvas">
+          <div className="flex flex-1 flex-col gap-4 py-4 px-4 lg:px-8 bg-surface-canvas min-w-0">
             <Outlet />
           </div>
         </SidebarInset>

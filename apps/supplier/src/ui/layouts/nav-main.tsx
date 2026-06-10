@@ -1,4 +1,5 @@
-import { ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -16,6 +17,13 @@ import {
   useSidebar,
 } from '@energyiq/ui';
 
+export interface NavSubItem {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  description?: string;
+}
+
 export interface NavItem {
   title: string;
   url: string;
@@ -26,7 +34,7 @@ export interface NavItem {
   badge?: number;
   /** Optional: paths that should keep this nav item active (e.g. child routes). */
   activePaths?: string[];
-  items?: { title: string; url: string }[];
+  items?: NavSubItem[];
 }
 
 interface NavMainProps {
@@ -36,90 +44,115 @@ interface NavMainProps {
 }
 
 export function NavMain({ items, extraClass, containerExtraClass }: NavMainProps) {
+  return (
+    <SidebarGroup className={`h-auto ${containerExtraClass ?? ''}`}>
+      <SidebarMenu className={`space-y-0 ${extraClass ?? ''}`}>
+        {items.map((item) => (
+          <NavMainItem key={item.title} item={item} />
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+}
+
+function NavMainItem({ item }: { item: NavItem }) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const { state } = useSidebar();
 
+  const isActivePath =
+    currentPath === item.url ||
+    (item.activePaths?.some((path) => currentPath.startsWith(path)) ?? false);
+  const isChildActive = item.items?.some((subItem) => currentPath === subItem.url) ?? false;
+  const hasChildren = (item.items?.length ?? 0) > 0;
+
+  // Seed the open state from the route (so a deep link / reload onto a child
+  // lands expanded), then let the user freely toggle it like a dropdown.
+  const [open, setOpen] = useState(isActivePath || isChildActive || Boolean(item.isActive));
+
+  const handleParentClick = () => {
+    // Leaf items navigate. Parents with children just toggle the dropdown
+    // (the wrapping CollapsibleTrigger flips `open`), except when the sidebar
+    // is collapsed to icons — there is no panel to show, so navigate instead.
+    if (!hasChildren || state === 'collapsed') navigate(item.url);
+  };
+
   return (
-    <SidebarGroup className={`h-auto ${containerExtraClass ?? ''}`}>
-      <SidebarMenu className={`space-y-0 ${extraClass ?? ''}`}>
-        {items.map((item) => {
-          const isActivePath =
-            currentPath === item.url ||
-            (item.activePaths?.some((path) => currentPath.startsWith(path)) ?? false);
-
-          return (
-            <Collapsible
-              key={item.title}
-              asChild
-              defaultOpen={isActivePath || item.isActive}
-              className="group/collapsible"
+    <Collapsible open={open} onOpenChange={setOpen} asChild className="group/collapsible">
+      <SidebarMenuItem className="flex flex-row items-center gap-x-2 relative">
+        <div
+          className={`${isActivePath ? 'flex' : 'hidden'} ${
+            state === 'expanded' ? 'flex' : 'hidden'
+          } bg-[#FBC02D] w-1.5 h-8 rounded-r-lg absolute -left-2`}
+        />
+        <div className="flex flex-col w-full">
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              isActive={isActivePath}
+              onClick={handleParentClick}
+              tooltip={item.title}
+              className={`tap-effect h-[42px]! ${state === 'expanded' ? 'ml-4' : 'ml-0'}`}
             >
-              <SidebarMenuItem className="flex flex-row items-center gap-x-2 relative">
-                <div
-                  className={`${isActivePath ? 'flex' : 'hidden'} ${
-                    state === 'expanded' ? 'flex' : 'hidden'
-                  } bg-[#FBC02D] w-1.5 h-8 rounded-r-lg absolute -left-2`}
+              {item.icon && (
+                <item.icon
+                  className={`transition-colors ${
+                    item.accent
+                      ? 'text-[#FBC02D] stroke-[#FBC02D]'
+                      : isActivePath
+                        ? 'stroke-white'
+                        : 'text-gray-400 stroke-gray-400'
+                  } ${isActivePath && state === 'collapsed' ? '-ml-1' : ''}`}
                 />
-                <div className={`${state === 'expanded' ? 'flex' : ''} w-full`}>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      isActive={isActivePath}
-                      onClick={() => navigate(item.url)}
-                      tooltip={item.title}
-                      className={`tap-effect h-[42px]! ${state === 'expanded' ? 'ml-4' : 'ml-0'}`}
-                    >
-                      {item.icon && (
-                        <item.icon
-                          className={`transition-colors ${
-                            item.accent
-                              ? 'text-[#FBC02D] stroke-[#FBC02D]'
-                              : isActivePath
-                                ? 'stroke-white'
-                                : 'text-gray-400 stroke-gray-400'
-                          } ${isActivePath && state === 'collapsed' ? '-ml-1' : ''}`}
-                        />
-                      )}
-                      <span
-                        className={`text-sm font-normal leading-6 transition-colors ${
-                          item.accent ? 'text-[#FBC02D]' : !isActivePath ? 'text-gray-400' : ''
-                        }`}
-                      >
-                        {item.title}
-                      </span>
-                      {item.badge && <NotificationBadge count={item.badge} />}
-                      {(item.items?.length ?? 0) > 0 && (
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
+              )}
+              <span
+                className={`text-sm font-normal leading-6 transition-colors ${
+                  item.accent ? 'text-[#FBC02D]' : !isActivePath ? 'text-gray-400' : ''
+                }`}
+              >
+                {item.title}
+              </span>
+              {item.badge && <NotificationBadge count={item.badge} />}
+              {hasChildren && (
+                <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+              )}
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
 
-                  {(item.items?.length ?? 0) > 0 && (
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild>
-                              <button
-                                type="button"
-                                onClick={() => navigate(subItem.url)}
-                                className="w-full text-left"
-                              >
-                                <span>{subItem.title}</span>
-                              </button>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  )}
-                </div>
-              </SidebarMenuItem>
-            </Collapsible>
-          );
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
+          {hasChildren && (
+            <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+              <SidebarMenuSub className="mx-0 translate-x-0 border-l-0 px-0">
+                {item.items?.map((subItem) => {
+                  const isSubActive = currentPath === subItem.url;
+                  return (
+                    <SidebarMenuSubItem key={subItem.title}>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={isSubActive}
+                        className="[&>svg]:size-3.5 text-gray-400 data-[active=true]:bg-[#FBC02D]/10 data-[active=true]:text-[#FBC02D] data-[active=true]:font-medium"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => navigate(subItem.url)}
+                          className="w-full text-left"
+                        >
+                          {subItem.icon && <subItem.icon />}
+                          <span className="truncate">{subItem.title}</span>
+                          {subItem.description && !isSubActive && (
+                            <span className="ml-auto text-[10px] text-gray-500 hidden xl:block truncate">
+                              {subItem.description}
+                            </span>
+                          )}
+                        </button>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  );
+                })}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          )}
+        </div>
+      </SidebarMenuItem>
+    </Collapsible>
   );
 }

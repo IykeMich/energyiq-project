@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { ConfirmDialog, DataGrid, type ColDef } from '@energyiq/ui';
 import { UNITS_DATA, type ProductUnitRow } from './mocks';
-import { UnitFormModal } from './components/unit-form-modal';
+import { UnitFormModal } from '@/ui/components/product/unit-form-modal';
 
 export function UnitListPage() {
   const [rows, setRows] = useState<ProductUnitRow[]>(UNITS_DATA);

@@ -6,11 +6,18 @@ import { VerifyPage } from '@/ui/pages/auth/verify-page';
 import { LoginPage } from '@/ui/pages/auth/login-page';
 import { DashboardPage } from '@/ui/pages/dashboard/dashboard-page';
 import { TankMonitoringPage } from '@/ui/pages/inventory/tank-monitoring/tank-monitoring-page';
+import { WarehouseInventoryPage } from '@/ui/pages/inventory/warehouse-inventory-page';
+import { StockTransferPage } from '@/ui/pages/inventory/stock-transfer-page';
+import { TransferHistoryPage } from '@/ui/pages/inventory/transfer-history-page';
+import { CreateWarehousePage } from '@/ui/pages/inventory/create-warehouse-page';
 import { ProductListPage } from '@/ui/pages/product/product-list-page';
 import { AddProductPage } from '@/ui/pages/product/add-product-page';
 import { CategoryListPage } from '@/ui/pages/product/category-list-page';
 import { UnitListPage } from '@/ui/pages/product/unit-list-page';
 import { DistributorListPage } from '@/ui/pages/distributor/distributor-list-page';
+import { DistributorApprovalPage } from '@/ui/pages/distributor/distributor-approval-page';
+import { DistributorInvitePage } from '@/ui/pages/distributor/distributor-invite-page';
+import { OrdersPage } from '@/ui/pages/orders/orders-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
@@ -49,13 +56,20 @@ export const router = createBrowserRouter([
             element: <DashboardLayout />,
             children: [
               { path: '/:slug/dashboard', element: <DashboardPage /> },
+              { path: '/:slug/inventory', element: <WarehouseInventoryPage /> },
+              { path: '/:slug/inventory/transfer', element: <StockTransferPage /> },
+              { path: '/:slug/inventory/transfer-history', element: <TransferHistoryPage /> },
+              { path: '/:slug/inventory/create-warehouse', element: <CreateWarehousePage /> },
               { path: '/:slug/inventory/tank-monitoring', element: <TankMonitoringPage /> },
+              { path: '/:slug/orders', element: <OrdersPage /> },
               { path: '/:slug/products', element: <ProductListPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },
               { path: '/:slug/products/categories', element: <CategoryListPage /> },
               { path: '/:slug/products/units', element: <UnitListPage /> },
               { path: '/:slug/distributors', element: <DistributorListPage /> },
+              { path: '/:slug/distributors/approval', element: <DistributorApprovalPage /> },
+              { path: '/:slug/distributors/invite', element: <DistributorInvitePage /> },
             ],
           },
         ],

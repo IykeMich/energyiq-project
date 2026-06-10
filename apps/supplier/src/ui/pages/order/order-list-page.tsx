@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataGrid, type ColDef } from '@energyiq/ui';
 import { ORDERS_MOCK, buildStatusCounts, type Order } from './mocks';
-import { OrderStatusTabs, type OrderStatusFilter } from './components/order-status-tabs';
-import { OrderFilterBar } from './components/order-filter-bar';
-import { OrderStatusBadge } from './components/order-status-badge';
-import { OrderActionsCell } from './components/order-actions-cell';
+import { OrderStatusTabs, type OrderStatusFilter } from '@/ui/components/order/order-status-tabs';
+import { OrderFilterBar } from '@/ui/components/order/order-filter-bar';
+import { OrderStatusBadge } from '@/ui/components/order/order-status-badge';
+import { OrderActionsCell } from '@/ui/components/order/order-actions-cell';
 
 const NGN = new Intl.NumberFormat('en-NG', {
   style: 'currency',

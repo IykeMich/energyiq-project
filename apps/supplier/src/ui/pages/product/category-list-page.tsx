@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { ConfirmDialog, DataGrid, type ColDef } from '@energyiq/ui';
 import { CATEGORIES_DATA, type ProductCategoryRow } from './mocks';
-import { ProductStatusBadge } from './components/product-status-badge';
-import { CategoryFormModal } from './components/category-form-modal';
+import { ProductStatusBadge } from '@/ui/components/product/product-status-badge';
+import { CategoryFormModal } from '@/ui/components/product/category-form-modal';
 
 export function CategoryListPage() {
   const [rows, setRows] = useState<ProductCategoryRow[]>(CATEGORIES_DATA);

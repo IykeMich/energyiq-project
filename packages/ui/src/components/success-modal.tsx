@@ -68,7 +68,7 @@ export function SuccessModal({
   const badge = TONE_CLASSES[tone];
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} size="sm">
+    <Modal open={open} onOpenChange={onOpenChange} size="sm" showClose={false}>
       <div className="flex flex-col items-center gap-2 -mt-4">
         <div className={`w-[68px] h-[68px] rounded-full ${badge.outer} flex items-center justify-center`}>
           <div className={`w-[55px] h-[55px] rounded-full ${badge.middle} flex items-center justify-center`}>

@@ -3,11 +3,11 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog, SuccessModal } from '@energyiq/ui';
 import { getOrderDetail, type OrderLineItem } from './mocks';
-import { OrderInfoCard } from './components/order-info-card';
-import { OrderDistributorCard } from './components/order-distributor-card';
-import { RejectOrderModal } from './components/reject-order-modal';
-import { ModifyOrderModal } from './components/modify-order-modal';
-import { AddProductModal } from './components/add-product-modal';
+import { OrderInfoCard } from '@/ui/components/order/order-info-card';
+import { OrderDistributorCard } from '@/ui/components/order/order-distributor-card';
+import { RejectOrderModal } from '@/ui/components/order/reject-order-modal';
+import { ModifyOrderModal } from '@/ui/components/order/modify-order-modal';
+import { AddProductModal } from '@/ui/components/order/add-product-modal';
 
 type OpenModal = null | 'reject' | 'modify' | 'addProduct' | 'confirmApprove' | 'confirmReject';
 

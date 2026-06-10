@@ -39,7 +39,7 @@ export function ConfirmDialog({
       title={title}
       size="sm"
       showClose={false}
-      className="max-w-[680px]"
+      className="max-w-[680px] bg-[linear-gradient(296.54deg,#212121_76.08%,#FBC02D_144.17%)]"
     >
       <div className="flex flex-col gap-6">
         <p className="text-sm text-foreground">{message}</p>
