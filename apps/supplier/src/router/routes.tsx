@@ -11,6 +11,7 @@ import { OrderDetailPage } from '@/ui/pages/order/order-detail-page';
 import { ProductListPage } from '@/ui/pages/product/product-list-page';
 import { AddProductPage } from '@/ui/pages/product/add-product-page';
 import { CategoryListPage } from '@/ui/pages/product/category-list-page';
+import { EmployeeListPage } from '@/ui/pages/employees/employee-list-page';
 import { UnitListPage } from '@/ui/pages/product/unit-list-page';
 import { DistributorListPage } from '@/ui/pages/distributor/distributor-list-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
@@ -50,7 +51,7 @@ export const router = createBrowserRouter([
           {
             element: <DashboardLayout />,
             children: [
-              { path: '/:slug/dashboard', element: <DashboardPage /> },
+              { path: '/dashboard', element: <DashboardPage /> },
               { path: '/:slug/inventory/tank-monitoring', element: <TankMonitoringPage /> },
               { path: '/:slug/orders', element: <OrderListPage /> },
               { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
               { path: '/:slug/products/categories', element: <CategoryListPage /> },
               { path: '/:slug/products/units', element: <UnitListPage /> },
               { path: '/:slug/distributors', element: <DistributorListPage /> },
+              { path: '/:slug/employees', element: <EmployeeListPage /> },
             ],
           },
         ],
