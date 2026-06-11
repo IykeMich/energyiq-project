@@ -128,7 +128,7 @@ export function EmployeeListPage() {
             rowData={EMPLOYEES_MOCK}
             columnDefs={columnDefs}
             rowHeight={64}
-            className="h-[162.5] rounded-[18px] bg-surface-card"
+            className="h-[1650px] rounded-[18px] bg-surface-card"
           />
         </div>
 
