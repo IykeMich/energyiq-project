@@ -97,19 +97,23 @@ export const authSlice = createSlice({
     // Remove this reducer (and its dispatch in packages/ui/src/forms/auth/login-form.tsx)
     // once the real auth endpoint lands.
     tempBypassLogin(state) {
-      state.isAuthenticated = true;
-      state.loginType = 'account';
-      state.slug = 'demo';
-      state.user = {
+      const demoUser = {
         id: 'temp-user',
         name: 'Demo Supplier',
         email: 'demo@energyiq.com',
-        role: 'owner',
-        entity_type: 'supplier',
+        role: 'owner' as const,
+        entity_type: 'supplier' as const,
         entity_id: 'temp-supplier',
         account_number: '0000000000',
         slug: 'demo',
       };
+      state.isAuthenticated = true;
+      state.loginType = 'account';
+      state.slug = 'demo';
+      state.user = demoUser;
+      // Persist a fake session so a page refresh re-hydrates as authenticated
+      // instead of bouncing to /login.
+      authUseCases().setDemoSession(demoUser);
     },
   },
   extraReducers: (builder) => {

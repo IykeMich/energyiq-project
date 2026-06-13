@@ -14,10 +14,14 @@ export function RequireAuth() {
 
 // Redirects to dashboard if already authenticated.
 export function RedirectIfAuth() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, slug: stateSlug } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    // Routes are slug-prefixed (/:slug/dashboard). Source the slug the same way
+    // the sidebar does. With the temp login bypass this resolves to 'demo';
+    // once the real auth endpoint lands it becomes the tenant's actual slug.
+    const slug = user?.slug ?? stateSlug ?? 'demo';
+    return <Navigate to={`/${slug}/dashboard`} replace />;
   }
 
   return <Outlet />;

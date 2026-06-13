@@ -25,3 +25,5 @@ dist-ssr
 
 # TS incremental build cache
 *.tsbuildinfo
+
+claude.md

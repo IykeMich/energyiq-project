@@ -26,6 +26,7 @@ export * from './fields';
 // Generic components
 export { FormError } from './components/feedback/form-error';
 export { SectionHeader } from './components/section-header';
+export { Toaster, toast, notifyNoAccess } from './components/toast/toaster';
 export { Modal, type ModalSize } from './components/modal';
 export { ConfirmDialog, type ConfirmIntent } from './components/confirm-dialog';
 export {
@@ -34,6 +35,7 @@ export {
   type SuccessModalAction,
 } from './components/success-modal';
 export { WizardStepPills, type WizardStepPillsProps } from './components/wizard-step-pills';
+export { LoadingOverlay } from './components/loading-overlay';
 export { DataGrid, type DataGridProps, type ColDef, type GridOptions } from './components/data-grid/data-grid';
 
 // Layouts

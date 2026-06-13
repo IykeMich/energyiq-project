@@ -1,3 +1,5 @@
+import { ORDERS_MOCK as ORDERS_LIST_MOCK } from '@/ui/components/orders/orders-mocks';
+
 export type OrderStatus =
   | 'pending'
   | 'approved'
@@ -5,6 +7,28 @@ export type OrderStatus =
   | 'modified'
   | 'disputed'
   | 'cancelled';
+
+/** Fulfillment stage shown on the Order Details page, driving the header pill + actions. */
+export type OrderDetailStage = 'awaiting_approval' | 'awaiting_delivery' | 'rejected';
+
+/**
+ * Derive the detail stage from the order's status in the supplier orders list
+ * (the list the user clicked from). Dispatched/Delivered orders can no longer be
+ * rejected; already-rejected orders load in the disabled state.
+ * TODO(orval): source the stage from the order endpoint once it lands.
+ */
+export function getOrderStage(id: string): OrderDetailStage {
+  const listOrder = ORDERS_LIST_MOCK.find((order) => order.id === id);
+  switch (listOrder?.status) {
+    case 'Dispatched':
+    case 'Delivered':
+      return 'awaiting_delivery';
+    case 'Rejected':
+      return 'rejected';
+    default:
+      return 'awaiting_approval';
+  }
+}
 
 export type PaymentStatus = 'paid' | 'unpaid' | 'pending' | 'failed';
 
@@ -164,8 +188,20 @@ const SAMPLE_LINE_ITEMS: OrderLineItem[] = [
 ];
 
 export function getOrderDetail(id: string): OrderDetail | null {
-  const summary = ORDERS_MOCK.find((o) => o.id === id);
-  if (!summary) return null;
+  const matched = ORDERS_MOCK.find((o) => o.id === id);
+  if (!matched) return null;
+
+  // This page is the "Awaiting Approval" detail view. Pin the displayed summary
+  // to the design example so any opened order renders pixel-perfect; only the
+  // order id varies. TODO(orval): drop the override once the endpoint provides
+  // real per-order detail data.
+  const summary: Order = {
+    ...matched,
+    date: '20 Nov 2025',
+    amountNGN: 1_150_000,
+    status: 'pending',
+    payment: 'paid',
+  };
 
   const submittedTimestamp = `${summary.date}; 10:23 AM`;
   const timeline: OrderTimelineEvent[] =
@@ -189,7 +225,7 @@ export function getOrderDetail(id: string): OrderDetail | null {
     lineItems: SAMPLE_LINE_ITEMS,
     timeline,
     distributor: {
-      name: summary.distributor,
+      name: 'Rapid Logistics',
       email: 'rapidlogistics12@yahoo.com',
       phone: '(+234) 70 8974 6721',
       orderNote: 'N/A',
@@ -216,6 +252,7 @@ export function getOrderDetail(id: string): OrderDetail | null {
 }
 
 export const REJECT_REASONS = [
+  'Insufficient Stock',
   'Out of stock',
   'Pricing mismatch',
   'Distributor on hold',
@@ -229,3 +266,89 @@ export const ADDABLE_PRODUCTS = [
   { id: 'prod-dpk', name: 'Dual Purpose Kerosene', unit: 'L', unitPriceNGN: 550 },
   { id: 'prod-lub', name: 'Lubricant Oil (20L Kegs)', unit: 'Units', unitPriceNGN: 5_000 },
 ] as const;
+
+// ───────── Order Dispatch (Approve Order flow) ─────────
+
+export interface OrderDispatchSummary {
+  orderTotalNGN: number;
+  totalItems: number;
+  paymentLabel: string;
+  inventoryLabel: string;
+}
+
+export interface OrderDispatchDelivery {
+  recipient: string;
+  address: string;
+  city: string;
+  phone: string;
+}
+
+/** Pre-filled dispatch assignment values shown in the design. */
+export interface OrderDispatchAssignment {
+  driverName: string;
+  vehiclePlate: string;
+  trackingNumber: string;
+  estimatedDelivery: string;
+}
+
+/** A dispatched quantity line (e.g. "Diesel (AGO) – 10,000 Litres"). */
+export interface DispatchedQuantity {
+  id: string;
+  label: string;
+}
+
+export interface OrderDispatchSuccess {
+  recipient: string;
+  contactName: string;
+  orderTotalNGN: number;
+  phone: string;
+  requestedOn: string;
+  orderPlaced: string;
+  address: string;
+}
+
+export interface OrderDispatch {
+  summary: OrderDispatchSummary;
+  delivery: OrderDispatchDelivery;
+  assignment: OrderDispatchAssignment;
+  dispatchedQuantities: DispatchedQuantity[];
+  success: OrderDispatchSuccess;
+}
+
+// TODO(orval): replace with the dispatch detail query hook once the endpoint lands.
+export function getOrderDispatch(id: string): OrderDispatch {
+  return {
+    summary: {
+      orderTotalNGN: 2_000_000,
+      totalItems: 3,
+      paymentLabel: 'Confirmed',
+      inventoryLabel: 'Allocated',
+    },
+    delivery: {
+      recipient: 'Rapid Logistics',
+      address: '15 Ikorodu Road',
+      city: 'Lagos State',
+      phone: '(+234) 70 8974 6721',
+    },
+    assignment: {
+      driverName: 'Emmanuel Ojukwu',
+      vehiclePlate: 'KAM-76A-88',
+      trackingNumber: 'TRK-2026211-003',
+      estimatedDelivery: '26-02-2026',
+    },
+    dispatchedQuantities: [
+      { id: 'dq-diesel', label: 'Diesel (AGO) – 10,000 Litres' },
+      { id: 'dq-fuel', label: 'Fuel(PMS) – 1,500 Litres' },
+      { id: 'dq-lubricant', label: 'Lubricant Oil (20L Kegs) - 10 Units' },
+    ],
+    success: {
+      recipient: 'Rapid Logistics',
+      contactName: `${id}: Ifeoma Okeke`,
+      orderTotalNGN: 2_000_000,
+      phone: '(+234) 70 8974 6721',
+      requestedOn: 'Mar 20, 2025',
+      orderPlaced: 'Today, 08:22AM',
+      address: '15 Ikorodu Road, Lagos State.',
+    },
+  };
+}

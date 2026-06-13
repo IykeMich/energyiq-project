@@ -2,12 +2,17 @@ import {
   LayoutDashboard,
   Users,
   Package,
-  Warehouse,
+  Tag,
+  Ruler,
   ShoppingCart,
-  DollarSign,
-  MessageSquare,
-  BarChart3,
-  FileText,
+  Warehouse,
+  Award,
+  Wallet,
+  ArrowLeftRight,
+  Receipt,
+  FileCheck,
+  ScrollText,
+  MessageSquareWarning,
   UserCog,
   Settings,
   LogOut,
@@ -36,31 +41,69 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
   const displayEmail = user?.email?.trim() ? user.email : 'andrewfran@gmail.com';
   const initials = getInitials(displayName);
 
-  const navMainItems: NavItem[] = [
+  // Dashboard sits above the labelled sections (matches the design).
+  const navTopItems: NavItem[] = [
     { title: 'Dashboard', url: `/${slug}/dashboard`, icon: LayoutDashboard },
+  ];
+
+  const navTradeItems: NavItem[] = [
     {
       title: 'Products',
       url: `/${slug}/products`,
       icon: Package,
       activePaths: [`/${slug}/products`],
       items: [
-        { title: 'Catalog', url: `/${slug}/products` },
-        { title: 'Categories', url: `/${slug}/products/categories` },
-        { title: 'Units of Measure', url: `/${slug}/products/units` },
+        { title: 'Catalog', url: `/${slug}/products`, icon: Package, description: 'All products' },
+        {
+          title: 'Categories',
+          url: `/${slug}/products/categories`,
+          icon: Tag,
+          description: 'Group products',
+        },
+        {
+          title: 'Units of Measure',
+          url: `/${slug}/products/units`,
+          icon: Ruler,
+          description: 'Units & sizing',
+        },
       ],
     },
-    { title: 'Distributors', url: `/${slug}/distributors`, icon: Users },
     { title: 'Inventory', url: `/${slug}/inventory`, icon: Warehouse },
-    { title: 'Orders', url: `/${slug}/orders`, icon: ShoppingCart },
-    { title: 'Financials', url: `/${slug}/financials`, icon: DollarSign },
-    { title: 'Complaints', url: `/${slug}/complaints`, icon: MessageSquare },
-    { title: 'Analytics', url: `/${slug}/analytics`, icon: BarChart3 },
-    { title: 'Documents', url: `/${slug}/documents`, icon: FileText },
-    { title: 'Employees', url: `/${slug}/employees`, icon: UserCog },
-    { title: 'Sophia', url: `/${slug}/sophia`, icon: UserCog },
+    {
+      title: 'Orders',
+      url: `/${slug}/orders`,
+      icon: ShoppingCart,
+      activePaths: [`/${slug}/orders`],
+    },
   ];
 
+  // TODO: Tier Management has no page yet — link will 404 until that page lands.
+  const navNetworkItems: NavItem[] = [
+    { title: 'Distributors', url: `/${slug}/distributors`, icon: Users },
+    { title: 'Tier Management', url: `/${slug}/tier-management`, icon: Award },
+  ];
+
+  // TODO: Accounts / Transactions / Sales Entry have no pages yet — links will 404 until they land.
+  const navFinanceItems: NavItem[] = [
+    { title: 'Accounts', url: `/${slug}/accounts`, icon: Wallet },
+    { title: 'Transactions', url: `/${slug}/transactions`, icon: ArrowLeftRight },
+    { title: 'Sales Entry', url: `/${slug}/sales-entry`, icon: Receipt },
+  ];
+
+  const navComplianceItems: NavItem[] = [
+    { title: 'KYC Documents', url: `/${slug}/kyc-documents`, icon: FileCheck },
+    {
+      title: 'Complaints',
+      url: `/${slug}/complaints`,
+      icon: MessageSquareWarning,
+      activePaths: [`/${slug}/complaints`],
+    },
+    { title: 'Audit Logs', url: `/${slug}/audit-logs`, icon: ScrollText },
+  ];
+
+  // TODO: Team & Permissions has no page yet — link will 404 until that page lands.
   const navSecondaryItems: NavItem[] = [
+    { title: 'Team & Permissions', url: `/${slug}/team-permissions`, icon: UserCog },
     { title: 'Settings', url: `/${slug}/settings`, icon: Settings },
     { title: 'Log out', url: '/logout', icon: LogOut },
   ];
@@ -75,7 +118,16 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="no-scrollbar">
-        <NavMain items={navMainItems} extraClass="pb-8 border-b border-gray-800" />
+        <NavMain items={navTopItems} containerExtraClass="pb-0" />
+        <NavMain items={navTradeItems} label="Trade" containerExtraClass="py-0" />
+        <NavMain items={navNetworkItems} label="Network" containerExtraClass="py-0" />
+        <NavMain items={navFinanceItems} label="Finances" containerExtraClass="py-0" />
+        <NavMain
+          items={navComplianceItems}
+          label="Compliance"
+          extraClass="pb-8 border-b border-gray-800"
+          containerExtraClass="py-0"
+        />
         <NavMain items={navSecondaryItems} extraClass="pb-8" />
       </SidebarContent>
       <SidebarFooter className="p-4">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, X } from 'lucide-react';
 import { cn } from '@energyiq/shared';
 
 export type ColumnAlignment = 'left' | 'center' | 'right';
@@ -8,6 +8,8 @@ export type ColumnAlignment = 'left' | 'center' | 'right';
 export interface Column<RowData> {
   /** Text shown in the header cell. */
   header: string;
+  /** Custom header renderer; overrides `header` when present (e.g. a select-all checkbox). */
+  renderHeader?: () => ReactNode;
   /** Key on the row used to read the cell value. */
   accessor: keyof RowData;
   /** Fixed column width (any CSS width, e.g. "120px"). */
@@ -137,6 +139,18 @@ export function DefaultTable<RowData extends object>({
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)}>
+      {sort && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setSort(null)}
+            className="tap-effect inline-flex items-center gap-1 text-xs font-medium text-[#FBC02D] hover:underline"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+            Clear sort
+          </button>
+        </div>
+      )}
       <div className="w-full overflow-x-auto no-scrollbar">
         <table className="w-full min-w-max border-separate border-spacing-y-1">
           <thead>
@@ -164,7 +178,7 @@ export function DefaultTable<RowData extends object>({
                         alignment === 'right' && 'justify-end',
                       )}
                     >
-                      {column.header}
+                      {column.renderHeader ? column.renderHeader() : column.header}
                       {renderSortIcon(column)}
                     </span>
                   </th>

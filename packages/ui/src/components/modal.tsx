@@ -55,21 +55,24 @@ export function Modal({
                     type="button"
                     onClick={onBack}
                     aria-label="Back"
-                    className="w-[31px] h-[31px] rounded-full border border-border-strong flex items-center justify-center text-foreground"
+                    className="w-8 h-8 rounded-full bg-brand text-brand-foreground flex items-center justify-center"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 )}
                 {title && (
-                  <DialogPrimitive.Title className="text-xl font-semibold text-foreground m-0">
-                    {title}
-                  </DialogPrimitive.Title>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-1 h-5 rounded-full bg-brand" />
+                    <DialogPrimitive.Title className="text-xl font-semibold text-foreground m-0">
+                      {title}
+                    </DialogPrimitive.Title>
+                  </div>
                 )}
               </div>
               {showClose && (
                 <DialogPrimitive.Close
                   aria-label="Close"
-                  className="w-8 h-8 rounded-full border border-border-strong flex items-center justify-center text-foreground"
+                  className="w-8 h-8 rounded-full bg-brand text-brand-foreground flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </DialogPrimitive.Close>

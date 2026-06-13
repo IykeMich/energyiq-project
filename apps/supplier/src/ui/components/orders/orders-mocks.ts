@@ -8,7 +8,8 @@ export interface OrderRow {
   id: string;
   /** Display date as shown in the design (e.g. "18-Nov-2025"). */
   date: string;
-  supplier: string;
+  /** Counterparty distributor for this supplier order. */
+  distributor: string;
   items: number;
   /** Raw amount in Naira; formatted for display in the table. */
   amount: number;
@@ -16,17 +17,24 @@ export interface OrderRow {
   payment: PaymentStatus;
 }
 
-export const ORDERS_MOCK: OrderRow[] = [
-  { id: 'ORD-001', date: '18-Nov-2025', supplier: 'Zenith Traders (Silver)', items: 3, amount: 1250000, status: 'Approved', payment: 'Pending' },
-  { id: 'ORD-002', date: '19-Nov-2025', supplier: 'Ideal Supplies (Bronze)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
-  { id: 'ORD-003', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
-  { id: 'ORD-004', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
-  { id: 'ORD-005', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Delivered', payment: 'Paid' },
-  { id: 'ORD-006', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Pending' },
-  { id: 'ORD-007', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Pending' },
-  { id: 'ORD-008', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Rejected', payment: 'Paid' },
-  { id: 'ORD-009', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
+// The first rows mirror the design exactly; the remainder repeat the sample so the
+// footer reads "of 100 Entries". TODO(orval): replace with the orders query hook.
+const ORDERS_SAMPLE: Omit<OrderRow, 'id'>[] = [
+  { date: '18-Nov-2025', distributor: 'Zenith Traders (Silver)', items: 3, amount: 1250000, status: 'Approved', payment: 'Pending' },
+  { date: '19-Nov-2025', distributor: 'Ideal Supplies (Bronze)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Delivered', payment: 'Paid' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Pending' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Pending' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Rejected', payment: 'Paid' },
+  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
 ];
+
+export const ORDERS_MOCK: OrderRow[] = Array.from({ length: 100 }, (_, index) => ({
+  id: `ORD-${String(index + 1).padStart(3, '0')}`,
+  ...ORDERS_SAMPLE[index % ORDERS_SAMPLE.length],
+}));
 
 /** Badge text color per status; the badge background reuses the same hue at low opacity. */
 export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
@@ -50,7 +58,7 @@ export interface OrderStatusTab {
 
 // The "All" tab is selected by default in the design.
 export const ORDER_STATUS_TABS: OrderStatusTab[] = [
-  { label: 'All', count: 150 },
+  { label: 'All', count: 100 },
   { label: 'Pending', count: 20 },
   { label: 'Approved', count: 10 },
   { label: 'Rejected', count: 10 },
@@ -70,31 +78,9 @@ export interface OrderFilter {
 export const ORDER_FILTERS: OrderFilter[] = [
   { id: 'date', label: 'Date', options: ['Today', 'This Week', 'This Month', 'This Year'] },
   {
-    id: 'supplier',
-    label: 'Supplier',
+    id: 'distributor',
+    label: 'Distributor',
     options: ['Zenith Traders', 'Ideal Supplies', 'Rapid Logistics'],
-  },
-  {
-    id: 'order-status',
-    label: 'Order Status',
-    options: ['Approved', 'Dispatched', 'Pending', 'Delivered', 'Rejected'],
   },
   { id: 'payment-status', label: 'Payment Status', options: ['Paid', 'Pending', 'Failed'] },
 ];
-
-export interface OrderTrackerStep {
-  label: string;
-  timestamp: string;
-}
-
-export const ORDER_TRACKER_REFERENCE = '#ORD-003';
-
-export const ORDER_TRACKER_STEPS: OrderTrackerStep[] = [
-  { label: 'Pickup', timestamp: '10:38AM. 01-02' },
-  { label: 'On Transit', timestamp: '10:38AM. 01-02' },
-  { label: 'On Delivery', timestamp: '10:38AM. 01-02' },
-  { label: 'Delivered', timestamp: '10:38AM. 01-02' },
-];
-
-/** Index of the currently active tracker step (0-based). */
-export const ORDER_TRACKER_ACTIVE_INDEX = 0;

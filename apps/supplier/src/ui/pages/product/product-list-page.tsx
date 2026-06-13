@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog, DataGrid, type ColDef } from '@energyiq/ui';
 import { PRODUCTS_MOCK, formatStock, type Product } from './mocks';
-import { ProductStatusBadge } from './components/product-status-badge';
-import { ProductFilterBar } from './components/product-filter-bar';
-import { ProductActionsCell } from './components/product-actions-cell';
-import { AssignWarehouseWizardModal } from './components/assign-warehouse-wizard-modal';
+import { ProductStatusBadge } from '@/ui/components/product/product-status-badge';
+import { ProductFilterBar } from '@/ui/components/product/product-filter-bar';
+import { ProductActionsCell } from '@/ui/components/product/product-actions-cell';
+import { AssignWarehouseWizardModal } from '@/ui/components/product/assign-warehouse-wizard-modal';
+import { ProductDetailsSheet } from '@/ui/components/product/product-details-sheet';
 
 const NGN = new Intl.NumberFormat('en-NG');
 
@@ -15,6 +16,7 @@ export function ProductListPage() {
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>(PRODUCTS_MOCK);
   const [assignWarehouseOpen, setAssignWarehouseOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const columnDefs = useMemo<ColDef<Product>[]>(
     () => [
@@ -105,7 +107,14 @@ export function ProductListPage() {
         rowSelection="multiple"
         rowHeight={56}
         suppressRowClickSelection
-        className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden"
+        onRowClicked={(event) => setSelectedProduct(event.data ?? null)}
+        className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
+      />
+
+      <ProductDetailsSheet
+        product={selectedProduct}
+        onOpenChange={(open) => !open && setSelectedProduct(null)}
+        onEdit={(product) => navigate(`/${slug}/products/${product.id}/edit`)}
       />
 
       <AssignWarehouseWizardModal

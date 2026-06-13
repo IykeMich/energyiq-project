@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TANKS_MOCK, TANK_SUMMARY_MOCK, VARIANCE_ALERT_MOCK } from './mocks';
-import { VarianceAlertBanner } from './components/variance-alert-banner';
-import { TankSummaryStats } from './components/tank-summary-stats';
-import { TankCard } from './components/tank-card';
-import { RecordDipForm } from './components/record-dip-form';
-import { VarianceAlertModal } from './components/variance-alert-modal';
-import { ReenterReadingModal } from './components/reenter-reading-modal';
+import { VarianceAlertBanner } from '@/ui/components/tank-monitoring/variance-alert-banner';
+import { TankSummaryStats } from '@/ui/components/tank-monitoring/tank-summary-stats';
+import { TankCard } from '@/ui/components/tank-monitoring/tank-card';
+import { RecordDipForm } from '@/ui/components/tank-monitoring/record-dip-form';
+import { VarianceAlertModal } from '@/ui/components/tank-monitoring/variance-alert-modal';
+import { ReenterReadingModal } from '@/ui/components/tank-monitoring/reenter-reading-modal';
 import { SuccessModal, type SuccessModalDetail } from '@energyiq/ui';
-import { SavingOverlay } from './components/saving-overlay';
-import { NoConnectionBanner } from './components/no-connection-banner';
+import { SavingOverlay } from '@/ui/components/tank-monitoring/saving-overlay';
+import { NoConnectionBanner } from '@/ui/components/tank-monitoring/no-connection-banner';
 
 interface SuccessState {
   open: boolean;

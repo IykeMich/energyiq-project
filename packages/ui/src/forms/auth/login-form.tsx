@@ -29,15 +29,16 @@ export function LoginForm() {
 
   const rememberMe = watch('rememberMe');
 
-  // TEMP: auth endpoint bypassed — fake a logged-in state, then navigate to
-  // /dashboard. The commented `onSubmit` below restores the real flow.
+  // TEMP: auth endpoint bypassed — fake a logged-in state, then navigate to the
+  // slug-prefixed dashboard. tempBypassLogin sets slug='demo', so this matches.
+  // Remove the hardcoded slug when the real endpoint lands (see commented flow).
   const onSubmit = () => {
     dispatch(tempBypassLogin());
-    navigate('/dashboard');
+    navigate('/demo/dashboard');
   };
   // const onSubmit = async (data: LoginFormData) => {
-  //   const success = await login({ email: data.email, password: data.password });
-  //   if (success) navigate('/dashboard');
+  //   const result = await login({ email: data.email, password: data.password });
+  //   if (result.success) navigate(`/${result.slug}/dashboard`);
   // };
 
   return (

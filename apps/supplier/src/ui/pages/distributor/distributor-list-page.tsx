@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataGrid, type ColDef } from '@energyiq/ui';
 import { DISTRIBUTORS_MOCK, buildDistributorSummary, type Distributor } from './mocks';
-import { DistributorSummaryStats } from './components/distributor-summary-stats';
-import { DistributorFilterBar } from './components/distributor-filter-bar';
-import { DistributorTierBadge } from './components/distributor-tier-badge';
-import { DistributorStatusBadge } from './components/distributor-status-badge';
+import { DistributorSummaryStats } from '@/ui/components/distributor/distributor-summary-stats';
+import { DistributorFilterBar } from '@/ui/components/distributor/distributor-filter-bar';
+import { DistributorTierBadge } from '@/ui/components/distributor/distributor-tier-badge';
+import { DistributorStatusBadge } from '@/ui/components/distributor/distributor-status-badge';
+import { DistributorDetailsSheet } from '@/ui/components/distributor/distributor-details-sheet';
 
 const NGN = new Intl.NumberFormat('en-NG');
 
@@ -18,11 +19,21 @@ function formatMillions(value: number): string {
 export function DistributorListPage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
+  const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
 
   const summary = useMemo(() => buildDistributorSummary(DISTRIBUTORS_MOCK), []);
 
   const columnDefs = useMemo<ColDef<Distributor>[]>(
     () => [
+      {
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 48,
+        flex: 0,
+        sortable: false,
+        filter: false,
+        resizable: false,
+      },
       {
         field: 'name',
         headerName: 'Distributor',
@@ -100,6 +111,7 @@ export function DistributorListPage() {
         <h2 className="text-base font-semibold text-foreground">Distributor Table</h2>
         <button
           type="button"
+          onClick={() => navigate(`/${slug}/distributors/approval`)}
           className="text-sm text-brand underline font-semibold"
         >
           Distributor Approval
@@ -110,8 +122,15 @@ export function DistributorListPage() {
         rowData={DISTRIBUTORS_MOCK}
         columnDefs={columnDefs}
         rowHeight={64}
-        onRowClicked={(e) => e.data && navigate(`/${slug}/distributors/${e.data.id}`)}
+        rowSelection="multiple"
+        suppressRowClickSelection
+        onRowClicked={(event) => setSelectedDistributor(event.data ?? null)}
         className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
+      />
+
+      <DistributorDetailsSheet
+        distributor={selectedDistributor}
+        onOpenChange={(open) => !open && setSelectedDistributor(null)}
       />
     </section>
   );

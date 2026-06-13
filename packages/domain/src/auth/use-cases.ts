@@ -7,6 +7,7 @@ import type {
   LoginRequest,
   LoginResult,
   AuthState,
+  AuthUser,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════
@@ -74,6 +75,15 @@ export class AuthUseCases {
       this.logout();
       return false;
     }
+  }
+
+  // ── Temp Demo Session ───────────────────────────────────────
+  // TEMP: persists a fake demo session so the login-bypass survives page
+  // refreshes (getState() reads these back on hydrate). Remove alongside
+  // tempBypassLogin once the real auth endpoint lands.
+  setDemoSession(user: AuthUser): void {
+    this.tokens.setTokens('demo-access-token', 'demo-refresh-token');
+    this.user.setUser(user);
   }
 
   // ── Logout ──────────────────────────────────────────────────
