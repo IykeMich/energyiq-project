@@ -108,8 +108,7 @@ export function EmployeeListPage() {
             Employee Management
           </h1>
         </header>
-
-        {/* Summary Cards */}
+ 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard title="Total Employees" value={counts.total} />
           <StatCard title="Active Employees" value={counts.active} />
@@ -117,7 +116,7 @@ export function EmployeeListPage() {
           <StatCard title="Inactive Accounts" value={counts.inactive} />
         </div>
 
-        {/* Filters */}
+        
         <InviteEmployeeModal
           onInviteMember={() => setIsInviteModalOpen(true)}
         />
@@ -134,7 +133,7 @@ export function EmployeeListPage() {
 
       </section>
 
-      {/* Invite Modal */}
+      
      
 
       {/* Success Modal */}
