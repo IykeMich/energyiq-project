@@ -18,6 +18,17 @@ import { DistributorListPage } from '@/ui/pages/distributor/distributor-list-pag
 import { DistributorApprovalPage } from '@/ui/pages/distributor/distributor-approval-page';
 import { DistributorInvitePage } from '@/ui/pages/distributor/distributor-invite-page';
 import { OrdersPage } from '@/ui/pages/orders/orders-page';
+import { SalesEntryPage } from '@/ui/pages/sales-entry/sales-entry-page';
+import { AuditLogsPage } from '@/ui/pages/audit-logs/audit-logs-page';
+import { OrderDetailPage } from '@/ui/pages/order/order-detail-page';
+import { OrderDispatchPage } from '@/ui/pages/order/order-dispatch-page';
+import { ComplaintsPage } from '@/ui/pages/complaints/complaints-page';
+import { ComplaintDetailPage } from '@/ui/pages/complaint/complaint-detail-page';
+import { TeamPermissionsPage } from '@/ui/pages/team-permissions/team-permissions-page';
+import { KycDocumentsPage } from '@/ui/pages/kyc-documents/kyc-documents-page';
+import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-types-page';
+import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
+import { KycReviewQueuePage } from '@/ui/pages/kyc-documents/kyc-review-queue-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
@@ -62,6 +73,17 @@ export const router = createBrowserRouter([
               { path: '/:slug/inventory/create-warehouse', element: <CreateWarehousePage /> },
               { path: '/:slug/inventory/tank-monitoring', element: <TankMonitoringPage /> },
               { path: '/:slug/orders', element: <OrdersPage /> },
+              { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
+              { path: '/:slug/orders/:id/dispatch', element: <OrderDispatchPage /> },
+              { path: '/:slug/sales-entry', element: <SalesEntryPage /> },
+              { path: '/:slug/audit-logs', element: <AuditLogsPage /> },
+              { path: '/:slug/complaints', element: <ComplaintsPage /> },
+              { path: '/:slug/complaints/:id', element: <ComplaintDetailPage /> },
+              { path: '/:slug/team-permissions', element: <TeamPermissionsPage /> },
+              { path: '/:slug/kyc-documents', element: <KycDocumentsPage /> },
+              { path: '/:slug/kyc-documents/review', element: <KycReviewQueuePage /> },
+              { path: '/:slug/kyc-documents/types', element: <KycDocumentTypesPage /> },
+              { path: '/:slug/kyc-documents/types/new', element: <AddKycDocumentTypePage /> },
               { path: '/:slug/products', element: <ProductListPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },

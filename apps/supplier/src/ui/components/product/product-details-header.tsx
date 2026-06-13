@@ -23,7 +23,7 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onPause }: Prod
           type="button"
           onClick={onClose}
           aria-label="Close product details"
-          className="tap-effect flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FBC02D] text-[#121212]"
+          className="tap-effect flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FBC02D] text-[#121212] transition-opacity hover:opacity-90"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -44,14 +44,14 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onPause }: Prod
           <button
             type="button"
             onClick={onEdit}
-            className="tap-effect h-8 rounded-full bg-[#FBC02D] px-4 text-xs font-semibold text-[#121212]"
+            className="tap-effect h-8 rounded-full bg-[#FBC02D] px-4 text-xs font-semibold text-[#121212] transition-opacity hover:opacity-90"
           >
             Edit
           </button>
           <button
             type="button"
             onClick={onPause}
-            className="tap-effect h-8 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D]"
+            className="tap-effect h-8 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D] transition-colors hover:bg-[#FBC02D]/10"
           >
             Pause Product
           </button>

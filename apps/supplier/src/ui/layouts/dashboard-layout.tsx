@@ -1,6 +1,6 @@
 import { useEffect, type CSSProperties } from 'react';
 import { Outlet } from 'react-router-dom';
-import { SidebarInset, SidebarProvider } from '@energyiq/ui';
+import { SidebarInset, SidebarProvider, Toaster } from '@energyiq/ui';
 import { AppSidebar } from './app-sidebar';
 import { LayoutHeader } from './layout-header';
 import { PageHeaderProvider } from './page-header';
@@ -22,7 +22,9 @@ export function DashboardLayout() {
         }
       >
         <AppSidebar />
-        <SidebarInset className="bg-surface-canvas min-w-0">
+        <SidebarInset className="bg-surface-canvas min-w-0 relative">
+          {/* Content-anchored toast host: banners span the content column, not the sidebar. */}
+          <Toaster />
           <LayoutHeader />
           <div className="flex flex-1 flex-col gap-4 py-4 px-4 lg:px-8 bg-surface-canvas min-w-0">
             <Outlet />

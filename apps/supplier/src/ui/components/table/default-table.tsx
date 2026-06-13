@@ -8,6 +8,8 @@ export type ColumnAlignment = 'left' | 'center' | 'right';
 export interface Column<RowData> {
   /** Text shown in the header cell. */
   header: string;
+  /** Custom header renderer; overrides `header` when present (e.g. a select-all checkbox). */
+  renderHeader?: () => ReactNode;
   /** Key on the row used to read the cell value. */
   accessor: keyof RowData;
   /** Fixed column width (any CSS width, e.g. "120px"). */
@@ -176,7 +178,7 @@ export function DefaultTable<RowData extends object>({
                         alignment === 'right' && 'justify-end',
                       )}
                     >
-                      {column.header}
+                      {column.renderHeader ? column.renderHeader() : column.header}
                       {renderSortIcon(column)}
                     </span>
                   </th>

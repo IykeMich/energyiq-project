@@ -1,32 +1,25 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ConfirmDialog, SuccessModal } from '@energyiq/ui';
-import { getOrderDetail, type OrderLineItem } from './mocks';
+import { ConfirmDialog, LoadingOverlay, toast } from '@energyiq/ui';
+import { getOrderDetail, getOrderStage } from './mocks';
 import { OrderInfoCard } from '@/ui/components/order/order-info-card';
 import { OrderDistributorCard } from '@/ui/components/order/order-distributor-card';
 import { RejectOrderModal } from '@/ui/components/order/reject-order-modal';
 import { ModifyOrderModal } from '@/ui/components/order/modify-order-modal';
-import { AddProductModal } from '@/ui/components/order/add-product-modal';
 
-type OpenModal = null | 'reject' | 'modify' | 'addProduct' | 'confirmApprove' | 'confirmReject';
-
-interface SuccessState {
-  open: boolean;
-  title: string;
-  subtitle: string;
-  reference?: string;
-}
+type OpenModal = null | 'reject' | 'modify' | 'confirmApprove' | 'confirmReject' | 'confirmModify';
 
 export function OrderDetailPage() {
   const navigate = useNavigate();
   const { slug = '', id = '' } = useParams<{ slug: string; id: string }>();
   const [modal, setModal] = useState<OpenModal>(null);
-  const [success, setSuccess] = useState<SuccessState>({ open: false, title: '', subtitle: '' });
   const [pendingReject, setPendingReject] = useState<{ reason: string; note: string } | null>(null);
-  const [extraLineItems, setExtraLineItems] = useState<OrderLineItem[]>([]);
+  const [stage, setStage] = useState(() => getOrderStage(id));
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const detail = useMemo(() => getOrderDetail(id), [id]);
+  const actionsDisabled = stage === 'rejected';
 
   if (!detail) {
     return (
@@ -46,33 +39,39 @@ export function OrderDetailPage() {
     );
   }
 
-  const fullDetail = {
-    ...detail,
-    lineItems: [...detail.lineItems, ...extraLineItems],
+  const handleModifyConfirmed = () => {
+    setModal(null);
+    setIsProcessing(true);
+    // TODO(orval): replace the timer with the modify mutation's pending/settled state.
+    setTimeout(() => {
+      setIsProcessing(false);
+      toast.success('Success', {
+        description: `'${detail.summary.id}' has been modified. ${detail.distributor.name} will receive a notification soon.`,
+      });
+    }, 1200);
   };
-
-  const closeSuccess = () => setSuccess((s) => ({ ...s, open: false }));
 
   const handleApproveConfirmed = () => {
     setModal(null);
-    setSuccess({
-      open: true,
-      title: 'Order Approved',
-      subtitle: `Order ${detail.summary.id} has been approved. The distributor has been notified.`,
-      reference: detail.summary.id,
-    });
+    // Approving an order continues into the dispatch wizard.
+    navigate(`/${slug}/orders/${detail.summary.id}/dispatch`);
   };
 
   const handleRejectConfirmed = () => {
     if (!pendingReject) return;
     setModal(null);
-    setSuccess({
-      open: true,
-      title: 'Order Rejected',
-      subtitle: `Order ${detail.summary.id} has been rejected. The distributor has been notified.`,
-      reference: detail.summary.id,
-    });
+    // Rejecting transitions the page itself: red "Order Rejected" pill + disabled actions.
+    setStage('rejected');
     setPendingReject(null);
+  };
+
+  const handleRejectClick = () => {
+    // A dispatched order can no longer be rejected — surface a toast instead of the modal.
+    if (stage === 'awaiting_delivery') {
+      toast.error('This order cannot be rejected at its current stage');
+      return;
+    }
+    setModal('reject');
   };
 
   return (
@@ -89,10 +88,17 @@ export function OrderDetailPage() {
           </button>
           <h1 className="text-2xl font-semibold text-foreground">Order Details</h1>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full bg-success/20 text-success px-4 py-2 text-sm font-semibold">
-          <Send className="w-4 h-4" />
-          Awaiting Approval
-        </span>
+        {stage === 'rejected' ? (
+          <span className="inline-flex items-center gap-2 rounded-full bg-danger/20 text-danger px-4 py-2 text-sm font-semibold">
+            <Send className="w-4 h-4" />
+            Order Rejected
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2 rounded-full bg-success/20 text-success px-4 py-2 text-sm font-semibold">
+            <Send className="w-4 h-4" />
+            {stage === 'awaiting_delivery' ? 'Awaiting Delivery' : 'Awaiting Approval'}
+          </span>
+        )}
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
@@ -102,7 +108,7 @@ export function OrderDetailPage() {
           amountNGN={detail.summary.amountNGN}
           payment={{ method: detail.payment.method, status: detail.summary.payment }}
           delivery={detail.delivery}
-          lineItems={fullDetail.lineItems}
+          lineItems={detail.lineItems}
           timeline={detail.timeline}
         />
 
@@ -116,14 +122,24 @@ export function OrderDetailPage() {
                 <button
                   type="button"
                   onClick={() => setModal('modify')}
-                  className="h-13.25 rounded-[28px] border border-brand text-brand font-semibold"
+                  disabled={actionsDisabled}
+                  className={
+                    actionsDisabled
+                      ? 'h-13.25 rounded-[28px] border border-border-strong text-muted-foreground font-semibold cursor-not-allowed'
+                      : 'h-13.25 rounded-[28px] border border-brand text-brand font-semibold'
+                  }
                 >
                   Modify Order
                 </button>
                 <button
                   type="button"
-                  onClick={() => setModal('reject')}
-                  className="h-13.25 rounded-[28px] border border-danger text-danger font-semibold"
+                  onClick={handleRejectClick}
+                  disabled={actionsDisabled}
+                  className={
+                    actionsDisabled
+                      ? 'h-13.25 rounded-[28px] border border-border-strong text-muted-foreground font-semibold cursor-not-allowed'
+                      : 'h-13.25 rounded-[28px] border border-danger text-danger font-semibold'
+                  }
                 >
                   Reject Order
                 </button>
@@ -131,16 +147,14 @@ export function OrderDetailPage() {
               <button
                 type="button"
                 onClick={() => setModal('confirmApprove')}
-                className="h-13.25 rounded-[28px] bg-brand text-brand-foreground font-semibold"
+                disabled={actionsDisabled}
+                className={
+                  actionsDisabled
+                    ? 'h-13.25 rounded-[28px] bg-foreground/10 text-muted-foreground font-semibold cursor-not-allowed'
+                    : 'h-13.25 rounded-[28px] bg-brand text-brand-foreground font-semibold'
+                }
               >
-                Approve Order Biko
-              </button>
-              <button
-                type="button"
-                onClick={() => setModal('addProduct')}
-                className="h-13.25 rounded-[28px] bg-foreground/10 text-foreground font-semibold"
-              >
-                Add Product
+                Approve Order
               </button>
             </>
           }
@@ -150,7 +164,7 @@ export function OrderDetailPage() {
       <RejectOrderModal
         open={modal === 'reject'}
         onOpenChange={(o) => !o && setModal(null)}
-        detail={fullDetail}
+        detail={detail}
         onReject={(d) => {
           setPendingReject(d);
           setModal('confirmReject');
@@ -160,26 +174,9 @@ export function OrderDetailPage() {
       <ModifyOrderModal
         open={modal === 'modify'}
         onOpenChange={(o) => !o && setModal(null)}
-        detail={fullDetail}
-        onSave={() => {
-          setModal(null);
-          setSuccess({
-            open: true,
-            title: 'Order Modified',
-            subtitle: `Order ${detail.summary.id} has been updated. The distributor will receive the revised quote.`,
-            reference: detail.summary.id,
-          });
-        }}
-      />
-
-      <AddProductModal
-        open={modal === 'addProduct'}
-        onOpenChange={(o) => !o && setModal(null)}
-        orderId={detail.summary.id}
-        onAdd={(item) => {
-          setExtraLineItems((prev) => [...prev, item]);
-          setModal(null);
-        }}
+        detail={detail}
+        // TODO(orval): persist the edited line items via the modify mutation.
+        onSave={() => setModal('confirmModify')}
       />
 
       <ConfirmDialog
@@ -202,33 +199,17 @@ export function OrderDetailPage() {
         onConfirm={handleRejectConfirmed}
       />
 
-      <SuccessModal
-        open={success.open}
-        onOpenChange={(o) => !o && closeSuccess()}
-        title={success.title}
-        subtitle={
-          <>
-            {success.subtitle.split(detail.summary.id).map((part, i, arr) => (
-              <span key={i}>
-                {part}
-                {i < arr.length - 1 && (
-                  <span className="text-brand font-semibold">{detail.summary.id}</span>
-                )}
-              </span>
-            ))}
-          </>
-        }
-        highlight={success.reference ? { label: 'Order Reference:', value: success.reference } : undefined}
-        primaryAction={{ label: 'Track Order', onClick: closeSuccess }}
-        secondaryAction={{
-          label: 'Go to Home',
-          onClick: () => {
-            closeSuccess();
-            navigate(`/${slug}/dashboard`);
-          },
-        }}
-        buttonLayout="stack"
+      <ConfirmDialog
+        open={modal === 'confirmModify'}
+        onOpenChange={(o) => !o && setModal(null)}
+        title="Confirm Order Modification"
+        message={`You are modifying Order ${detail.summary.id}. The distributor will be notified of these changes.`}
+        confirmLabel="Confirm Changes"
+        intent="primary"
+        onConfirm={handleModifyConfirmed}
       />
+
+      {isProcessing && <LoadingOverlay message="Saving changes..." />}
     </section>
   );
 }

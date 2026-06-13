@@ -171,7 +171,7 @@ export function AddProductPage() {
             <button
               type="button"
               onClick={handleNext}
-              className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10"
+              className="tap-effect h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 transition-opacity hover:opacity-90"
             >
               Go to Review
             </button>
@@ -182,14 +182,14 @@ export function AddProductPage() {
               <button
                 type="button"
                 onClick={handleExport}
-                className="h-[53px] rounded-[28px] bg-brand/20 text-brand font-semibold px-8"
+                className="tap-effect h-[53px] rounded-[28px] bg-brand/20 text-brand font-semibold px-8 transition-colors hover:bg-brand/30"
               >
                 Export Configuration
               </button>
               <button
                 type="button"
                 onClick={handlePublish}
-                className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10"
+                className="tap-effect h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 transition-opacity hover:opacity-90"
               >
                 Publish Product
               </button>

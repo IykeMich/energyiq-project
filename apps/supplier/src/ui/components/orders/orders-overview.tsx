@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { OrdersSearchBar } from './orders-search-bar';
 import { OrdersStatusTabs } from './orders-status-tabs';
@@ -12,6 +13,8 @@ import { ORDERS_MOCK } from './orders-mocks';
  * the endpoint lands.
  */
 export function OrdersOverview() {
+  const navigate = useNavigate();
+  const { slug = '' } = useParams<{ slug: string }>();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [filters, setFilters] = useState<OrderFilterSelection>({});
@@ -56,9 +59,7 @@ export function OrdersOverview() {
         <OrdersFilterChips selection={filters} onChange={setFilter} />
         <OrdersTable
           orders={filteredOrders}
-          onEdit={() => {
-            // TODO(orval): open the edit flow once the order routes/endpoints land.
-          }}
+          onEdit={(order) => navigate(`/${slug}/orders/${order.id}`)}
           onCancel={() => {
             // TODO(orval): wire the cancel-order action once the endpoint lands.
           }}

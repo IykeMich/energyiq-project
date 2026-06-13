@@ -26,6 +26,7 @@ export * from './fields';
 // Generic components
 export { FormError } from './components/feedback/form-error';
 export { SectionHeader } from './components/section-header';
+export { Toaster, toast, notifyNoAccess } from './components/toast/toaster';
 export { Modal, type ModalSize } from './components/modal';
 export { ConfirmDialog, type ConfirmIntent } from './components/confirm-dialog';
 export {

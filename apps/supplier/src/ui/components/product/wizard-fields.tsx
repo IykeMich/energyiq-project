@@ -33,17 +33,25 @@ interface TextFieldProps {
   onChange: (next: string) => void;
   placeholder?: string;
   type?: 'text' | 'number';
+  /** When set, the control shows the destructive border and the message below it. */
+  error?: string;
 }
 
-export function TextField({ value, onChange, placeholder, type = 'text' }: TextFieldProps) {
+export function TextField({ value, onChange, placeholder, type = 'text', error }: TextFieldProps) {
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="bg-surface-card border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand"
-    />
+    <div className="flex flex-col gap-1">
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={cn(
+          'bg-surface-card border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand',
+          error && 'border-destructive focus:border-destructive',
+        )}
+      />
+      {error && <p className="text-destructive text-xs">{error}</p>}
+    </div>
   );
 }
 
@@ -52,17 +60,25 @@ interface TextAreaProps {
   onChange: (next: string) => void;
   placeholder?: string;
   rows?: number;
+  /** When set, the control shows the destructive border and the message below it. */
+  error?: string;
 }
 
-export function TextAreaField({ value, onChange, placeholder, rows = 4 }: TextAreaProps) {
+export function TextAreaField({ value, onChange, placeholder, rows = 4, error }: TextAreaProps) {
   return (
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      className="bg-surface-card border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none"
-    />
+    <div className="flex flex-col gap-1">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className={cn(
+          'bg-surface-card border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none',
+          error && 'border-destructive focus:border-destructive',
+        )}
+      />
+      {error && <p className="text-destructive text-xs">{error}</p>}
+    </div>
   );
 }
 
@@ -71,6 +87,8 @@ interface SelectFieldProps {
   onChange: (next: string) => void;
   placeholder?: string;
   options: readonly { value: string; label: string }[] | readonly string[];
+  /** When set, the trigger shows the destructive border and the message below it. */
+  error?: string;
 }
 
 interface CheckboxFieldProps {
@@ -143,29 +161,37 @@ export function ToggleSwitch({
   );
 }
 
-export function SelectField({ value, onChange, placeholder, options }: SelectFieldProps) {
+export function SelectField({ value, onChange, placeholder, options, error }: SelectFieldProps) {
   const normalized = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
   return (
-    <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
-      <SelectTrigger className="bg-surface-card border-border-strong data-[size=default]:h-[52px] w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent
-        align="start"
-        sideOffset={6}
-        alignItemWithTrigger={false}
-        className="w-(--anchor-width) rounded-[20px] border border-border-strong bg-surface-modal p-1.5"
-      >
-        {normalized.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value}
-            className="h-11 rounded-[14px] pl-4 text-sm text-foreground"
-          >
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex flex-col gap-1">
+      <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
+        <SelectTrigger
+          className={cn(
+            'bg-surface-card border-border-strong data-[size=default]:h-[52px] w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand',
+            error && 'border-destructive focus:ring-destructive',
+          )}
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent
+          align="start"
+          sideOffset={6}
+          alignItemWithTrigger={false}
+          className="w-(--anchor-width) rounded-[20px] border border-border-strong bg-surface-modal p-1.5"
+        >
+          {normalized.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              className="h-11 rounded-[14px] pl-4 text-sm text-foreground"
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-destructive text-xs">{error}</p>}
+    </div>
   );
 }
