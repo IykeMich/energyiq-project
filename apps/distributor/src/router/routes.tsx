@@ -11,6 +11,11 @@ import { CreateOrderPage } from '@/ui/pages/orders/create-order-page';
 import { EditOrderPage } from '@/ui/pages/orders/edit-order-page';
 import { OrderDetailPage } from '@/ui/pages/orders/order-detail-page';
 import { ComplaintsPage } from '@/ui/pages/complaints/complaints-page';
+import { DocumentsPage } from '@/ui/pages/documents/documents-page';
+import { SalesPage } from '@/ui/pages/sales/sales-page';
+import { ExpensesPage } from '@/ui/pages/expenses/expenses-page';
+import { TankMonitoringPage } from '@/ui/pages/tankmonitoring/tank-monitoring-page';
+import { RecordSalesPage } from '@/ui/pages/records-sales/record-sales-page';
 
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
 // Public auth routes (/login, /register, /verify) are reachable until the user
@@ -53,6 +58,12 @@ export const router = createBrowserRouter([
               { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
               { path: '/:slug/orders/:id/edit', element: <EditOrderPage /> },
               { path: '/:slug/complaints', element: <ComplaintsPage /> },
+              { path: '/:slug/documents', element: <DocumentsPage /> },
+              { path: '/:slug/record-sales', element: <RecordSalesPage /> },
+              { path: '/:slug/sales-history', element: <SalesPage /> },
+              { path: '/:slug/expenses', element: <ExpensesPage /> },
+               { path: '/:slug/tank-monitoring', element: <TankMonitoringPage /> }
+
             ],
           },
         ],

@@ -42,6 +42,10 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
     { title: 'Complaints', url: `/${slug}/complaints`, icon: MessageSquare },
     { title: 'Documents', url: `/${slug}/documents`, icon: FileText },
     { title: 'Analytics', url: `/${slug}/analytics`, icon: BarChart3 },
+    { title: 'Record Sales', url: `/${slug}/record-sales`, icon: BarChart3 },
+    { title: 'Sales', url: `/${slug}/sales-history`, icon: BarChart3 },
+    { title: 'Log Expense', url: `/${slug}/expenses`, icon: BarChart3 },
+    { title: 'Tank Monitoring', url: `/${slug}/tank-monitoring`, icon: BarChart3 },
   ];
 
   const navSecondaryItems: NavItem[] = [
@@ -59,7 +63,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="no-scrollbar">
-        <NavMain items={navMainItems} extraClass="pb-8 border-b border-gray-800" />
+        <NavMain items={navMainItems}  extraClass="pb-8 border-b border-gray-800" />
         <NavMain items={navSecondaryItems} extraClass="pb-8" />
       </SidebarContent>
       <SidebarFooter className="p-4">
