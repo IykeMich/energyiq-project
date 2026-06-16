@@ -42,5 +42,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
         </div>
       </div>
     </div>
+    
+
   );
 }

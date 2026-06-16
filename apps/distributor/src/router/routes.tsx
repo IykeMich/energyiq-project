@@ -16,7 +16,9 @@ import { SalesPage } from '@/ui/pages/sales/sales-page';
 import { ExpensesPage } from '@/ui/pages/expenses/expenses-page';
 import { TankMonitoringPage } from '@/ui/pages/tankmonitoring/tank-monitoring-page';
 import { RecordSalesPage } from '@/ui/pages/records-sales/record-sales-page';
-
+import { ForgotPasswordPage} from '@/ui/pages/auth/forgot-password-page';
+import { CheckEmailPage } from '@/ui/pages/auth/email-page';
+import { ResetPasswordPage } from '@/ui/pages/auth/reset-page';
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
 // Public auth routes (/login, /register, /verify) are reachable until the user
 // logs in, after which they're redirected into the dashboard.
@@ -42,6 +44,21 @@ export const router = createBrowserRouter([
           { path: '/login', element: <LoginPage /> },
           { path: '/register', element: <RegisterPage /> },
           { path: '/verify', element: <VerifyPage /> },
+
+          // Forgot Password Flow
+    {
+      path: '/forgot-password',
+      element: <ForgotPasswordPage/>,
+    },
+    {
+      path: '/check-email',
+      element: <CheckEmailPage />,
+    },
+    {
+      path: '/reset-password',
+      element: <ResetPasswordPage/>,
+    },
+
         ],
       },
 

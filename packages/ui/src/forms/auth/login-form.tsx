@@ -109,9 +109,12 @@ export function LoginForm() {
           </span>
           <span className="text-sm text-white">Stay signed in</span>
         </label>
-        <a href="#" className="text-sm text-white hover:underline">
-          Forgot password?
-        </a>
+       <Link
+  to="/forgot-password"
+  className="text-sm text-white hover:underline"
+>
+  Forgot password?
+</Link>
       </div>
 
       {/* Submit */}

@@ -31,7 +31,9 @@ import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-type
 import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
 import { KycReviewQueuePage } from '@/ui/pages/kyc-documents/kyc-review-queue-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
-
+import { ForgotPasswordPage} from '@/ui/pages/auth/forgot-password-page';
+import { CheckEmailPage } from '@/ui/pages/auth/email-page';
+import { ResetPasswordPage } from '@/ui/pages/auth/reset-page'
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
 // Public auth routes (/login, /register, /verify) are reachable until the user
 // logs in, after which they're redirected into the dashboard.
@@ -57,6 +59,15 @@ export const router = createBrowserRouter([
           { path: '/login', element: <LoginPage /> },
           { path: '/register', element: <RegisterPage /> },
           { path: '/verify', element: <VerifyPage /> },
+          { path: '/forgot-password', element: <ForgotPasswordPage /> },
+          {
+      path: '/check-email',
+      element: <CheckEmailPage />,
+    },
+    {
+      path: '/reset-password',
+      element: <ResetPasswordPage/>,
+    },
         ],
       },
 

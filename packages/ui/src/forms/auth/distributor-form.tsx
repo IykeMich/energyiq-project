@@ -11,7 +11,7 @@ import {
 } from '../../validation/auth/register';
 
 import { Upload, FileText } from 'lucide-react';
-
+import { useEffect } from 'react';
 const steps = [
   'Account Setup',
   'OTP verification',
@@ -31,9 +31,9 @@ export function DistributorForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
+ 
+//  const [phoneNumber, setPhoneNumber] = useState('');
+//   const [codeSent, setCodeSent] = useState(false); 
   const [businessProfile, setBusinessProfile] = useState({
   businessName: '',
   cacNumber: '',
@@ -44,6 +44,10 @@ export function DistributorForm() {
   contactPerson: '',
   operationalRegions: '',
 });
+const [otp, setOtp] = useState(['', '', '', '', '', '']);
+const [otpError, setOtpError] = useState(false);
+const [otpVerified, setOtpVerified] = useState(false);
+const [countdown, setCountdown] = useState(30);
 const [documentErrors, setDocumentErrors] = useState<
   Record<string, string>
 >({});
@@ -113,16 +117,31 @@ const [documents, setDocuments] = useState({
   };
 
   const handleOtpChange = (value: string, index: number) => {
-    if (isNaN(Number(value))) return;
+  if (!/^\d*$/.test(value)) return;
 
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
+  const newOtp = [...otp];
+  newOtp[index] = value.slice(-1);
+  setOtp(newOtp);
 
-    if (value && index < 5) {
-      document.getElementById(`otp-${index + 1}`)?.focus();
+  setOtpError(false);
+
+  if (value && index < otp.length - 1) {
+    document.getElementById(`otp-${index + 1}`)?.focus();
+  }
+
+  const code = newOtp.join('');
+
+  if (code.length === 6) {
+    // Replace with API verification
+    if (code === '123456') {
+      setOtpVerified(true);
+      setOtpError(false);
+    } else {
+      setOtpError(true);
+      setOtpVerified(false);
     }
-  };
+  }
+};
   const handleFileUpload = (
   e: React.ChangeEvent<HTMLInputElement>,
   key: keyof typeof documents
@@ -175,6 +194,16 @@ const [documents, setDocuments] = useState({
 
     nextStep();
   };
+
+  useEffect(() => {
+  if (!otpVerified && countdown > 0) {
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }
+}, [countdown, otpVerified]);
 
  return (
   <div className="min-h-screen bg-[#0f0f0f] text-white">
@@ -361,57 +390,85 @@ const [documents, setDocuments] = useState({
 )}
 
           {/* STEP 2 */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
+         {currentStep === 2 && (
+  <div className="max-w-md mx-auto text-center">
 
-              <div className="text-center">
-                <h2 className="text-3xl font-bold">
-                  Verify Your Email
-                </h2>
+    <h2 className="text-2xl font-semibold mb-2">
+      Verify your phone
+    </h2>
 
-                <p className="text-sm text-gray-400 mt-2">
-                  We'll send a 6-digit verification code to your phone number.
-                </p>
-              </div>
+    <p className="text-sm text-gray-400 mb-10">
+      We sent a 6-digit code to {'08012345678'}.
+      Enter it below.
+    </p>
 
-              <div>
-                <label className="block text-sm mb-2">
-                  Phone Number
-                </label>
+    <div className="flex justify-center gap-3 mb-5">
+      {otp.map((digit, index) => (
+        <input
+          key={index}
+          id={`otp-${index}`}
+          type="text"
+          value={digit}
+          maxLength={1}
+          onChange={(e) =>
+            handleOtpChange(e.target.value, index)
+          }
+          className={`w-12 h-12 text-center rounded-lg bg-transparent border text-white transition
+            ${
+              otpVerified
+                ? 'border-green-500'
+                : otpError
+                ? 'border-green-500'
+                : 'border-[#404040]'
+            }`}
+        />
+      ))}
+    </div>
 
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter your phone number"
-                  className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
-                />
-              </div>
+    {otpError && (
+      <p className="text-red-500 text-sm mb-4">
+        Invalid code
+      </p>
+    )}
 
-              {!codeSent ? (
-                <button
-                  type="button"
-                  onClick={() => setCodeSent(true)}
-                  className="w-full h-14 rounded-full bg-[#4A4A4A] text-white font-semibold"
-                >
-                  Send Code
-                </button>
-              ) : (
-                <div className="flex justify-center gap-3">
-                  {otp.map((d, i) => (
-                    <input
-                      key={i}
-                      id={`otp-${i}`}
-                      value={d}
-                      onChange={(e) => handleOtpChange(e.target.value, i)}
-                      maxLength={1}
-                      className="w-12 h-14 text-center bg-transparent border border-gray-600 rounded-xl text-white"
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+    {!otpError && (
+      <p
+        className={`text-sm mb-6 ${
+          otpVerified
+            ? 'text-gray-400'
+            : 'text-gray-500'
+        }`}
+      >
+        Resend code in 0:
+        {countdown.toString().padStart(2, '0')}
+      </p>
+    )}
+
+    <button
+      type="button"
+      className="w-full h-12 rounded-full bg-[#FBC02D] text-black font-semibold"
+      onClick={() => {
+        const code = otp.join('');
+
+        if (code.length !== 6) {
+          setOtpError(true);
+          return;
+        }
+
+        nextStep();
+      }}
+    >
+      Verify Code
+    </button>
+
+    <button
+      type="button"
+      className="mt-4 text-sm text-yellow-400"
+    >
+      Change phone number
+    </button>
+  </div>
+)}
 
           {currentStep === 3 && (
   <div className="space-y-4">
@@ -665,7 +722,7 @@ const [documents, setDocuments] = useState({
 
     <button
       type="button"
-      onClick={() => navigate('/dashboard')}
+      onClick={() => navigate('/login')}
       className="w-full mt-8 h-12 rounded-full bg-yellow-400 text-black font-semibold"
     >
       View Dashboard
@@ -674,6 +731,8 @@ const [documents, setDocuments] = useState({
 )}
 
           {/* Navigation */}
+
+          
           <div className="flex gap-4 pt-6">
             {currentStep > 1 && (
               <button
@@ -692,9 +751,9 @@ const [documents, setDocuments] = useState({
   if (currentStep === 2) {
     const filled = otp.every((d) => d !== '');
 
-    if (!codeSent || !filled) {
-      return;
-    }
+    // if (!codeSent || !filled) {
+    //   return;
+    // }
   }
 
   // STEP 4 DOCUMENT VALIDATION
@@ -736,6 +795,7 @@ const [documents, setDocuments] = useState({
     navigate('/dashboard');
     return;
   }
+  
 
   nextStep();
 }}

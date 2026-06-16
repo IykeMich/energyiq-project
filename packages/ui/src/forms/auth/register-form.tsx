@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 
-import { useAuth } from '../../hooks/use-auth';
 import {
   registerSchema,
   type RegisterFormData,
 } from '../../validation/auth/register';
+import { Lock } from 'lucide-react';
+
+export function RegisterForm() {
+
+  const [accountCreated, setAccountCreated] =
+  useState(false);
+  const navigate = useNavigate();
 const steps = [
   'Company Information',
   'Account Setup',
@@ -16,17 +23,13 @@ const steps = [
   'OTP Verification',
 ];
 
-export function RegisterForm() {
-  const navigate = useNavigate();
-
-  const { initiate, isLoading, clearError } = useAuth();
 const [otp, setOtp] = useState(['', '', '', '', '', '']);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [documents] = useState({
+ const [documents, setDocuments] = useState({
   cac: null as File | null,
   tax: null as File | null,
   directorId: null as File | null,
@@ -51,14 +54,23 @@ const handleOtpChange = (
     )?.focus();
   }
 };
+const handleOtpSubmit = () => {
+  const code = otp.join('');
 
+  if (code.length !== 6) {
+    return;
+  }
+
+  
+  setAccountCreated(true);
+};
 const resendOtp = () => {
   console.log('Resend OTP');
 };
 
   const {
     register,
-    handleSubmit,
+    // handleSubmit,
     watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
@@ -84,29 +96,45 @@ const progress = (uploadedCount / 4) * 100;
     }
   };
 
-  const onSubmit = async (data: RegisterFormData) => {
-    if (currentStep !== 4) return;
+  // const onSubmit = async (data: RegisterFormData) => {
+  //   if (currentStep !== 4) return;
 
-    clearError();
+  //   // clearError();
 
-    const success = await initiate({
-      company: {
-        name: data.company_name,
-        email: data.company_email || undefined,
-        business_type: data.business_type,
-        registration_number: data.registration_number,
-      },
-      account: {
-        name: data.account_name,
-        email: data.account_email,
-        password: data.password,
-      },
-    });
+  //   // const success = await initiate({
+  //   //   company: {
+  //   //     name: data.company_name,
+  //   //     email: data.company_email || undefined,
+  //   //     business_type: data.business_type,
+  //   //     registration_number: data.registration_number,
+  //   //   },
+  //   //   account: {
+  //   //     name: data.account_name,
+  //   //     email: data.account_email,
+  //   //     password: data.password,
+  //   //   },
+  //   // });
 
-    if (success) {
-      navigate('/verify');
-    }
-  };
+  //   if (success) {
+  //     navigate('/verify');
+  //   }
+  // };
+
+
+const handleFileUpload = (
+  e: React.ChangeEvent<HTMLInputElement>,
+  key: keyof typeof documents
+) => {
+  const file = e.target.files?.[0];
+
+  if (!file) return;
+
+  setDocuments((prev) => ({
+    ...prev,
+    [key]: file,
+  }));
+};
+
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -156,7 +184,7 @@ const progress = (uploadedCount / 4) * 100;
       </div>
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        // onSubmit={handleSubmit(onSubmit)}
         className="space-y-5"
       >
         {/* STEP 1 */}
@@ -351,220 +379,259 @@ const progress = (uploadedCount / 4) * 100;
 
         {/* STEP 3 */}
 
-       {currentStep === 3 && (
+      {currentStep === 3 && (
   <div className="bg-[#0D0D0D] border border-[#1D1D1D] rounded-[24px] p-6">
-    <div className="mb-6">
-      <div className="h-full bg-[#FBC02D] rounded-full"
-     style={{ width: `${progress}%` }}
-/>
-      <p className="text-xs text-gray-400">
-  {uploadedCount} of 4 documents uploaded
-</p>
 
-      <div className="w-full h-1 bg-[#1F1F1F] rounded-full mt-3">
-        <div className="h-full w-0 bg-[#FBC02D] rounded-full" />
+    {/* Progress */}
+    <div className="mb-8">
+      <p className="text-xs text-gray-400 mb-3">
+        {uploadedCount} of 4 documents uploaded
+      </p>
+
+      <div className="w-full h-1 bg-[#1F1F1F] rounded-full">
+        <div
+          className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
+          style={{
+            width: `${progress}%`,
+          }}
+        />
       </div>
     </div>
 
-    {/* CAC */}
-    <div className="border border-dashed border-[#4A4A4A] rounded-xl p-5 mb-4">
-      <h4 className="text-white text-sm font-medium">
-        CAC Certificate
-        <span className="text-[#FBC02D] ml-1">
-          required
-        </span>
-      </h4>
+    {[
+      {
+        key: 'cac',
+        title: 'CAC Certificate',
+        desc: 'Certificate of Incorporation',
+        required: true,
+      },
+      {
+        key: 'tax',
+        title: 'Tax Clearance Certificate',
+        desc: 'Current TCC from FIRS',
+        required: true,
+      },
+      {
+        key: 'directorId',
+        title: "Director's Government ID",
+        desc: "NIN Slip, Passport, Driver's License",
+        extra: 'Both sides required',
+        required: true,
+      },
+      {
+        key: 'utilityBill',
+        title: 'Utility Bill',
+        desc: 'Not older than 3 months',
+        required: false,
+      },
+    ].map((item) => {
+      const file =
+        documents[item.key as keyof typeof documents];
 
-      <p className="text-xs text-gray-400 mt-1">
-        Certificate of Incorporation
-      </p>
+      return (
+        <div
+          key={item.key}
+          className="border border-dashed border-[#4A4A4A] rounded-xl p-5 mb-4"
+        >
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h4 className="text-sm font-medium text-white">
+                {item.title}
 
-      <label className="mt-4 flex justify-center cursor-pointer">
-        <div className="w-[220px] h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
-          <p className="text-[#FBC02D] text-xs font-medium">
-            Click to upload
-          </p>
+                <span
+                  className={`ml-1 text-[10px] ${
+                    item.required
+                      ? 'text-[#FBC02D]'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  {item.required
+                    ? 'REQUIRED'
+                    : 'OPTIONAL'}
+                </span>
+              </h4>
 
-          <p className="text-gray-400 text-xs">
-            or drag and drop
-          </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {item.desc}
+              </p>
 
-          <p className="text-[10px] text-gray-500 mt-1">
-            PDF, JPG, PNG (Max 10MB)
-          </p>
+              {item.extra && (
+                <p className="text-[#FBC02D] text-xs mt-1">
+                  {item.extra}
+                </p>
+              )}
+            </div>
+
+            {file && (
+              <span className="bg-green-900/30 text-green-400 text-[10px] px-3 py-1 rounded-full">
+                Uploaded, Awaiting review
+              </span>
+            )}
+          </div>
+
+          {file ? (
+            <div className="bg-[#202020] rounded-lg p-3 flex justify-between items-center">
+              <span className="text-xs text-gray-300">
+                {file.name}
+              </span>
+
+              <label className="text-[#FBC02D] text-xs cursor-pointer">
+                Replace
+
+                <input
+                  hidden
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) =>
+                    handleFileUpload(
+                      e,
+                      item.key as keyof typeof documents
+                    )
+                  }
+                />
+              </label>
+            </div>
+          ) : (
+            <label className="flex justify-center cursor-pointer">
+              <div className="w-[220px] h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
+                <UploadCloud
+                  size={18}
+                  strokeWidth={1.5}
+                  className="text-gray-400 mb-2"
+                />
+
+                <p className="text-xs">
+                  <span className="text-[#FBC02D] font-medium">
+                    Click to upload
+                  </span>
+
+                  <span className="text-gray-400">
+                    {' '}or drag and drop
+                  </span>
+                </p>
+
+                <p className="text-[10px] text-gray-500 mt-1">
+                  PDF, JPG, PNG, Max 10MB
+                </p>
+              </div>
+
+              <input
+                hidden
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) =>
+                  handleFileUpload(
+                    e,
+                    item.key as keyof typeof documents
+                  )
+                }
+              />
+            </label>
+          )}
         </div>
-
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-        />
-      </label>
-    </div>
-
-    {/* Tax Clearance */}
-    <div className="border border-dashed border-[#4A4A4A] rounded-xl p-5 mb-4">
-      <h4 className="text-white text-sm font-medium">
-        Tax Clearance Certificate
-        <span className="text-[#FBC02D] ml-1">
-          required
-        </span>
-      </h4>
-
-      <p className="text-xs text-gray-400 mt-1">
-        Current TCC from FIRS
-      </p>
-
-      <label className="mt-4 flex justify-center cursor-pointer">
-        <div className="w-[220px] h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
-          <p className="text-[#FBC02D] text-xs font-medium">
-            Click to upload
-          </p>
-
-          <p className="text-gray-400 text-xs">
-            or drag and drop
-          </p>
-
-          <p className="text-[10px] text-gray-500 mt-1">
-            PDF, JPG, PNG (Max 10MB)
-          </p>
-        </div>
-
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-        />
-      </label>
-    </div>
-
-    {/* Directors */}
-    <div className="border border-dashed border-[#4A4A4A] rounded-xl p-5 mb-4">
-      <h4 className="text-white text-sm font-medium">
-        Director's Government ID
-        <span className="text-[#FBC02D] ml-1">
-          required
-        </span>
-      </h4>
-
-      <p className="text-xs text-gray-400 mt-1">
-        NIN slip, Passport, Driver's License
-      </p>
-
-      <p className="text-[#FBC02D] text-xs mt-1">
-        Both sides required
-      </p>
-
-      <label className="mt-4 flex justify-center cursor-pointer">
-        <div className="w-[220px] h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
-          <p className="text-[#FBC02D] text-xs font-medium">
-            Click to upload
-          </p>
-
-          <p className="text-gray-400 text-xs">
-            or drag and drop
-          </p>
-
-          <p className="text-[10px] text-gray-500 mt-1">
-            PDF, JPG, PNG (Max 10MB)
-          </p>
-        </div>
-
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-        />
-      </label>
-    </div>
-
-    {/* Utility Bill */}
-    <div className="border border-dashed border-[#4A4A4A] rounded-xl p-5">
-      <h4 className="text-white text-sm font-medium">
-        Utility Bill
-      </h4>
-
-      <p className="text-xs text-gray-400 mt-1">
-        Not older than 3 months
-      </p>
-
-      <label className="mt-4 flex justify-center cursor-pointer">
-        <div className="w-[220px] h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
-          <p className="text-[#FBC02D] text-xs font-medium">
-            Click to upload
-          </p>
-
-          <p className="text-gray-400 text-xs">
-            or drag and drop
-          </p>
-
-          <p className="text-[10px] text-gray-500 mt-1">
-            PDF, JPG, PNG (Max 10MB)
-          </p>
-        </div>
-
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-        />
-      </label>
-    </div>
+      );
+    })}
   </div>
 )}
 
  {/* STEP 4 */}
 {currentStep === 4 && (
-  <div className="flex flex-col items-center text-center py-6">
-    {/* Success Circle */}
-    <div className="w-14 h-14 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-6">
-      <span className="text-green-500 text-xl font-bold">✓</span>
-    </div>
+  <>
+    {!accountCreated ? (
+      <div className="flex flex-col items-center text-center py-6">
 
-    {/* Title */}
-    <h2 className="text-2xl font-semibold text-white">
-      OTP Verification
-    </h2>
+        {/* Success Circle */}
+       <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-6">
+  <Lock
+    size={28}
+    className="text-green-500"
+    strokeWidth={2}
+  />
+</div>
 
-    {/* Description */}
-    <p className="text-sm text-gray-400 mt-3 mb-8 max-w-md">
-      We sent a 6-digit code to
-      <br />
-      <span className="text-white">
-        {watch('account_email') || 'admin@company.com'}
-      </span>
-    </p>
+        <h2 className="text-2xl font-semibold text-white">
+          OTP Verification
+        </h2>
 
-    {/* OTP Inputs */}
-    <div className="flex justify-center gap-2 mb-5">
-      {otp.map((digit, index) => (
-        <input
-          key={index}
-          id={`otp-${index}`}
-          type="text"
-          value={digit}
-          maxLength={1}
-          onChange={(e) =>
-            handleOtpChange(e.target.value, index)
-          }
-          className="w-12 h-12 rounded-lg bg-[#111111] border border-red-500 text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D]"
-        />
-      ))}
-    </div>
+        <p className="text-sm text-gray-400 mt-3 mb-8">
+          We sent a 6-digit code to
+          <br />
 
-    {/* Resend */}
-    <button
-      type="button"
-      onClick={resendOtp}
-      className="text-xs text-gray-400 hover:text-[#FBC02D] transition"
-    >
-      Didn't receive code? Resend code
-    </button>
-  </div>
+          <span className="text-white">
+            {watch('account_email') ||
+              'admin@company.com'}
+          </span>
+        </p>
+
+        {/* OTP Inputs */}
+        <div className="flex justify-center gap-3 mb-8">
+          {otp.map((digit, index) => (
+            <input
+              key={index}
+              id={`otp-${index}`}
+              type="text"
+              value={digit}
+              maxLength={1}
+              onChange={(e) =>
+                handleOtpChange(
+                  e.target.value,
+                  index
+                )
+              }
+              className="w-12 h-12 rounded-lg bg-[#111111] border border-[#2D2D2D] text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D]"
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={resendOtp}
+          className="text-xs text-gray-400 hover:text-[#FBC02D] mb-8"
+        >
+          Didn't receive code? Resend
+        </button>
+
+        <button
+          type="button"
+          onClick={handleOtpSubmit}
+          className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold"
+        >
+          Verify Code
+        </button>
+      </div>
+    ) : (
+      <div className="flex flex-col items-center text-center py-10">
+
+        {/* Big Success Icon */}
+        <div className="w-20 h-20 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-8">
+          <span className="text-green-500 text-3xl font-bold">
+            ✓
+          </span>
+        </div>
+
+        <h2 className="text-3xl font-semibold text-white mb-4">
+          Account Created Successfully
+        </h2>
+
+        <p className="text-gray-400 mb-10">
+          Your account is waiting admin approval.
+          You will recieve an email once is active.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold"
+        >
+          Login
+        </button>
+      </div>
+    )}
+  </>
 )}
 
          {/* Buttons */}
-{currentStep < 4 ? (
+{currentStep < 4 && (
   <div className="flex gap-4 pt-4">
     {currentStep > 1 && (
       <button
@@ -585,14 +652,6 @@ const progress = (uploadedCount / 4) * 100;
       Next
     </button>
   </div>
-) : (
-  <button
-    type="submit"
-    disabled={isLoading}
-    className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold mt-6"
-  >
-    {isLoading ? 'Verifying...' : 'Submit'}
-  </button>
 )}
 
 </form>
