@@ -23,6 +23,12 @@ export interface InitiateResult {
   registration_token: string;
   account_number: string;
   slug: string;
+  /**
+   * Dev-only: the OTP echoed back by the backend when APP_ENV=development,
+   * so the frontend can autofill the verify form without depending on real
+   * email delivery. Never present in production.
+   */
+  dev_otp?: string;
 }
 
 // Complete registration
