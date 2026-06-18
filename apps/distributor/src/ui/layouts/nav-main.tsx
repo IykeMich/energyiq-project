@@ -8,6 +8,7 @@ import {
   CollapsibleTrigger,
   NotificationBadge,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -39,13 +40,20 @@ export interface NavItem {
 
 interface NavMainProps {
   items: NavItem[];
+  /** Optional uppercase section header rendered above the group (e.g. "TRADE"). */
+  label?: string;
   extraClass?: string;
   containerExtraClass?: string;
 }
 
-export function NavMain({ items, extraClass, containerExtraClass }: NavMainProps) {
+export function NavMain({ items, label, extraClass, containerExtraClass }: NavMainProps) {
   return (
     <SidebarGroup className={`h-auto ${containerExtraClass ?? ''}`}>
+      {label && (
+        <SidebarGroupLabel className="px-4 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+          {label}
+        </SidebarGroupLabel>
+      )}
       <SidebarMenu className={`space-y-0 ${extraClass ?? ''}`}>
         {items.map((item) => (
           <NavMainItem key={item.title} item={item} />

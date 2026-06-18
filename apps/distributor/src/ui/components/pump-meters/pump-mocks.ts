@@ -1,0 +1,38 @@
+export const BRANCHES = [
+  {
+    id: '1',
+    name: 'Main Depot A',
+    location: 'Trans-Ekulu, Enugu',
+    revenue: '₦38.2M',
+    dispensed: '47,820 L',
+    pumps: '3/3 active',
+    status: 'good',
+  },
+  {
+    id: '2',
+    name: 'Main Depot B',
+    location: 'Independence Layout, Enugu',
+    revenue: '₦28.2M',
+    dispensed: '37,820 L',
+    pumps: '3/3 active',
+    status: 'good',
+  },
+  {
+    id: '3',
+    name: 'Nsukka Station',
+    location: 'Nsukka, Enugu',
+    revenue: '₦21.6M',
+    dispensed: '19,620 L',
+    pumps: '2/3 active',
+    status: 'warning',
+  },
+  {
+    id: '4',
+    name: 'New Haven',
+    location: 'VI, Enugu',
+    revenue: '₦19.45M',
+    dispensed: '19,620 L',
+    pumps: '3/3 active',
+    status: 'danger',
+  },
+];

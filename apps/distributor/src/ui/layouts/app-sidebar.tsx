@@ -1,11 +1,16 @@
 import {
   LayoutDashboard,
   ShoppingCart,
-  Truck,
-  Wallet,
-  MessageSquare,
-  FileText,
+  ClipboardList,
+  Receipt,
   BarChart3,
+  Fuel,
+  Gauge,
+  Wallet,
+  TrendingUp,
+  Landmark,
+  FileText,
+  MessageSquare,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -13,6 +18,7 @@ import type { ComponentProps } from 'react';
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -26,55 +32,174 @@ import { TeamSwitcher } from './team-switcher';
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
   const { user, slug: stateSlug } = useAuth();
+
   const slug = user?.slug ?? stateSlug ?? 'demo';
 
-  const displayName = user?.name?.trim() ? user.name : 'Andrew Franklin';
-  const displayEmail = user?.email?.trim() ? user.email : 'andrewfran@gmail.com';
+  const displayName =
+    user?.name?.trim() || 'Andrew Franklin';
+
+  const displayEmail =
+    user?.email?.trim() || 'andrewfran@gmail.com';
+
   const initials = getInitials(displayName);
 
-  // Slug-prefixed routes (/:slug/…). Dashboard, Orders and Complaints are wired;
-  // the rest are scaffold links for the shell until those pages are built.
-  const navMainItems: NavItem[] = [
-    { title: 'Dashboard', url: `/${slug}/dashboard`, icon: LayoutDashboard },
-    { title: 'Orders', url: `/${slug}/orders`, icon: ShoppingCart, activePaths: [`/${slug}/orders`] },
-    { title: 'Deliveries', url: `/${slug}/deliveries`, icon: Truck },
-    { title: 'Wallet', url: `/${slug}/wallet`, icon: Wallet },
-    { title: 'Complaints', url: `/${slug}/complaints`, icon: MessageSquare },
-    { title: 'Documents', url: `/${slug}/documents`, icon: FileText },
-    { title: 'Analytics', url: `/${slug}/analytics`, icon: BarChart3 },
-    { title: 'Record Sales', url: `/${slug}/record-sales`, icon: BarChart3 },
-    { title: 'Sales', url: `/${slug}/sales-history`, icon: BarChart3 },
-    { title: 'Log Expense', url: `/${slug}/expenses`, icon: BarChart3 },
-    { title: 'Tank Monitoring', url: `/${slug}/tank-monitoring`, icon: BarChart3 },
+  // Dashboard
+  const navTopItems: NavItem[] = [
+    {
+      title: 'Dashboard',
+      url: `/${slug}/dashboard`,
+      icon: LayoutDashboard,
+    },
   ];
 
+  // TRADE
+  const navTradeItems: NavItem[] = [
+    {
+      title: 'Record Sale',
+      url: `/${slug}/record-sales`,
+      icon: Receipt,
+    },
+    {
+      title: 'Sales History',
+      url: `/${slug}/sales-history`,
+      icon: BarChart3,
+    },
+  ];
+
+  // ORDER
+  const navOrderItems: NavItem[] = [
+   
+    {
+      title: 'Orders',
+      url: `/${slug}/orders`,
+      icon: ClipboardList,
+      activePaths: [`/${slug}/orders`],
+    },
+  ];
+
+  // STATION OPS
+  const navStationOpsItems: NavItem[] = [
+    {
+      title: 'Tank Monitoring',
+      url: `/${slug}/tank-monitoring`,
+      icon: Fuel,
+    },
+    {
+      title: 'Pump & Meters',
+      url: `/${slug}/pump-meters`,
+      icon: Gauge,
+    },
+    {
+      title: 'Expenses',
+      url: `/${slug}/expenses`,
+      icon: Wallet,
+    },
+  ];
+
+  // FINANCE
+  
+
+  // COMPLIANCE
+  const navComplianceItems: NavItem[] = [
+    {
+      title: 'KYC Documents',
+      url: `/${slug}/documents`,
+      icon: FileText,
+    },
+    {
+      title: 'Complaints',
+      url: `/${slug}/complaints`,
+      icon: MessageSquare,
+      activePaths: [`/${slug}/complaints`],
+    },
+  ];
+
+  // Bottom Items
   const navSecondaryItems: NavItem[] = [
-    { title: 'Settings', url: `/${slug}/settings`, icon: Settings },
-    { title: 'Log out', url: '/logout', icon: LogOut },
+    {
+      title: 'Settings',
+      url: `/${slug}/settings`,
+      icon: Settings,
+    },
+    {
+      title: 'Log out',
+      url: '/logout',
+      icon: LogOut,
+    },
   ];
 
   return (
     <Sidebar
       collapsible="icon"
       {...props}
-      className="border border-[#27272A] border-s-0 bg-[#121212]"
+      className="border-r border-[#27272A] bg-[#121212]"
     >
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
+
       <SidebarContent className="no-scrollbar">
-        <NavMain items={navMainItems}  extraClass="pb-8 border-b border-gray-800" />
-        <NavMain items={navSecondaryItems} extraClass="pb-8" />
+
+        <NavMain
+          items={navTopItems}
+          containerExtraClass="pb-0"
+        />
+
+        <NavMain
+          label="TRADE"
+          items={navTradeItems}
+          containerExtraClass="py-0"
+        />
+
+        <NavMain
+          label="ORDER"
+          items={navOrderItems}
+          containerExtraClass="py-0"
+        />
+
+        <NavMain
+          label="STATION OPS"
+          items={navStationOpsItems}
+          containerExtraClass="py-0"
+        />
+
+      
+
+        <NavMain
+          label="COMPLIANCE"
+          items={navComplianceItems}
+          extraClass="pb-8 border-b border-[#27272A]"
+          containerExtraClass="py-0"
+        />
+
+        <NavMain
+          items={navSecondaryItems}
+          extraClass="pb-8"
+        />
       </SidebarContent>
+
       <SidebarFooter className="p-4">
         <SidebarSeparator className="mb-4" />
+
         <div className="flex items-center gap-3 px-2">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-[#FBC02D] text-[#121212]">{initials}</AvatarFallback>
+            <AvatarImage
+              src={undefined}
+              alt={displayName}
+            />
+            <AvatarFallback className="bg-[#FBC02D] text-[#121212]">
+              {initials}
+            </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col min-w-0">
-            <p className="text-sm font-medium text-white truncate">{displayName}</p>
-            <p className="text-xs text-gray-400 truncate">{displayEmail}</p>
+
+          <div className="min-w-0 flex flex-col">
+            <p className="truncate text-sm font-medium text-white">
+              {displayName}
+            </p>
+
+            <p className="truncate text-xs text-gray-400">
+              {displayEmail}
+            </p>
           </div>
         </div>
       </SidebarFooter>
