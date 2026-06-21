@@ -2,52 +2,71 @@ interface Props {
   className?: string;
 }
 
+const stats = [
+  {
+    label: 'Total Tanks:',
+    value: '4',
+    footer: '4 Products',
+    valueClass: 'text-white',
+    footerClass: 'text-[#7D7D7D]',
+  },
+  {
+    label: 'Alerts:',
+    value: '2',
+    footer: 'Needs attention',
+    valueClass: 'text-[#EF4444]',
+    footerClass: 'text-[#22C55E]',
+  },
+  {
+    label: 'Last Dip:',
+    value: 'Today',
+    footer: 'Last 7:05am',
+    valueClass: 'text-white',
+    footerClass: 'text-[#7D7D7D]',
+  },
+  {
+    label: 'Avg Days Left:',
+    value: '13',
+    footer: '',
+    valueClass: 'text-white',
+    footerClass: 'text-[#7D7D7D]',
+  },
+];
+
 export function TankStatsTracker({
-  className,
+  className = '',
 }: Props) {
   return (
     <div
-      className={`grid gap-4 md:grid-cols-4 ${className}`}
+      className={`grid grid-cols-2 gap-3 lg:grid-cols-4 ${className}`}
     >
-      <div className="rounded-[16px] bg-[#6161611A] p-5">
-        <p className="text-xs text-[#FFFFFF80]">
-          Total tanks
-        </p>
+      {stats.map((stat) => (
+        <div
+          key={stat.label}
+          className="
+            rounded-[16px]
+            bg-[#232323]
+            px-4
+            py-3
+          "
+        >
+          <p className="text-[10px] text-[#8C8C8C]">
+            {stat.label}
+          </p>
 
-        <h3 className="mt-2 text-2xl font-semibold text-white">
-          14
-        </h3>
-      </div>
+          <h3
+            className={`mt-2 text-[24px] font-semibold ${stat.valueClass}`}
+          >
+            {stat.value}
+          </h3>
 
-      <div className="rounded-[16px] bg-[#6161611A] p-5">
-        <p className="text-xs text-[#FFFFFF80]">
-          Alerts
-        </p>
-
-        <h3 className="mt-2 text-2xl font-semibold text-red-500">
-          2
-        </h3>
-      </div>
-
-      <div className="rounded-[16px] bg-[#6161611A] p-5">
-        <p className="text-xs text-[#FFFFFF80]">
-          Last Dip
-        </p>
-
-        <h3 className="mt-2 text-2xl font-semibold text-white">
-          Today
-        </h3>
-      </div>
-
-      <div className="rounded-[16px] bg-[#6161611A] p-5">
-        <p className="text-xs text-[#FFFFFF80]">
-          Avg Days Left
-        </p>
-
-        <h3 className="mt-2 text-2xl font-semibold text-white">
-          13
-        </h3>
-      </div>
+          <p
+            className={`mt-1 text-[9px] ${stat.footerClass}`}
+          >
+            {stat.footer}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

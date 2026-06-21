@@ -28,11 +28,17 @@ export function DocumentsOverview() {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="w-full px-6 py-6">
       {!selectedDocument && (
-        <DocumentManagementCard
-          onViewDocument={handleAction}
-        />
+        <>
+          <div className="mb-6">
+            
+          </div>
+
+          <DocumentManagementCard
+            onViewDocument={handleAction}
+          />
+        </>
       )}
 
       {selectedDocument && (

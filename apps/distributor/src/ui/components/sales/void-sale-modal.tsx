@@ -1,164 +1,136 @@
-import { AlertTriangle, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@energyiq/ui';
-import { useState } from 'react';
+
 import type { SaleRow } from './sales-mocks';
 
-interface VoidSaleModalProps {
+interface Props {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   sale: SaleRow | null;
-}
-
-interface InfoRowProps {
-  label: string;
-  value: React.ReactNode;
-}
-
-function InfoRow({ label, value }: InfoRowProps) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-[#FFFFFF99]">
-        {label}
-      </span>
-
-      <span className="text-sm font-medium text-white">
-        {value}
-      </span>
-    </div>
-  );
 }
 
 export function VoidSaleModal({
   open,
   onOpenChange,
   sale,
-}: VoidSaleModalProps) {
-  const [reason, setReason] = useState('');
-
+}: Props) {
   if (!sale) return null;
 
+  const handleVoid = () => {
+    console.log(
+      'Voiding sale',
+      sale.id,
+    );
+
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[480px] border-none bg-[#0B0B0B] text-white">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg">
-              Void Sale
-            </DialogTitle>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <DialogContent
+        className="
+          max-w-[520px]
+          border-none
+          bg-[#121212]
+          text-white
+        "
+      >
+        <div className="space-y-6">
+          <h2 className="text-lg font-semibold">
+            Void Sale
+          </h2>
 
-            <button
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4 text-[#FFFFFF80]" />
-            </button>
+          <div
+            className="
+              rounded-xl
+              border
+              border-[#991B1B]
+              bg-[#450A0A]
+              p-4
+              text-sm
+              text-[#FCA5A5]
+            "
+          >
+            This action cannot be
+            undone.
           </div>
-        </DialogHeader>
 
-        <div className="space-y-5">
+          <div className="rounded-xl bg-[#1A1A1A] p-4">
+            <div className="space-y-3">
+              <Row
+                label="Sales ID"
+                value={sale.id}
+              />
 
-          {/* Warning */}
-          <div className="rounded-xl bg-[#2B0B0B] p-4">
-            <div className="flex gap-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 text-[#EF4444]" />
+              <Row
+                label="Product"
+                value={sale.product}
+              />
 
-              <div>
-                <p className="text-sm font-medium text-[#EF4444]">
-                  This action cannot be undone.
-                </p>
-
-                <p className="mt-1 text-xs text-[#FFFFFF80]">
-                  This sale will be marked void and removed
-                  from reports and daily metrics.
-                </p>
-              </div>
+              <Row
+                label="Total"
+                value={`₦${sale.total.toLocaleString()}`}
+              />
             </div>
           </div>
 
-          {/* Sale Summary */}
-          <div className="rounded-[16px] bg-[#121212] p-4">
-            <InfoRow
-              label="Sales ID:"
-              value={`#${sale.id}`}
-            />
-
-            <InfoRow
-              label="Product:"
-              value={`${sale.product} • ${sale.qty}L`}
-            />
-
-            <InfoRow
-              label="Total Amount:"
-              value={`₦${sale.total.toLocaleString(
-                'en-NG',
-              )}`}
-            />
-          </div>
-
-          {/* Reason */}
-          <div>
-            <label className="mb-2 block text-sm text-[#FFFFFF99]">
-              Reason for void
-            </label>
-
-            <Select
-  value={reason}
-  onValueChange={(value) => setReason(value ?? '')}
->
-              <SelectTrigger className="border-[#2A2A2A] bg-[#121212]">
-                <SelectValue placeholder="Select reason" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="data-entry">
-                  Data Entry Error
-                </SelectItem>
-
-                <SelectItem value="duplicate">
-                  Duplicate Sale
-                </SelectItem>
-
-                <SelectItem value="customer">
-                  Customer Cancellation
-                </SelectItem>
-
-                <SelectItem value="other">
-                  Other
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Footer */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
               onClick={() =>
                 onOpenChange(false)
               }
+              className="
+                rounded-full
+                bg-[#2A2A2A]
+                px-6
+                py-2
+              "
             >
               Cancel
-            </Button>
+            </button>
 
-            <Button
-              className="flex-1 bg-[#EF4444] text-white"
+            <button
+              type="button"
+              onClick={handleVoid}
+              className="
+                rounded-full
+                bg-[#B91C1C]
+                px-6
+                py-2
+                text-white
+              "
             >
               Void Sale
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Row({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-[#A3A3A3]">
+        {label}
+      </span>
+
+      <span>{value}</span>
+    </div>
   );
 }

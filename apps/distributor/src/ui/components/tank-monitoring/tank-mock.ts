@@ -1,3 +1,4 @@
+
 export interface TankRow {
   id: string;
   name: string;
@@ -5,37 +6,46 @@ export interface TankRow {
   capacity: number;
   current: number;
   daysLeft: number;
-  status:
-    | 'Healthy'
-    | 'Low Stock'
-    | 'Critical';
+  status: string;
 }
 
 export const TANKS_MOCK: TankRow[] = [
+
+  
+
   {
     id: '1',
-    name: 'Main Depot Tank A',
-    product: 'PMS',
+    name: 'Main Depot A',
+    product: 'Premium Motor Spirit (PMS)',
     capacity: 50000,
-    current: 32000,
+    current: 40000,
     daysLeft: 8,
     status: 'Healthy',
   },
   {
     id: '2',
-    name: 'Main Depot Tank B',
-    product: 'AGO',
+    name: 'Main Depot',
+    product: 'Automotive Gas Oil (AGO)',
     capacity: 30000,
-    current: 5000,
-    daysLeft: 2,
-    status: 'Low Stock',
+    current: 24420,
+    daysLeft: 8,
+    status: 'Healthy',
   },
   {
     id: '3',
-    name: 'Victoria Island Tank C',
-    product: 'PMS',
-    capacity: 40000,
-    current: 1200,
+    name: 'Nsukka Station',
+    product: 'AGO',
+    capacity: 20000,
+    current: 10250,
+    daysLeft: 4,
+    status: 'Low Stock',
+  },
+  {
+    id: '4',
+    name: 'New Haven',
+    product: 'DPK',
+    capacity: 10000,
+    current: 2400,
     daysLeft: 1,
     status: 'Critical',
   },

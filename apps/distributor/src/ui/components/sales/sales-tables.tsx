@@ -175,10 +175,18 @@ function buildColumns(
 
 interface SalesTableProps {
   sales: SaleRow[];
+  onViewDetails: (
+    sale: SaleRow,
+  ) => void;
+  onVoidSale: (
+    sale: SaleRow,
+  ) => void;
 }
 
 export function SalesTable({
   sales,
+  onViewDetails,
+  onVoidSale,
 }: SalesTableProps) {
   const [selectedIds, setSelectedIds] =
     useState<string[]>([]);
@@ -193,28 +201,32 @@ export function SalesTable({
     );
   };
 
-  const handleViewDetails = (
-    sale: SaleRow,
-  ) => {
-    console.log('View details', sale);
-  };
+  // const handleViewDetails = (
+  //   sale: SaleRow,
+  // ) => {
+  //   console.log('View details', sale);
+  // };
 
-  const handleVoidSale = (
-    sale: SaleRow,
-  ) => {
-    console.log('Void sale', sale);
-  };
+  // const handleVoidSale = (
+  //   sale: SaleRow,
+  // ) => {
+  //   console.log('Void sale', sale);
+  // };
 
-  const columns = useMemo(
-    () =>
-      buildColumns(
-        selectedIds,
-        toggleSale,
-        handleViewDetails,
-        handleVoidSale,
-      ),
-    [selectedIds],
-  );
+ const columns = useMemo(
+  () =>
+    buildColumns(
+      selectedIds,
+      toggleSale,
+      onViewDetails,
+      onVoidSale,
+    ),
+  [
+    selectedIds,
+    onViewDetails,
+    onVoidSale,
+  ],
+);
 
   return (
     <DefaultTable

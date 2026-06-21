@@ -8,10 +8,6 @@ export interface Document {
   note?: string;
 
   type: string;
-  reviewedBy?: string;
-  approvedOn?: string;
-  validUntil?: string;
-  replacement?: string;
 
   activity: {
     title: string;
@@ -20,36 +16,43 @@ export interface Document {
   }[];
 }
 
+
+
 export const documents: Document[] = [
+  {
+    title: 'National ID / Passport',
+    file: 'passport_john_doe.pdf',
+    status: 'approved',
+    uploaded: 'Feb 12, 2026',
+    expiry: 'Feb 12, 2027',
+
+    type: 'Passport',
+
+    activity: [],
+  },
+
   {
     title: "Director's Government ID (Driver's License)",
     file: 'driver_license.pdf',
     status: 'approved',
     uploaded: 'Feb 12, 2026',
-    expiry: 'Dec 31, 2026',
+    expiry: 'Feb 12, 2027',
 
     type: "Driver's License",
-    reviewedBy: 'Chioma Okafor',
-    approvedOn: 'Feb 13, 2026 • 11:36 AM',
-    validUntil: 'Dec 31, 2026',
 
-    activity: [
-      {
-        title: 'Document uploaded',
-        description: 'driver_license.pdf',
-        date: 'Feb 12, 2026',
-      },
-      {
-        title: 'Validation passed',
-        description: 'All checks completed.',
-        date: 'Feb 13, 2026',
-      },
-      {
-        title: 'Approved',
-        description: 'Document has been approved.',
-        date: 'Feb 13, 2026',
-      },
-    ],
+    activity: [],
+  },
+
+  {
+    title: 'Certificate of Incorporation',
+    file: 'cert_incorporation.pdf',
+    status: 'approved',
+    uploaded: 'Feb 12, 2026',
+    expiry: 'Feb 13, 2027',
+
+    type: 'Certificate',
+
+    activity: [],
   },
 
   {
@@ -57,39 +60,39 @@ export const documents: Document[] = [
     file: 'tin_doc.pdf',
     status: 'rejected',
     uploaded: 'Feb 12, 2026',
-    expiry: 'Feb 12, 2027',
+    expiry: 'Feb 13, 2027',
 
-    type: 'Tax Certificate',
     note:
       'The TIN number on the document does not match the one provided during registration.',
 
-    activity: [
-      {
-        title: 'Rejected',
-        description: 'TIN number mismatch',
-        date: 'Feb 13, 2026',
-      },
-    ],
+    type: 'Tax Certificate',
+
+    activity: [],
   },
 
   {
     title: 'Utility Bill',
-    file: 'utility_bill.pdf',
+    file: 'business_license_2025.pdf',
     status: 'expiring',
     uploaded: 'Feb 12, 2026',
-    expiry: 'Apr 12, 2026',
+    expiry: 'May 12, 2026',
     optional: true,
 
     type: 'Utility Bill',
-    validUntil: 'Apr 12, 2026',
-    replacement: 'None',
 
-    activity: [
-      {
-        title: 'Expiry countdown',
-        description: '18 days remaining',
-        date: 'Today',
-      },
-    ],
+    activity: [],
+  },
+
+  {
+    title: 'Shareholder Register',
+    file: 'shareholder_register.pdf',
+    status: 'pending',
+    uploaded: 'Feb 12, 2026',
+
+    optional: true,
+
+    type: 'Register',
+
+    activity: [],
   },
 ];

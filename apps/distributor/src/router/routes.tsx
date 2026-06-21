@@ -20,6 +20,7 @@ import { ForgotPasswordPage} from '@/ui/pages/auth/forgot-password-page';
 import { CheckEmailPage } from '@/ui/pages/auth/email-page';
 import { ResetPasswordPage } from '@/ui/pages/auth/reset-page';
 import { PumpPage } from '@/ui/pages/pump-meters/pump-page';
+import { PumpBranchDetails } from '@/ui/components/pump-meters/PumpBranchDetails';
 // Authenticated routes live under tenant-slug paths (/:slug/dashboard, …).
 // Public auth routes (/login, /register, /verify) are reachable until the user
 // logs in, after which they're redirected into the dashboard.
@@ -82,6 +83,9 @@ export const router = createBrowserRouter([
               { path: '/:slug/expenses', element: <ExpensesPage /> },
                { path: '/:slug/tank-monitoring', element: <TankMonitoringPage /> },
                { path: '/:slug/pump-meters', element: < PumpPage /> },
+               { path: '/:slug/pump-meters/:id',
+                element: <PumpBranchDetails />,
+                },
 
             ],
           },

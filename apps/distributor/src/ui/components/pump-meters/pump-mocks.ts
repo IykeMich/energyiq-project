@@ -36,3 +36,36 @@ export const BRANCHES = [
     status: 'danger',
   },
 ];
+
+export const PUMPS = [
+  {
+    id: '1',
+    name: 'Pump 1 - PMS',
+    product: 'PMS',
+    totalSales: 1200000,
+    volumeSold: 18240,
+    meterReading: 152400,
+    nozzleCount: 2,
+    status: 'active',
+  },
+  {
+    id: '2',
+    name: 'Pump 1 - AGO',
+    product: 'AGO',
+    totalSales: 850000,
+    volumeSold: 12600,
+    meterReading: 106350,
+    nozzleCount: 2,
+    status: 'active',
+  },
+  {
+    id: '3',
+    name: 'Pump 2 - PMS',
+    product: 'PMS',
+    totalSales: 620000,
+    volumeSold: 9800,
+    meterReading: 77000,
+    nozzleCount: 2,
+    status: 'maintenance',
+  },
+];
