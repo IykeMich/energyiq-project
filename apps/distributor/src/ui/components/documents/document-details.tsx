@@ -2,7 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { DocumentActivity } from './document-activity';
 import { DocumentPreviewCard } from './doc-preview-card';
 import { StatusBadge } from './document-status-badge';
-import { DocumentPreview } from './document-preview'
+// import { DocumentPreview } from './document-preview'
 
 interface Props {
   document: any;

@@ -268,7 +268,7 @@ const [documents, setDocuments] = useState({
 
       {/* Stepper */}
       <div className="flex justify-between max-w-3xl mx-auto mt-10 mb-12 px-4 relative">
-        <div className="absolute top-2 left-8 right-8 h-[2px] bg-[#333]" />
+        <div className="absolute top-2 left-8 right-8 h-0.5 bg-[#333]" />
 
         {steps.map((step, index) => {
           const active = currentStep >= index + 1;

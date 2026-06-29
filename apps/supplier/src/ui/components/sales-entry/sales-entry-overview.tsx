@@ -128,7 +128,7 @@ export function SalesEntryOverview() {
         <button
           type="button"
           onClick={() => setConfigureOpen(true)}
-          className="tap-effect h-[46px] rounded-full bg-[#FBC02D] px-6 text-sm font-semibold text-[#121212]"
+          className="tap-effect `h-[46px] rounded-full bg-[#FBC02D] px-6 text-sm font-semibold text-[#121212]"
         >
           Generate Report
         </button>

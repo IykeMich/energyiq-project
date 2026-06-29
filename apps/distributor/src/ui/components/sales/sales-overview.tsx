@@ -76,7 +76,7 @@ export function SalesHistory() {
         </header>
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <SalesStatsTracker className="w-full lg:max-w-[700px]" />
+          <SalesStatsTracker className="w-full lg:max-w-175" />
 
           <div className="flex flex-wrap items-center gap-3">
             <SalesActionButton

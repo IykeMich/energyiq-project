@@ -97,7 +97,7 @@ export function LoginForm() {
               id="rememberMe"
               type="checkbox"
               {...register('rememberMe')}
-              className="peer appearance-none w-4 h-4 rounded-[4px] bg-[#FBC02D] cursor-pointer"
+              className="peer appearance-none w-4 h-4 rounded-lg bg-[#FBC02D] cursor-pointer"
             />
             {rememberMe && (
               <Check

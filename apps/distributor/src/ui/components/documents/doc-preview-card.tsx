@@ -9,7 +9,7 @@ export function DocumentPreviewCard({
 }: Props) {
   return (
     <div className="rounded-3xl border border-[#252525] bg-[#1A1A1A] p-8">
-      <div className="mx-auto flex h-[220px] max-w-[350px] flex-col items-center justify-center rounded-2xl border border-[#333] bg-[#111]">
+      <div className="mx-auto flex h-55 max-w-87.5 flex-col items-center justify-center rounded-2xl border border-[#333] bg-[#111]">
         <div className="mb-4 h-12 w-12 rounded-xl bg-[#F4B400]" />
 
         <p className="text-sm text-white">

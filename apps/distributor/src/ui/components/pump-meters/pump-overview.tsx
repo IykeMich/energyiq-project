@@ -154,7 +154,7 @@ export function PumpOverview() {
                     </span>
                   </p>
 
-                  <div className="mt-3 h-[4px] w-full rounded-full bg-[#2A2A2A]">
+                  <div className="mt-3 `h-[4px] w-full rounded-full bg-[#2A2A2A]">
                     <div
                       className={`h-full rounded-full ${progressClass} ${progressWidth}`}
                     />

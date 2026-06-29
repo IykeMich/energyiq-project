@@ -24,7 +24,7 @@ function OrdersFilterChip({ label, options }: OrderFilter) {
           <ChevronDown className="h-3.5 w-3.5 text-[#FBC02D]" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[160px]">
+      <DropdownMenuContent align="start" className="min-w-40">
         {options.map((option) => (
           <DropdownMenuItem
             key={option}

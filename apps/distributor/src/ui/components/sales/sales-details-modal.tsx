@@ -27,7 +27,7 @@ export function SaleDetailsModal({
     >
       <DialogContent
         className="
-          max-w-[480px]
+          max-w-120
           border-none
           bg-[#121212]
           text-white

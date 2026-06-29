@@ -32,7 +32,7 @@ export function BulkUploadModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[850px] border-none bg-[#0B0B0B] p-0 text-white overflow-hidden rounded-[24px]">
+      <DialogContent className="`max-w-[850px] border-none bg-[#0B0B0B] p-0 text-white overflow-hidden rounded-[24px]">
         {step === 1 && (
           <BulkUploadInitial
             onFileSelect={handleFileSelect}

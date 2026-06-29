@@ -9,7 +9,7 @@ export function DocumentSubmittedModal({
 }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="w-[520px] rounded-[32px] bg-[#080808] p-10 text-center">
+      <div className="w-130 rounded-[32px] bg-[#080808] p-10 text-center">
         <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-[#F4B400]/20">
           <CheckCircle2 className="text-[#F4B400]" />
         </div>

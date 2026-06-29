@@ -19,12 +19,12 @@ export function RecordMeterReadingModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-[9998] bg-black/80"
+        className="fixed inset-0 `z-[9998] bg-black/80"
         onClick={onClose}
       />
 
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div className="w-full max-w-[520px] rounded-[32px] bg-[#0F0F0F] p-6">
+      <div className="fixed inset-0 `z-[9999] flex items-center justify-center p-4">
+        <div className="w-full `max-w-[520px] rounded-[32px] bg-[#0F0F0F] p-6">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
             <div>

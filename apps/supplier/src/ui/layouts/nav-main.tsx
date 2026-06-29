@@ -100,7 +100,7 @@ function NavMainItem({ item }: { item: NavItem }) {
               isActive={isActivePath}
               onClick={handleParentClick}
               tooltip={item.title}
-              className={`tap-effect h-[42px]! ${state === 'expanded' ? 'ml-4' : 'ml-0'}`}
+              className={`tap-effect h-10.5! ${state === 'expanded' ? 'ml-4' : 'ml-0'}`}
             >
               {item.icon && (
                 <item.icon

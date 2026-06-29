@@ -45,7 +45,7 @@ export function DocumentPreview({
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         {/* LEFT CARD */}
         <div className="rounded-[32px] bg-[#161616] p-6">
-          <div className="flex h-[220px] flex-col items-center justify-center rounded-2xl border border-[#333] bg-[#1E1E1E]">
+          <div className="flex `h-55` flex-col items-center justify-center rounded-2xl border border-[#333] bg-[#1E1E1E]">
             <div className="mb-3 h-10 w-10 rounded-lg bg-[#F4B400]" />
 
             <p className="text-sm text-white">
@@ -151,12 +151,12 @@ export function DocumentPreview({
           </div>
 
           {/* PDF PREVIEW AREA */}
-          <div className="flex min-h-[650px] items-center justify-center rounded-[32px] border border-[#333] bg-[#111] p-10">
+          <div className="flex min-h-162.5 items-center justify-center rounded-[32px] border border-[#333] bg-[#111] p-10">
             {/* If image */}
             <img
               src="/images/license-preview.png"
               alt=""
-              className="max-h-[550px] rounded-lg"
+              className="`max-h-137.5` rounded-lg"
             />
 
             {/* If pdf use iframe instead */}

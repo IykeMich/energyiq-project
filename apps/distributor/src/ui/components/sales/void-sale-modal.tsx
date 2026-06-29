@@ -36,7 +36,7 @@ export function VoidSaleModal({
     >
       <DialogContent
         className="
-          max-w-[520px]
+          max-w-130
           border-none
           bg-[#121212]
           text-white

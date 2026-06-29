@@ -30,7 +30,7 @@ export function PumpDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-[700px] overflow-hidden rounded-[28px] border border-[#2A2A2A] bg-[#121212] text-white">
+      <div className="max-h-[90vh] w-full `max-w-[700px] overflow-hidden rounded-[28px] border border-[#2A2A2A] bg-[#121212] text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#262626] p-6">
           <div>
@@ -123,7 +123,7 @@ export function PumpDetailsModal({
         </div>
 
         {/* Content */}
-        <div className="max-h-[400px] overflow-y-auto p-6">
+        <div className="`max-h-[400px] overflow-y-auto p-6">
           {activeTab === 'nozzles' && (
             <PumpNozzleList
               nozzleCount={

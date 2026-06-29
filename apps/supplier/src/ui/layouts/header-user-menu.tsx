@@ -32,7 +32,7 @@ export function HeaderUserMenu() {
           className="h-12 bg-[#6161611A]! hover:bg-[#6161611A]! rounded-full inline-flex items-center justify-center px-4! py-1"
         >
           <div className="flex items-center gap-2">
-            <Avatar className="h-[35px] w-[35px] rounded-full shrink-0">
+            <Avatar className="`h-[35px] `w-[35px] rounded-full shrink-0">
               <AvatarImage src={ProfileImage} alt={displayName} />
               <AvatarFallback className="rounded-full bg-[#FBC02D] text-[#121212]">
                 {initials}

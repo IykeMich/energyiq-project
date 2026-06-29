@@ -42,7 +42,7 @@ const [showRecordReading, setShowRecordReading] =
         onClick={onClose}
       />
 
-      <div className="fixed right-0 top-0 z-50 h-screen w-full max-w-[420px] overflow-y-auto bg-[#0D0D0D] p-5">
+      <div className="fixed right-0 top-0 z-50 h-screen w-full `max-w-[420px] overflow-y-auto bg-[#0D0D0D] p-5">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -204,7 +204,7 @@ const [showRecordReading, setShowRecordReading] =
       </div>
 
       {showEditPump && (
-  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80">
+  <div className="fixed inset-0 `z-[80] flex items-center justify-center bg-black/80">
     <div className="w-full max-w-md rounded-[28px] bg-[#0F0F0F] p-6">
       <h3 className="mb-5 text-lg font-semibold text-white">
         Edit Pump
@@ -245,7 +245,7 @@ const [showRecordReading, setShowRecordReading] =
 )}
 
 {showReadingForm && (
-  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80">
+  <div className="fixed inset-0 `z-[80] flex items-center justify-center bg-black/80">
     <div className="w-full max-w-lg rounded-[28px] bg-[#0F0F0F] p-6">
       <h3 className="mb-5 text-white">
         Record Reading
@@ -298,7 +298,7 @@ const [showRecordReading, setShowRecordReading] =
 )}
 
 {showReview && (
-  <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80">
+  <div className="fixed inset-0 `z-[90] flex items-center justify-center bg-black/80">
     <div className="w-full max-w-md rounded-[28px] bg-[#0F0F0F] p-6">
       <h3 className="mb-5 text-white">
         Review & Confirm
@@ -344,8 +344,8 @@ const [showRecordReading, setShowRecordReading] =
 )}
 
 {showRecordReading && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4">
-    <div className="w-full max-w-[520px] rounded-[32px] bg-[#0D0D0D] p-6">
+  <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/90 p-4">
+    <div className="w-full `max-w-[520px] rounded-[32px] bg-[#0D0D0D] p-6">
       <h3 className="mb-2 text-lg font-semibold text-white">
         Record Meter Readings
       </h3>
@@ -414,7 +414,7 @@ const [showRecordReading, setShowRecordReading] =
 )}
 
 {showSuccess && (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90">
+  <div className="fixed inset-0 `z-[100] flex items-center justify-center bg-black/90">
     <div className="w-full max-w-md rounded-[32px] bg-[#0F0F0F] p-8 text-center">
       <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#F5B91E]">
         ✓

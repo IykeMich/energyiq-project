@@ -16,7 +16,7 @@ export function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-2 py-[2px] text-[9px] font-medium ${
+      className={`rounded-full px-2 py-0.5 text-[9px] font-medium ${
         styles[status as keyof typeof styles]
       }`}
     >

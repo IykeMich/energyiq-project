@@ -14,7 +14,7 @@ function StepConnector({ filledBars }: { filledBars: number }) {
         <span
           key={barIndex}
           className={cn(
-            'h-[5px] flex-1 rounded-full',
+            'h-[5px]` flex-1 rounded-full',
             barIndex < filledBars ? 'bg-[#FBC02D]' : 'bg-[#616161B2]',
           )}
         />
@@ -29,7 +29,7 @@ export function OrdersStatusTracker({ className }: { className?: string }) {
     <div className={cn('flex flex-col gap-5 rounded-[15px] bg-[#6161611A] p-5', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="h-[17px] w-1 rounded-sm bg-[#FBC02D]" />
+          <span className="h-[17px]` w-1 rounded-sm bg-[#FBC02D]" />
           <h2 className="text-sm font-semibold text-white">
             Order Status - {ORDER_TRACKER_REFERENCE}
           </h2>

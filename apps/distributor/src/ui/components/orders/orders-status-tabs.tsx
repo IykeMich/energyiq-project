@@ -27,11 +27,11 @@ export function OrdersStatusTabs({ activeLabel, onChange }: OrdersStatusTabsProp
             >
               {tab.label}
             </span>
-            <span className="flex h-[14px] min-w-[14px] items-center justify-center rounded bg-[#616161B2] px-1 text-[8px] font-semibold text-white">
+            <span className="flex h-3.5 min-w-3.5 items-center justify-center rounded bg-[#616161B2] px-1 text-[8px] font-semibold text-white">
               {tab.count}
             </span>
             {isActive && (
-              <span className="absolute -bottom-[13px] left-0 h-[3px] w-9 rounded-full bg-[#FBC02D]" />
+              <span className="absolute -bottom-3.25 left-0 h-0.75 w-9 rounded-full bg-[#FBC02D]" />
             )}
           </button>
         );

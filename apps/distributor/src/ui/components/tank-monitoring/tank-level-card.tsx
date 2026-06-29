@@ -51,9 +51,9 @@ export function TankLevelCard({
         </span>
       </div>
 
-      <div className="mt-3 h-[4px] rounded-full bg-[#2B2B2B]">
+      <div className="mt-3 h-1 rounded-full bg-[#2B2B2B]">
         <div
-          className={`h-[4px] rounded-full ${status.barColor}`}
+          className={ `h-1 rounded-full ${status.barColor}`}
           style={{
             width: `${Math.max(percent, 8)}%`,
           }}

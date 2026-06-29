@@ -44,7 +44,7 @@ export function AddTankModal({
     >
       <DialogContent
         className="
-          max-w-[460px]
+          `max-w-[460px]
           rounded-[24px]
           border-none
           bg-[#090909]

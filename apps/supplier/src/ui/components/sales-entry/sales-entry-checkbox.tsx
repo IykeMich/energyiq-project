@@ -28,7 +28,7 @@ export function SalesEntryCheckbox({
         onChange(!checked);
       }}
       className={cn(
-        'tap-effect flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors',
+        'tap-effect flex h-4 w-4 items-center justify-center rounded-lg border transition-colors',
         checked ? 'border-[#FBC02D] bg-[#FBC02D]' : 'border-[#616161B2] bg-transparent',
       )}
     >

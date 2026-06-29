@@ -20,7 +20,7 @@ export function VarianceAlertModal({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="max-w-[450px] rounded-[24px] border-none bg-[#0B0B0B] p-6 text-white">
+      <DialogContent className="`max-w-[450px] rounded-[24px] border-none bg-[#0B0B0B] p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-[#FBC02D]" />

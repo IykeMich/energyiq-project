@@ -21,7 +21,7 @@ export function AddPumpModal({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="max-w-[500px] rounded-[24px] border border-[#2A2A2A] bg-[#121212]">
+      <DialogContent className="max-w-125 rounded-[24px] border border-[#2A2A2A] bg-[#121212]">
         <DialogHeader>
           <DialogTitle className="text-white">
             Add Pump

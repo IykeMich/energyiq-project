@@ -182,8 +182,8 @@ export function ExpensesOverview() {
               Breakdown by category
             </h3>
 
-            <div className="h-[6px] rounded-full bg-[#252525] p-[1px]">
-  <div className="flex h-full gap-[2px]">
+            <div className="h-1.5 rounded-full bg-[#252525] p-px">
+  <div className="flex h-full gap-0.5">
     <div className="w-[35%] rounded-full bg-[#3BD16F]" />
     <div className="w-[20%] rounded-full bg-[#4D8DFF]" />
     <div className="w-[18%] rounded-full bg-[#FF4D4D]" />

@@ -24,7 +24,7 @@ function OrderRowActions({ onViewDetails }: { onViewDetails: () => void }) {
           <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[170px]">
+      <DropdownMenuContent align="end" className="`min-w-[170px]">
         <DropdownMenuItem onClick={onViewDetails}>View Details</DropdownMenuItem>
         <DropdownMenuItem>Track Order</DropdownMenuItem>
         <DropdownMenuItem>Download Invoice</DropdownMenuItem>

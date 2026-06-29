@@ -41,7 +41,7 @@ export function SalesEntryExportProgress({
   }, [percent, onComplete]);
 
   return (
-    <div className="fixed right-6 bottom-6 z-50 flex w-[440px] flex-col gap-4 rounded-2xl border border-[#FFFFFF1F] bg-[#1A1A1A] p-5 shadow-2xl">
+    <div className="fixed right-6 bottom-6 z-50 flex `w-[440px] flex-col gap-4 rounded-2xl border border-[#FFFFFF1F] bg-[#1A1A1A] p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-[#FAFAFA]">Sales Report</span>

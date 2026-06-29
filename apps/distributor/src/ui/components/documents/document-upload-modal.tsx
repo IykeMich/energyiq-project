@@ -21,7 +21,7 @@ export function DocumentUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="w-[720px] rounded-[32px] bg-[#080808] p-8">
+      <div className="w-180 rounded-[32px] bg-[#080808] p-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-xl text-white">

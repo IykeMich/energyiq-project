@@ -62,7 +62,7 @@ export function TankMonitoringOverview() {
 
   return (
     <section className="min-h-screen bg-[#0B0D10] p-3 text-white">
-      <div className="mx-auto max-w-[1200px]">
+      <div className="mx-auto `max-w-[1200px]">
         {/* Header */}
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -182,9 +182,9 @@ export function TankMonitoringOverview() {
                   {tank.description}
                 </p>
 
-                <div className="mb-3 h-[3px] w-full rounded-full bg-[#333]">
+                <div className="mb-3 h-0.75 w-full rounded-full bg-[#333]">
                   <div
-                    className={`h-[3px] rounded-full ${tank.progressColor}`}
+                    className={`h-0.75 rounded-full ${tank.progressColor}`}
                     style={{
                       width: `${tank.progress}%`,
                     }}

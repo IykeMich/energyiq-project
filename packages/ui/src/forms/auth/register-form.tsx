@@ -153,7 +153,7 @@ const handleFileUpload = (
       {/* Stepper */}
 
       <div className="flex justify-between items-center mb-10 relative">
-        <div className="absolute top-2.5 left-0 w-full h-[1px] bg-[#2D2D2D]" />
+        <div className="absolute top-2.5 left-0 w-full `h-[1px] bg-[#2D2D2D]" />
 
         {steps.map((step, index) => {
           const active = currentStep >= index + 1;
@@ -493,7 +493,7 @@ const handleFileUpload = (
             </div>
           ) : (
             <label className="flex justify-center cursor-pointer">
-              <div className="w-[220px] h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
+              <div className="`w-[220px] `h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
                 <UploadCloud
                   size={18}
                   strokeWidth={1.5}

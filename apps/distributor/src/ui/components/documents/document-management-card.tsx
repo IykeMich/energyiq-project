@@ -9,8 +9,7 @@ export function DocumentManagementCard({
   onViewDocument,
 }: Props) {
   return (
-    <div className="w-full"> 
-    <div className="mb-5"> <h1 className="text-[28px] font-semibold text-white">
+    <div className="w-full"> <div className="mb-5"> <h1 className="text-[28px] font-semibold text-white">
 Document Management </h1>
 
 
@@ -20,13 +19,13 @@ Document Management </h1>
   </div>
 
   <div className="relative rounded-[18px] border border-[#3A3A3A] bg-[#111111] p-4">
-    <div className="absolute -top-[9px] left-3 bg-[#111111] px-2">
+    <div className="absolute -top-2.5 left-3 bg-[#111111] px-2">
       <span className="text-[12px] font-medium text-white">
         KYC / IDENTITY
       </span>
     </div>
 
-    <div className="absolute -top-[9px] right-3 bg-[#111111] px-2">
+    <div className="absolute -top-2.25 right-3 bg-[#111111] px-2">
       <span className="text-[11px] text-[#727272]">
         {documents.length} Documents
       </span>

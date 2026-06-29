@@ -22,7 +22,7 @@ export function ReEnterReadingModal({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="max-w-[450px] rounded-[24px] border-none bg-[#0B0B0B] p-6 text-white">
+      <DialogContent className="max-w-112.5 rounded-[24px] border-none bg-[#0B0B0B] p-6 text-white">
         <h2 className="text-lg font-semibold">
           Re-enter Reading
         </h2>

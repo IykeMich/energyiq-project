@@ -28,7 +28,7 @@ export function RecentDipForm() {
             setLitres(e.target.value)
           }
           placeholder="Litres"
-          className="w-[120px] rounded-full bg-[#121212] px-4 py-3 text-white"
+          className="w-30 rounded-full bg-[#121212] px-4 py-3 text-white"
         />
 
         <button className="rounded-full bg-[#FBC02D] px-6 py-3 font-medium text-black">

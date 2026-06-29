@@ -88,7 +88,7 @@ function buildColumns(
                 w-5
                 items-center
                 justify-center
-                rounded-[4px]
+                rounded-4px
                 border
                 transition-colors
                 ${

@@ -20,7 +20,7 @@ export function DipCorrectedModal({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="max-w-[420px] rounded-[24px] border-none bg-[#0B0B0B] p-6 text-white">
+      <DialogContent className="`max-w-[420px] rounded-[24px] border-none bg-[#0B0B0B] p-6 text-white">
         <h2 className="text-lg font-semibold">
           Dip Corrected
         </h2>
