@@ -749,8 +749,7 @@ const [documents, setDocuments] = useState({
               onClick={() => {
   // STEP 2 VALIDATION
   if (currentStep === 2) {
-    const filled = otp.every((d) => d !== '');
-
+    // const filled = otp.every((d) => d !== '');
     // if (!codeSent || !filled) {
     //   return;
     // }

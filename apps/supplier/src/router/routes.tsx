@@ -31,6 +31,10 @@ import { SalesAnalyticsPage } from '@/ui/pages/analytics/sales-analytics-page';
 import { DistributorAnalyticsPage } from '@/ui/pages/analytics/distributor-analytics-page';
 import { ComplaintAnalyticsPage } from '@/ui/pages/analytics/complaint-analytics-page';
 import { TradingAnalyticsPage } from '@/ui/pages/analytics/trading-analytics-page';
+import { InventoryReportPage } from '@/ui/pages/reports/inventory-report-page';
+import { DistributorReportPage } from '@/ui/pages/reports/distributor-report-page';
+import { ComplianceReportPage } from '@/ui/pages/reports/compliance-report-page';
+import { CustomReportBuilderPage } from '@/ui/pages/reports/custom-report-builder-page';
 import { KycDocumentsPage } from '@/ui/pages/kyc-documents/kyc-documents-page';
 import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-types-page';
 import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
@@ -103,6 +107,10 @@ export const router = createBrowserRouter([
               { path: '/:slug/analytics/distributors', element: <DistributorAnalyticsPage /> },
               { path: '/:slug/analytics/complaints', element: <ComplaintAnalyticsPage /> },
               { path: '/:slug/analytics/trading', element: <TradingAnalyticsPage /> },
+              { path: '/:slug/reports/inventory', element: <InventoryReportPage /> },
+              { path: '/:slug/reports/distributors', element: <DistributorReportPage /> },
+              { path: '/:slug/reports/compliance', element: <ComplianceReportPage /> },
+              { path: '/:slug/reports/custom', element: <CustomReportBuilderPage /> },
               { path: '/:slug/kyc-documents', element: <KycDocumentsPage /> },
               { path: '/:slug/kyc-documents/review', element: <KycReviewQueuePage /> },
               { path: '/:slug/kyc-documents/types', element: <KycDocumentTypesPage /> },

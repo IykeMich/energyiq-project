@@ -79,7 +79,7 @@ export function LogExpenseModal({
       open={open}
       onOpenChange={handleClose}
     >
-      <DialogContent className="max-w-[520px] border-none bg-[#0B0B0B] p-0 text-white">
+      <DialogContent className="max-w-130 border-none bg-[#0B0B0B] p-0 text-white">
         <div className="rounded-[24px] p-6">
           {/* Header */}
           <DialogHeader>

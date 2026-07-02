@@ -14,6 +14,7 @@ import {
   ScrollText,
   MessageSquareWarning,
   BarChart3,
+  FileText,
   UserCog,
   Settings,
   LogOut,
@@ -117,6 +118,21 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
     },
   ];
 
+  const navReportsItems: NavItem[] = [
+    {
+      title: 'Reports',
+      url: `/${slug}/reports/inventory`,
+      icon: FileText,
+      activePaths: [`/${slug}/reports`],
+      items: [
+        { title: 'Inventory Report', url: `/${slug}/reports/inventory`, icon: Package },
+        { title: 'Distributor Report', url: `/${slug}/reports/distributors`, icon: Users },
+        { title: 'Compliance Report', url: `/${slug}/reports/compliance`, icon: FileCheck },
+        { title: 'Custom Report Builder', url: `/${slug}/reports/custom`, icon: FileText },
+      ],
+    },
+  ];
+
   // TODO: Team & Permissions has no page yet — link will 404 until that page lands.
   const navSecondaryItems: NavItem[] = [
     { title: 'Team & Permissions', url: `/${slug}/team-permissions`, icon: UserCog },
@@ -145,6 +161,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
           containerExtraClass="py-0"
         />
         <NavMain items={navAnalyticsItems} label="Analytics" containerExtraClass="py-0" />
+        <NavMain items={navReportsItems} label="Reports" containerExtraClass="py-0" />
         <NavMain items={navSecondaryItems} extraClass="pb-8" />
       </SidebarContent>
       <SidebarFooter className="p-4">

@@ -23,7 +23,7 @@ export function EmployeeListPage() {
     []
   );
 
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [, setIsInviteModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const columnDefs = useMemo<ColDef[]>(
