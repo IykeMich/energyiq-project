@@ -26,6 +26,11 @@ import { OrderDispatchPage } from '@/ui/pages/order/order-dispatch-page';
 import { ComplaintsPage } from '@/ui/pages/complaints/complaints-page';
 import { ComplaintDetailPage } from '@/ui/pages/complaint/complaint-detail-page';
 import { TeamPermissionsPage } from '@/ui/pages/team-permissions/team-permissions-page';
+import { SettingsPage } from '@/ui/pages/settings/settings-page';
+import { SalesAnalyticsPage } from '@/ui/pages/analytics/sales-analytics-page';
+import { DistributorAnalyticsPage } from '@/ui/pages/analytics/distributor-analytics-page';
+import { ComplaintAnalyticsPage } from '@/ui/pages/analytics/complaint-analytics-page';
+import { TradingAnalyticsPage } from '@/ui/pages/analytics/trading-analytics-page';
 import { KycDocumentsPage } from '@/ui/pages/kyc-documents/kyc-documents-page';
 import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-types-page';
 import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
@@ -93,6 +98,11 @@ export const router = createBrowserRouter([
               { path: '/:slug/complaints', element: <ComplaintsPage /> },
               { path: '/:slug/complaints/:id', element: <ComplaintDetailPage /> },
               { path: '/:slug/team-permissions', element: <TeamPermissionsPage /> },
+              { path: '/:slug/settings', element: <SettingsPage /> },
+              { path: '/:slug/analytics/sales', element: <SalesAnalyticsPage /> },
+              { path: '/:slug/analytics/distributors', element: <DistributorAnalyticsPage /> },
+              { path: '/:slug/analytics/complaints', element: <ComplaintAnalyticsPage /> },
+              { path: '/:slug/analytics/trading', element: <TradingAnalyticsPage /> },
               { path: '/:slug/kyc-documents', element: <KycDocumentsPage /> },
               { path: '/:slug/kyc-documents/review', element: <KycReviewQueuePage /> },
               { path: '/:slug/kyc-documents/types', element: <KycDocumentTypesPage /> },
