@@ -15,7 +15,7 @@
     "typecheck": "yarn workspaces run typecheck",
     "lint": "yarn workspaces run lint",
     "test": "yarn workspaces run test",
-    "generate": "orval"
+    "generate": "node scripts/patch-swagger.mjs && orval"
   },
   "resolutions": {
     "zod": "^3.25.76"

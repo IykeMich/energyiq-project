@@ -1,11 +1,8 @@
-import { AuthLayout} from '@energyiq/ui';
-import { ForgotPasswordForm} from '@/ui/pages/auth/forgot-password-form';
+import { AuthLayout, ForgotPasswordForm } from '@energyiq/ui';
 
 export function ForgotPasswordPage() {
   return (
-    <AuthLayout
-     
-    >
+    <AuthLayout>
       <ForgotPasswordForm />
     </AuthLayout>
   );

@@ -51,11 +51,6 @@ const WORKFLOW_OPTIONS: OptionDef<ApprovalWorkflowOption>[] = [
     description: 'Distributors gain immediate access to the product. No manual review required.',
   },
   {
-    value: 'manual',
-    title: 'Manual Approval',
-    description: 'Each distributor request must be reviewed and approved by your team.',
-  },
-  {
     value: 'scheduled',
     title: 'Scheduled Activation',
     description: 'Product becomes available to distributors on a specific future date.',

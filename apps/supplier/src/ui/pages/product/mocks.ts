@@ -38,103 +38,22 @@ export function formatStock(p: Product): string {
   return p.unit === 'pcs' ? `${formatted}pcs` : `${formatted}${p.unit}`;
 }
 
-// ───────── Product Details (slide-out panel) ─────────
-
-/** Full unit label shown on the "Unit Measured" line of the details panel. */
-export const UNIT_LABEL: Record<ProductUnit, string> = {
-  L: 'Litres (L)',
-  pcs: 'Pieces (pcs)',
-  Kg: 'Kilograms (Kg)',
-};
-
-export interface ProductAttribute {
-  label: string;
-  value: string;
-}
-
-export interface ProductVariant {
-  name: string;
-  priceNGN: number;
-}
-
-export interface ProductDetail {
-  /** Number of warehouses the total stock is spread across. */
-  warehouseCount: number;
-  attributes: ProductAttribute[];
-  variants: ProductVariant[];
-}
-
-// Seed attributes/variants keyed by category so each product reads differently.
-const DETAIL_SEED: Record<ProductCategory, { attributes: ProductAttribute[]; variants: ProductVariant[] }> = {
-  Fuel: {
-    attributes: [
-      { label: 'Viscosity', value: '20W50' },
-      { label: 'Size', value: '1L' },
-      { label: 'Grade', value: 'Premium' },
-    ],
-    variants: [
-      { name: '1L Bottle', priceNGN: 700 },
-      { name: '4L Gallon', priceNGN: 2_400 },
-    ],
-  },
-  Lubricant: {
-    attributes: [
-      { label: 'Viscosity', value: '5W30' },
-      { label: 'Size', value: '5L' },
-      { label: 'Grade', value: 'Synthetic' },
-    ],
-    variants: [
-      { name: '1L Bottle', priceNGN: 1_200 },
-      { name: '5L Drum', priceNGN: 5_500 },
-    ],
-  },
-  'Spare Parts': {
-    attributes: [
-      { label: 'Material', value: 'Steel' },
-      { label: 'Fit', value: 'Universal' },
-      { label: 'Grade', value: 'OEM' },
-    ],
-    variants: [
-      { name: 'Single Unit', priceNGN: 1_500 },
-      { name: 'Pack of 10', priceNGN: 13_500 },
-    ],
-  },
-  Additive: {
-    attributes: [
-      { label: 'Concentration', value: 'High' },
-      { label: 'Size', value: '1L' },
-      { label: 'Grade', value: 'Industrial' },
-    ],
-    variants: [
-      { name: '1L Bottle', priceNGN: 2_200 },
-      { name: '5L Drum', priceNGN: 9_800 },
-    ],
-  },
-};
-
-// TODO(orval): replace with getProductDetail(product.id)
-export function buildProductDetail(product: Product): ProductDetail {
-  const seed = DETAIL_SEED[product.category];
-  return {
-    // Spread total stock across warehouses (~6,000 units each), clamped to 1–4.
-    warehouseCount: Math.min(4, Math.max(1, Math.ceil(product.totalStock / 6_000))),
-    attributes: seed.attributes,
-    variants: seed.variants,
-  };
-}
-
 // ───────── New Product (wizard) ─────────
 
-// TODO(orval): these dropdown option lists come from reference/lookup endpoints
-// (categories, units, packaging, tax types). Replace with the generated queries.
-export const CATEGORY_OPTIONS = ['Fuel', 'Lubricant', 'Spare Parts', 'Additive'] as const;
+// Category and unit options now come from the live category/unit endpoints
+// (see product-basic-info-tab.tsx). The lists below have no backend-provided
+// lookup endpoint — product_type/price_type are fixed enums on the API, and
+// packaging_type/tax_type/pricing-tier labels are freeform strings with no
+// reference endpoint, so these stay as UI-suggested option lists.
 export const TYPE_OPTIONS = ['Single Product', 'Product with Variant'] as const;
-export const UNIT_OPTIONS = ['Liters (L)', 'Pieces (pcs)', 'Kilograms (Kg)'] as const;
 export const PACKAGING_OPTIONS = ['Bulk Tanker', 'Drums', '20L Kegs', 'Pallets'] as const;
 export const PRICE_TYPE_OPTIONS = ['Fixed', 'Tiered', 'Cost-Plus'] as const;
 export const CURRENCY_OPTIONS = ['NGN', 'USD'] as const;
 export const PRICING_TIER_OPTIONS = ['Bronze', 'Silver', 'Gold'] as const;
-export const TAX_TYPE_OPTIONS = ['VAT', 'Withholding Tax', 'Custom Duty'] as const;
+// Only VAT/GST/SalesTax map to the backend tax_type enum; the other labels
+// are still offered in the UI but fall back to 'None' when submitted (see
+// add-product-page.tsx's toUpsertRequest).
+export const TAX_TYPE_OPTIONS = ['VAT', 'GST', 'SalesTax', 'Withholding Tax', 'Custom Duty'] as const;
 export const WAREHOUSE_OPTIONS = [
   { id: 'wh-lagos-main', name: 'Lagos Main Depot', availableStockL: 240_000 },
   { id: 'wh-lekki', name: 'Lekki Tank Farm', availableStockL: 180_000 },
@@ -163,7 +82,8 @@ export const WAREHOUSES_FOR_ASSIGN: WarehouseAssignTarget[] = [
 export const COMPLIANCE_OFFICERS = ['Joshua Obi', 'Amaka Eze', 'Tunde Bakare', 'Sarah Adeleke'] as const;
 
 export type VisibilityOption = 'all' | 'tier' | 'selected';
-export type ApprovalWorkflowOption = 'auto' | 'manual' | 'scheduled';
+// Only these two map to the backend's approval_workflow enum ('auto-approve' | 'scheduled').
+export type ApprovalWorkflowOption = 'auto' | 'scheduled';
 export type AutomationOption = 'publish-now' | 'schedule' | 'save-draft' | 'submit-review';
 
 export interface WarehouseAllocationDraft {
@@ -241,7 +161,6 @@ const VISIBILITY_LABEL: Record<VisibilityOption, string> = {
 
 const APPROVAL_LABEL: Record<ApprovalWorkflowOption, string> = {
   auto: 'Auto-Approve',
-  manual: 'Manual Approval',
   scheduled: 'Scheduled Activation',
 };
 
@@ -279,10 +198,12 @@ export interface ReviewSummary {
 }
 
 /**
- * Build the read-model shown on the Review & Activation step. Most rows are derived from the
- * draft; the few fields the wizard does not capture fall back to mock/derived values above.
+ * Build the read-model shown on the Review & Activation step. This runs BEFORE
+ * submission (previewing what create/update will send), so it's necessarily a
+ * local projection of the draft rather than a server query — see
+ * add-product-page.tsx's toUpsertRequest for the payload actually sent.
+ * step-review.tsx overrides the category/unit fields with live-resolved names.
  */
-// TODO(orval): replace with the generated product-review query once the create endpoint lands.
 export function buildReviewSummary(draft: NewProductDraft): ReviewSummary {
   const name = draft.name || 'Untitled product';
   const currencySymbol = CURRENCY_SYMBOL[draft.currency] ?? '';
@@ -422,61 +343,12 @@ export function buildScheduledDetails(date: string, time: string): ReviewRow[] {
   ];
 }
 
-/**
- * Mocked product publish/activation call used to drive the loading state.
- * Resolves after a short delay so the UI can show a spinner before the success modal.
- */
-// TODO(orval): replace with the generated create/publish-product mutation.
-export function mockProductAction(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 1_200));
-}
-
-// ───────── Categories ─────────
-
-export interface ProductCategoryRow {
-  id: string;
-  name: string;
-  description: string;
-  numberOfProducts: number;
-  status: 'active' | 'inactive';
-}
-
-export const CATEGORIES_DATA: ProductCategoryRow[] = [
-  { id: 'cat-fuel',      name: 'Fuel',        description: 'Fuel-based products',     numberOfProducts: 3, status: 'active' },
-  { id: 'cat-lubricant', name: 'Lubricant',   description: 'Engine oils & additives', numberOfProducts: 1, status: 'active' },
-  { id: 'cat-spare',     name: 'Spare Parts', description: 'Non-liquid items',        numberOfProducts: 1, status: 'active' },
-  { id: 'cat-additive',  name: 'Additive',    description: 'Non-liquid items',        numberOfProducts: 1, status: 'active' },
-  { id: 'cat-chemical',  name: 'Chemicals',   description: 'Non-liquid items',        numberOfProducts: 1, status: 'active' },
-];
-
-export function emptyCategory(): Omit<ProductCategoryRow, 'id'> {
-  return { name: '', description: '', numberOfProducts: 0, status: 'active' };
-}
-
 // ───────── Units of Measure ─────────
-
-export interface ProductUnitRow {
-  id: string;
-  name: string;
-  description: string;
-  type: 'Volume' | 'Count' | 'Weight';
-  shortCode: string;
-}
-
-export const UNITS_DATA: ProductUnitRow[] = [
-  { id: 'unit-litre',   name: 'Litre',       description: 'Used for fuel & chemicals', type: 'Volume', shortCode: 'L' },
-  { id: 'unit-pieces',  name: 'Pieces',      description: 'Physical components',       type: 'Count',  shortCode: 'pcs' },
-  { id: 'unit-kg',      name: 'Kilogram',    description: 'Powders & solids',          type: 'Weight', shortCode: 'kg' },
-  { id: 'unit-pack',    name: 'Pack',        description: 'Packaged goods',            type: 'Count',  shortCode: 'pcks' },
-  { id: 'unit-ml',      name: 'Milliliters', description: 'Non-liquid items',          type: 'Volume', shortCode: 'ml' },
-  { id: 'unit-barrel',  name: 'Barrels',     description: 'Non-liquid items',          type: 'Volume', shortCode: 'bbl' },
-];
+// NOTE: category/unit *rows* now come from the real API (see
+// hooks/use-product-categories.ts, hooks/use-product-units.ts). This list of
+// type option labels is UI-only (no lookup endpoint for unit "type" exists).
 
 export const UNIT_TYPE_OPTIONS = ['Volume', 'Count', 'Weight'] as const;
-
-export function emptyUnit(): Omit<ProductUnitRow, 'id'> {
-  return { name: '', description: '', type: 'Volume', shortCode: '' };
-}
 
 // ───────── New Product Draft ─────────
 

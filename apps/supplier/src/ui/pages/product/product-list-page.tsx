@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog, DataGrid, type ColDef } from '@energyiq/ui';
-import { PRODUCTS_MOCK, formatStock, type Product } from './mocks';
+import type { product } from '@energyiq/domain';
+import { useProductsQuery, useDeleteProductMutation } from '@/hooks/use-products';
 import { ProductStatusBadge } from '@/ui/components/product/product-status-badge';
 import { ProductFilterBar } from '@/ui/components/product/product-filter-bar';
 import { ProductActionsCell } from '@/ui/components/product/product-actions-cell';
@@ -13,12 +14,17 @@ const NGN = new Intl.NumberFormat('en-NG');
 export function ProductListPage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
-  const [products, setProducts] = useState<Product[]>(PRODUCTS_MOCK);
+  const [pendingDelete, setPendingDelete] = useState<product.Product | null>(null);
   const [assignWarehouseOpen, setAssignWarehouseOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<product.Product | null>(null);
 
-  const columnDefs = useMemo<ColDef<Product>[]>(
+  const productsQuery = useProductsQuery();
+  const deleteProduct = useDeleteProductMutation();
+
+  const products = productsQuery.data?.items ?? [];
+  const isEmpty = productsQuery.isSuccess && products.length === 0;
+
+  const columnDefs = useMemo<ColDef<product.Product>[]>(
     () => [
       {
         headerCheckboxSelection: true,
@@ -31,27 +37,23 @@ export function ProductListPage() {
       },
       { field: 'name', headerName: 'Product', minWidth: 160 },
       { field: 'sku', headerName: 'SKU', width: 120, flex: 0 },
-      { field: 'category', headerName: 'Category', width: 140, flex: 0 },
       { field: 'unit', headerName: 'Unit', width: 80, flex: 0 },
       {
-        headerName: 'Total Stock',
-        width: 130,
-        flex: 0,
-        valueGetter: (p) => (p.data ? formatStock(p.data) : ''),
-      },
-      {
-        field: 'defaultPriceNGN',
         headerName: 'Default Price',
         width: 140,
         flex: 0,
-        valueFormatter: (p) => (typeof p.value === 'number' ? `₦${NGN.format(p.value)}` : ''),
+        valueGetter: (p) => {
+          const value = Number(p.data?.base_price ?? 0);
+          const symbol = p.data?.currency === 'USD' ? '$' : '₦';
+          return `${symbol}${NGN.format(value)}`;
+        },
       },
       {
         field: 'status',
         headerName: 'Status',
         width: 130,
         flex: 0,
-        cellRenderer: (p: { value: Product['status'] }) => <ProductStatusBadge value={p.value} />,
+        cellRenderer: (p: { value?: string }) => <ProductStatusBadge value={p.value ?? 'draft'} />,
       },
       {
         headerName: 'Action',
@@ -59,7 +61,7 @@ export function ProductListPage() {
         flex: 0,
         sortable: false,
         filter: false,
-        cellRenderer: (p: { data: Product }) => (
+        cellRenderer: (p: { data: product.Product }) => (
           <ProductActionsCell
             product={p.data}
             onEdit={(prod) => navigate(`/${slug}/products/${prod.id}/edit`)}
@@ -72,9 +74,8 @@ export function ProductListPage() {
   );
 
   const handleDeleteConfirmed = () => {
-    if (!pendingDelete) return;
-    setProducts((prev) => prev.filter((p) => p.id !== pendingDelete.id));
-    setPendingDelete(null);
+    if (!pendingDelete?.id) return;
+    deleteProduct.mutate(pendingDelete.id, { onSuccess: () => setPendingDelete(null) });
   };
 
   return (
@@ -85,14 +86,14 @@ export function ProductListPage() {
           <button
             type="button"
             onClick={() => setAssignWarehouseOpen(true)}
-            className="h-[46px] px-6 rounded-full border border-brand text-brand font-semibold text-sm"
+            className="tap-effect h-[46px] px-6 rounded-full border border-brand text-brand font-semibold text-sm hover:bg-brand/10"
           >
             Assign to Warehouse
           </button>
           <button
             type="button"
             onClick={() => navigate(`/${slug}/products/new`)}
-            className="h-[46px] px-6 rounded-full bg-brand text-brand-foreground font-semibold text-sm"
+            className="tap-effect h-[46px] px-6 rounded-full bg-brand text-brand-foreground font-semibold text-sm hover:opacity-90"
           >
             Add New Product
           </button>
@@ -101,20 +102,33 @@ export function ProductListPage() {
 
       <ProductFilterBar />
 
-      <DataGrid<Product>
-        rowData={products}
-        columnDefs={columnDefs}
-        rowSelection="multiple"
-        rowHeight={56}
-        suppressRowClickSelection
-        onRowClicked={(event) => setSelectedProduct(event.data ?? null)}
-        className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
-      />
+      {productsQuery.isError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          Couldn't load products. Please try again.
+        </div>
+      )}
+
+      {isEmpty ? (
+        <div className="flex h-[300px] items-center justify-center rounded-[18px] bg-surface-card text-muted-foreground">
+          No products yet. Add your first one to get started.
+        </div>
+      ) : (
+        <DataGrid<product.Product>
+          rowData={products}
+          columnDefs={columnDefs}
+          rowSelection="multiple"
+          rowHeight={56}
+          loading={productsQuery.isLoading}
+          suppressRowClickSelection
+          onRowClicked={(event) => setSelectedProduct(event.data ?? null)}
+          className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
+        />
+      )}
 
       <ProductDetailsSheet
         product={selectedProduct}
         onOpenChange={(open) => !open && setSelectedProduct(null)}
-        onEdit={(product) => navigate(`/${slug}/products/${product.id}/edit`)}
+        onEdit={(prod) => navigate(`/${slug}/products/${prod.id}/edit`)}
       />
 
       <AssignWarehouseWizardModal

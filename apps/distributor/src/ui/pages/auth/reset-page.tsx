@@ -1,12 +1,9 @@
-import { AuthLayout} from '@energyiq/ui';
-import { ResetPassword} from '@/ui/pages/auth/reset-password-page';
+import { AuthLayout, ResetPasswordForm } from '@energyiq/ui';
 
 export function ResetPasswordPage() {
   return (
-    <AuthLayout
-     
-    >
-      <ResetPassword/>
+    <AuthLayout>
+      <ResetPasswordForm />
     </AuthLayout>
   );
 }

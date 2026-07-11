@@ -97,3 +97,121 @@ export interface AuthState {
   loginType: LoginType | null;
   isAuthenticated: boolean;
 }
+
+// MFA
+export interface VerifyMfaRequest {
+  code: string;
+}
+
+// OTP resend (shared shape for both supplier and distributor registration flows)
+export interface ResendOtpResult {
+  dev_otp?: string;
+}
+
+// Password reset
+export interface ResetPasswordConfirmRequest {
+  token: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+// Onboarding documents (shared shape for both supplier and distributor registration flows)
+export interface OnboardingDocumentRequest {
+  registration_token: string;
+  document_type: string;
+  file_name: string;
+  file_size: number;
+  file_url: string;
+  mime_type: string;
+}
+
+export interface OnboardingDocument {
+  id?: string;
+  document_type?: string;
+  file_name?: string;
+  file_size?: number;
+  file_url?: string;
+  mime_type?: string;
+  status?: string;
+  distributor_id?: string;
+  created_at?: number | string;
+  updated_at?: number | string;
+}
+
+// Distributor invitations (supplier side)
+export interface CreateInvitationRequest {
+  email: string;
+  name: string;
+  phone?: string;
+}
+
+export interface Invitation {
+  id?: string;
+  email?: string;
+  name?: string;
+  phone?: string;
+  status?: string;
+  token?: string;
+  registration_url?: string;
+  expires_at?: string;
+  accepted_at?: string;
+  created_at?: string;
+  supplier_id?: string;
+  supplier_name?: string;
+}
+
+export interface ListInvitationsParams {
+  limit?: number;
+  offset?: number;
+}
+
+// Distributor public onboarding
+export interface Distributor {
+  id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  tax_id?: string;
+  tier?: string;
+  status?: string;
+  kyc_status?: string;
+  risk_score?: number;
+  supplier_id?: string;
+  owner_user_id?: string;
+  owner_name?: string;
+  owner_phone?: string;
+  owner_email_verified?: boolean;
+  address?: Record<string, unknown>;
+  activated_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DistributorRegisterRequest {
+  full_name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirm_password: string;
+  invitation_token: string;
+}
+
+export interface DistributorRegisterResult {
+  registration_token?: string;
+  distributor?: Distributor;
+  dev_otp?: string;
+}
+
+export interface DistributorVerifyOtpRequest {
+  registration_token: string;
+  otp_code: string;
+}
+
+export interface DistributorBusinessProfileRequest {
+  registration_token: string;
+  business_name: string;
+  address: Record<string, unknown>;
+  phone?: string;
+  tax_id?: string;
+  meta?: Record<string, unknown>;
+}

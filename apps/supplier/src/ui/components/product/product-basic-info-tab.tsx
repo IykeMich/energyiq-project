@@ -1,11 +1,11 @@
 import {
-  CATEGORY_OPTIONS,
   PACKAGING_OPTIONS,
   TYPE_OPTIONS,
-  UNIT_OPTIONS,
   type NewProductDraft,
   type ProductVariantDraft,
 } from '@/ui/pages/product/mocks';
+import { useProductCategoriesQuery } from '@/hooks/use-product-categories';
+import { useProductUnitsQuery } from '@/hooks/use-product-units';
 import { Field, SelectField, TextAreaField, TextField } from './wizard-fields';
 import { ProductVariantEditor } from './product-variant-editor';
 
@@ -16,6 +16,17 @@ interface ProductBasicInfoTabProps {
 
 export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProps) {
   const showVariants = draft.type === 'Product with Variant';
+
+  const categoriesQuery = useProductCategoriesQuery({ status: 'active' });
+  const unitsQuery = useProductUnitsQuery({ status: 'active' });
+
+  const categoryOptions = (categoriesQuery.data ?? [])
+    .filter((category) => category.id && category.name)
+    .map((category) => ({ value: category.id as string, label: category.name as string }));
+
+  const unitOptions = (unitsQuery.data ?? [])
+    .filter((unit) => unit.short_code && unit.unit_name)
+    .map((unit) => ({ value: unit.short_code as string, label: `${unit.unit_name} (${unit.short_code})` }));
 
   const addVariant = () =>
     onChange({
@@ -52,7 +63,7 @@ export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProp
             value={draft.category}
             onChange={(value) => onChange({ category: value })}
             placeholder="Select category"
-            options={CATEGORY_OPTIONS}
+            options={categoryOptions}
           />
         </Field>
         <Field label="Product Type:">
@@ -68,7 +79,7 @@ export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProp
             value={draft.measuringUnit}
             onChange={(value) => onChange({ measuringUnit: value })}
             placeholder="Select unit"
-            options={UNIT_OPTIONS}
+            options={unitOptions}
           />
         </Field>
         <Field label="Packaging Type:">

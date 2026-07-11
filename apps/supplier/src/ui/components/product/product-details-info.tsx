@@ -1,5 +1,4 @@
-import type { Product, ProductDetail } from '@/ui/pages/product/mocks';
-import { UNIT_LABEL, formatStock } from '@/ui/pages/product/mocks';
+import type { product as productDomain } from '@energyiq/domain';
 
 const NGN = new Intl.NumberFormat('en-NG');
 
@@ -20,22 +19,26 @@ function InfoBox({ label, value, className }: InfoBoxProps) {
 }
 
 interface ProductDetailsInfoProps {
-  product: Product;
-  detail: ProductDetail;
+  product: productDomain.Product;
 }
 
-/** "Product Info" section: default price, unit measured, and total stock across warehouses. */
-export function ProductDetailsInfo({ product, detail }: ProductDetailsInfoProps) {
-  const warehouseLabel = `${detail.warehouseCount} Warehouse${detail.warehouseCount === 1 ? '' : 's'}`;
+/** "Product Info" section: default price, unit measured, and warehouses the product is assigned to. */
+export function ProductDetailsInfo({ product }: ProductDetailsInfoProps) {
+  const warehouseCount = product.warehouse_ids?.length ?? 0;
+  const warehouseLabel = `${warehouseCount} Warehouse${warehouseCount === 1 ? '' : 's'}`;
+  const price = Number(product.base_price ?? 0);
 
   return (
     <section className="flex flex-col gap-3">
       <p className="text-sm text-[#FFFFFFCC]">Product Info:</p>
       <div className="grid grid-cols-2 gap-3">
-        <InfoBox label="Default Price:" value={`₦${NGN.format(product.defaultPriceNGN)}`} />
-        <InfoBox label="Unit Measured:" value={UNIT_LABEL[product.unit]} />
+        <InfoBox
+          label="Default Price:"
+          value={`${product.currency === 'USD' ? '$' : '₦'}${NGN.format(price)}`}
+        />
+        <InfoBox label="Unit Measured:" value={product.unit ?? '—'} />
       </div>
-      <InfoBox label="Total Stock:" value={`${formatStock(product)} in ${warehouseLabel}`} />
+      <InfoBox label="Assigned To:" value={warehouseLabel} />
     </section>
   );
 }

@@ -2,10 +2,10 @@ import { defineConfig } from 'orval';
 
 // One Orval generation feeds both apps via the @energyiq/api package.
 // Run `yarn generate` from the repo root after the backend regenerates
-// docs/swagger.json.
+// energyiq-swagger.json.
 export default defineConfig({
   energyiq: {
-    input: '../energyiq-api/docs/swagger.json',
+    input: './.orval-input/energyiq-swagger.json',
     output: {
       mode: 'tags-split',
       target: './packages/api/src/generated',
@@ -19,8 +19,6 @@ export default defineConfig({
         },
         query: {
           useQuery: true,
-          useInfinite: true,
-          useInfiniteQueryParam: 'offset',
         },
       },
     },

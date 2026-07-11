@@ -7,7 +7,18 @@ import type {
   LoginRequest,
   LoginResult,
   AuthState,
-  AuthUser,
+  ResendOtpResult,
+  ResetPasswordConfirmRequest,
+  OnboardingDocumentRequest,
+  OnboardingDocument,
+  CreateInvitationRequest,
+  Invitation,
+  ListInvitationsParams,
+  Distributor,
+  DistributorRegisterRequest,
+  DistributorRegisterResult,
+  DistributorVerifyOtpRequest,
+  DistributorBusinessProfileRequest,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════
@@ -77,20 +88,20 @@ export class AuthUseCases {
     }
   }
 
-  // ── Temp Demo Session ───────────────────────────────────────
-  // TEMP: persists a fake demo session so the login-bypass survives page
-  // refreshes (getState() reads these back on hydrate). Remove alongside
-  // tempBypassLogin once the real auth endpoint lands.
-  setDemoSession(user: AuthUser): void {
-    this.tokens.setTokens('demo-access-token', 'demo-refresh-token');
-    this.user.setUser(user);
-  }
-
   // ── Logout ──────────────────────────────────────────────────
 
   logout(): void {
     this.tokens.clearTokens();
     this.user.clearUser();
+  }
+
+  // Revokes the refresh token server-side. Not called anywhere yet — no
+  // logout UI exists. Kept separate from the synchronous logout() above so
+  // adding it later doesn't need to make the Redux logout reducer async.
+  async logoutRemote(): Promise<void> {
+    const refreshToken = this.tokens.getRefreshToken();
+    if (!refreshToken) return;
+    await this.api.logout(refreshToken);
   }
 
   // ── Auth State ──────────────────────────────────────────────
@@ -117,5 +128,97 @@ export class AuthUseCases {
 
   async resetPassword(email: string): Promise<void> {
     return this.api.resetPassword(email);
+  }
+
+  async resetPasswordVerify(token: string): Promise<void> {
+    return this.api.resetPasswordVerify(token);
+  }
+
+  async resetPasswordConfirm(req: ResetPasswordConfirmRequest): Promise<void> {
+    return this.api.resetPasswordConfirm(req);
+  }
+
+  async resetPasswordResend(email: string): Promise<void> {
+    return this.api.resetPasswordResend(email);
+  }
+
+  // ── MFA (no UI yet — added for port completeness) ──────────
+
+  async enableMfa(): Promise<void> {
+    return this.api.enableMfa();
+  }
+
+  async verifyMfa(code: string): Promise<void> {
+    return this.api.verifyMfa(code);
+  }
+
+  // ── Supplier registration follow-ups ────────────────────────
+
+  async resendOtp(registrationToken: string): Promise<ResendOtpResult> {
+    return this.api.resendOtp(registrationToken);
+  }
+
+  async createOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument> {
+    return this.api.createOnboardingDocument(req);
+  }
+
+  async listOnboardingDocuments(registrationToken: string): Promise<OnboardingDocument[]> {
+    return this.api.listOnboardingDocuments(registrationToken);
+  }
+
+  async deleteOnboardingDocument(id: string, registrationToken: string): Promise<void> {
+    return this.api.deleteOnboardingDocument(id, registrationToken);
+  }
+
+  // ── Distributor invitations (supplier side) ─────────────────
+
+  async createInvitation(req: CreateInvitationRequest): Promise<Invitation> {
+    return this.api.createInvitation(req);
+  }
+
+  async listInvitations(params?: ListInvitationsParams): Promise<Invitation[]> {
+    return this.api.listInvitations(params);
+  }
+
+  async revokeInvitation(id: string): Promise<void> {
+    return this.api.revokeInvitation(id);
+  }
+
+  async verifyInvitation(token: string): Promise<Invitation> {
+    return this.api.verifyInvitation(token);
+  }
+
+  // ── Distributor public onboarding ───────────────────────────
+
+  async distributorRegister(req: DistributorRegisterRequest): Promise<DistributorRegisterResult> {
+    return this.api.distributorRegister(req);
+  }
+
+  async distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<void> {
+    return this.api.distributorVerifyOtp(req);
+  }
+
+  async distributorResendOtp(registrationToken: string): Promise<ResendOtpResult> {
+    return this.api.distributorResendOtp(registrationToken);
+  }
+
+  async saveDistributorBusinessProfile(req: DistributorBusinessProfileRequest): Promise<Distributor> {
+    return this.api.saveDistributorBusinessProfile(req);
+  }
+
+  async activateDistributor(registrationToken: string): Promise<Distributor> {
+    return this.api.activateDistributor(registrationToken);
+  }
+
+  async createDistributorOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument> {
+    return this.api.createDistributorOnboardingDocument(req);
+  }
+
+  async listDistributorOnboardingDocuments(registrationToken: string): Promise<OnboardingDocument[]> {
+    return this.api.listDistributorOnboardingDocuments(registrationToken);
+  }
+
+  async deleteDistributorOnboardingDocument(id: string, registrationToken: string): Promise<void> {
+    return this.api.deleteDistributorOnboardingDocument(id, registrationToken);
   }
 }

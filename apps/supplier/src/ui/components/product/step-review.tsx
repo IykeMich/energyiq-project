@@ -7,6 +7,8 @@ import {
   type ReviewChecklistItem,
   type ReviewRow,
 } from '@/ui/pages/product/mocks';
+import { useProductCategoriesQuery } from '@/hooks/use-product-categories';
+import { useProductUnitsQuery } from '@/hooks/use-product-units';
 
 interface StepReviewProps {
   draft: NewProductDraft;
@@ -43,7 +45,30 @@ const AUTOMATION_OPTIONS: AutomationDef[] = [
 ];
 
 export function StepReview({ draft, onChange }: StepReviewProps) {
-  const summary = buildReviewSummary(draft);
+  const categoriesQuery = useProductCategoriesQuery();
+  const unitsQuery = useProductUnitsQuery();
+
+  const categoryName =
+    categoriesQuery.data?.find((category) => category.id === draft.category)?.name ?? draft.category;
+  const unitLabel =
+    unitsQuery.data?.find((unit) => unit.short_code === draft.measuringUnit)?.unit_name ??
+    draft.measuringUnit;
+
+  // draft.category/measuringUnit hold real IDs (category_id, unit short_code) once
+  // selected from the live dropdowns — resolve them back to display names here since
+  // buildReviewSummary only has the raw draft to work with.
+  const baseSummary = buildReviewSummary(draft);
+  const summary = {
+    ...baseSummary,
+    snapshot: { ...baseSummary.snapshot, category: categoryName || '—', unit: unitLabel || '—' },
+    product: baseSummary.product.map((row) =>
+      row.label === 'Category'
+        ? { ...row, value: categoryName || '—' }
+        : row.label === 'Measurement Unit'
+          ? { ...row, value: unitLabel || '—' }
+          : row,
+    ),
+  };
 
   return (
     <div className="flex flex-col gap-6">

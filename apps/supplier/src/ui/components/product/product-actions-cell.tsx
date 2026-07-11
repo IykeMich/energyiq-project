@@ -1,10 +1,10 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import type { Product } from '@/ui/pages/product/mocks';
+import type { product as productDomain } from '@energyiq/domain';
 
 interface ProductActionsCellProps {
-  product: Product;
-  onEdit?: (product: Product) => void;
-  onDelete?: (product: Product) => void;
+  product: productDomain.Product;
+  onEdit?: (product: productDomain.Product) => void;
+  onDelete?: (product: productDomain.Product) => void;
 }
 
 export function ProductActionsCell({ product, onEdit, onDelete }: ProductActionsCellProps) {
@@ -17,7 +17,7 @@ export function ProductActionsCell({ product, onEdit, onDelete }: ProductActions
           onEdit?.(product);
         }}
         aria-label={`Edit ${product.name}`}
-        className="text-brand hover:opacity-80"
+        className="tap-effect text-brand hover:opacity-80"
       >
         <Pencil className="w-4 h-4" />
       </button>
@@ -28,7 +28,7 @@ export function ProductActionsCell({ product, onEdit, onDelete }: ProductActions
           onDelete?.(product);
         }}
         aria-label={`Delete ${product.name}`}
-        className="text-danger hover:opacity-80"
+        className="tap-effect text-danger hover:opacity-80"
       >
         <Trash2 className="w-4 h-4" />
       </button>

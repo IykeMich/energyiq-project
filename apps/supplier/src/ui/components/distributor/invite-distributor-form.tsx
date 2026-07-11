@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { LoadingOverlay, SuccessModal } from '@energyiq/ui';
+import { LoadingOverlay, SuccessModal, useAuth } from '@energyiq/ui';
 import type { DistributorInvitePayload } from '@/ui/pages/distributor/mocks';
 import { InviteFormField } from './invite-form-field';
 
@@ -20,6 +20,7 @@ type InviteFormState = typeof EMPTY_FORM;
 export function InviteDistributorForm() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
+  const { createInvitation, error, clearError } = useAuth();
   const [form, setForm] = useState<InviteFormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
@@ -48,12 +49,21 @@ export function InviteDistributorForm() {
       assuranceAmountNGN: form.assuranceAmount ? Number(form.assuranceAmount) : undefined,
     };
 
-    // TODO(orval): replace with the generated send-invite mutation.
+    // v1/invitation/create only accepts {name, email, phone} — contactPerson,
+    // location and assuranceAmount have no backend field yet and aren't sent.
+    clearError();
     setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const success = await createInvitation({
+      name: payload.distributorName,
+      email: payload.email,
+      phone: payload.phone,
+    });
     setSubmitting(false);
-    setInvitedName(payload.distributorName);
-    setSuccessOpen(true);
+
+    if (success) {
+      setInvitedName(payload.distributorName);
+      setSuccessOpen(true);
+    }
   };
 
   return (
@@ -63,6 +73,12 @@ export function InviteDistributorForm() {
         className="flex flex-col gap-6 rounded-[28px] border border-border-subtle p-7"
       >
         <h2 className="text-base text-muted-foreground">Distributor Details</h2>
+
+        {error && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+            {error}
+          </div>
+        )}
 
         <div className="flex flex-col gap-5">
           <InviteFormField

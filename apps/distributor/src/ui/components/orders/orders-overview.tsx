@@ -49,7 +49,7 @@ export function OrdersOverview() {
 
       {/* Tracker band: status tracker on the left, invite action on the right */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <OrdersStatusTracker className="w-full lg:max-w-50" />
+        <OrdersStatusTracker className="w-full lg:min-w-160 lg:max-w-50" />
         <OrdersActionButton
           label="New Order"
           icon={Plus}

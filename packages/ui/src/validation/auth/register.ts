@@ -50,13 +50,15 @@ export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const distributorSchema = z
   .object({
-    account_name: z.string().min(2, 'Full name is required'),
+    full_name: z.string().min(2, 'Full name is required'),
 
-    account_email: z.string().email('Invalid email address'),
+    email: z.string().email('Invalid email address'),
 
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    phone: z.string().min(7, 'Phone number is required'),
 
-    confirm_password: z.string().min(8, 'Confirm password is required'),
+    password: z.string().min(12, 'Password must be at least 12 characters'),
+
+    confirm_password: z.string().min(12, 'Confirm password is required'),
   })
   .refine((data) => data.password === data.confirm_password, {
     message: 'Passwords do not match',
@@ -64,3 +66,14 @@ export const distributorSchema = z
   });
 
 export type DistributorFormData = z.infer<typeof distributorSchema>;
+
+export const distributorBusinessProfileSchema = z.object({
+  business_name: z.string().min(2, 'Business name is required'),
+  address_line: z.string().min(2, 'Business address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  contact_person: z.string().optional(),
+  operational_regions: z.string().optional(),
+});
+
+export type DistributorBusinessProfileFormData = z.infer<typeof distributorBusinessProfileSchema>;

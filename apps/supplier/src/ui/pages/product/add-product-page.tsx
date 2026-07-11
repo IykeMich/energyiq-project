@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, SuccessModal, type SuccessModalAction } from '@energyiq/ui';
+import type { product } from '@energyiq/domain';
 import {
   buildActivationDetails,
   buildDraftDetails,
@@ -10,16 +11,78 @@ import {
   emptyDraft,
   formatScheduleDate,
   formatScheduleTime,
-  mockProductAction,
   type NewProductDraft,
   type ReviewRow,
 } from './mocks';
+import { useCreateProductMutation, useUpdateProductStatusMutation } from '@/hooks/use-products';
 import { StepProductDetails } from '@/ui/components/product/step-product-details';
 import { StepDistributorAccess } from '@/ui/components/product/step-distributor-access';
 import { StepReview } from '@/ui/components/product/step-review';
 import { ScheduleActivationModal } from '@/ui/components/product/schedule-activation-modal';
 import { ComplianceOfficerModal } from '@/ui/components/product/compliance-officer-modal';
 import { ProductPublishFailedBanner } from '@/ui/components/product/product-publish-failed-banner';
+
+/**
+ * Map the wizard's draft (a UI-shaped model) onto the real create payload.
+ *
+ * Known gaps, intentionally not fabricated:
+ * - Warehouse allocation is left empty — draft.warehouseAllocations stores a
+ *   free-text warehouse *name*, not a real warehouse_id, and no warehouse
+ *   domain module exists yet in this codebase to resolve one.
+ * - Tax type only sends a value when it matches the backend enum (VAT/GST/
+ *   SalesTax); the wizard's other suggested labels ("Withholding Tax",
+ *   "Custom Duty") have no backend equivalent and fall back to 'None'.
+ */
+function toUpsertRequest(
+  draft: NewProductDraft,
+  options: { status: 'draft' | 'active'; approvalWorkflow: product.ApprovalWorkflow; activationAt?: string },
+): product.ProductUpsertRequest {
+  const isTiered = draft.priceType === 'Tiered';
+  const isVariant = draft.type === 'Product with Variant';
+  const taxType: product.TaxType =
+    draft.taxType === 'VAT' || draft.taxType === 'GST' || draft.taxType === 'SalesTax'
+      ? draft.taxType
+      : 'None';
+
+  return {
+    name: draft.name,
+    sku: draft.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 40) || `SKU-${Date.now()}`,
+    category_id: draft.category,
+    unit: draft.measuringUnit,
+    currency: draft.currency,
+    base_price: Number(draft.sellingPrice) || 0,
+    cost_price: Number(draft.costPrice) || undefined,
+    description: draft.description || undefined,
+    packaging_type: draft.packagingType || undefined,
+    status: options.status,
+    product_type: isVariant ? 'product_with_variants' : 'single_product',
+    price_type: isTiered ? 'tiered' : 'untiered',
+    approval_workflow: options.approvalWorkflow,
+    distributor_visibility:
+      draft.visibility === 'tier' ? 'tier_based' : draft.visibility === 'selected' ? 'selected_distributors' : 'all_distributors',
+    activation_at: options.activationAt,
+    product_variants: isVariant
+      ? draft.variants.map((variant) => ({
+          sku: variant.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 40) || `VAR-${variant.id}`,
+          display_name: variant.displayName || variant.name,
+          cost_price: Number(variant.costPrice) || 0,
+          selling_price: Number(variant.sellingPrice) || 0,
+        }))
+      : undefined,
+    tier_pricing: isTiered
+      ? draft.pricingTiers.map((tier) => ({
+          tier: tier.tier,
+          unit_price: Number(tier.unitPrice) || 0,
+          min_quantity: tier.minQuantity ? Number(tier.minQuantity) : undefined,
+          max_quantity: tier.maxQuantity ? Number(tier.maxQuantity) : undefined,
+        }))
+      : undefined,
+    tax_configuration: draft.taxEnabled
+      ? { tax_type: taxType, tax_rate: Number(draft.taxRate) || 0 }
+      : undefined,
+    warehouse_allocations: [],
+  };
+}
 
 const TOTAL_STEPS = 3;
 
@@ -57,6 +120,9 @@ export function AddProductPage() {
   const [scheduleData, setScheduleData] = useState({ date: '', time: '' });
   const [officerData, setOfficerData] = useState({ officer: '', note: '' });
 
+  const createProduct = useCreateProductMutation();
+  const updateProductStatus = useUpdateProductStatusMutation();
+
   const patch = (next: Partial<NewProductDraft>) => setDraft((prev) => ({ ...prev, ...next }));
 
   const handleNext = () => setStep((current) => Math.min(current + 1, TOTAL_STEPS));
@@ -64,13 +130,32 @@ export function AddProductPage() {
 
   const productName = draft.name || 'Untitled product';
 
-  /** Mocked publish/activation call that drives the loading overlay before the success modal. */
+  /** Builds the create payload for the selected activation option and submits it. */
   const runActivation = async () => {
     setSuccessOpen(false);
     setPublishError(false);
     setIsProcessing(true);
     try {
-      await mockProductAction();
+      const activationAt =
+        draft.automationOption === 'schedule' && scheduleData.date
+          ? new Date(`${scheduleData.date}T${scheduleData.time || '00:00'}:00`).toISOString()
+          : undefined;
+
+      const req = toUpsertRequest(draft, {
+        status: draft.automationOption === 'save-draft' ? 'draft' : 'active',
+        approvalWorkflow: draft.automationOption === 'schedule' ? 'scheduled' : 'auto-approve',
+        activationAt,
+      });
+
+      const created = await createProduct.mutateAsync(req);
+
+      // "Submit for Review" has no direct create-time equivalent (the create
+      // endpoint only accepts draft/active) — create as draft, then move it
+      // into pending_review via the status-transition endpoint.
+      if (draft.automationOption === 'submit-review' && created.id) {
+        await updateProductStatus.mutateAsync({ id: created.id, status: 'pending_review' });
+      }
+
       setIsProcessing(false);
       setSuccessOpen(true);
     } catch {

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { UploadCloud } from 'lucide-react';
 
+import { useAuth } from '../../hooks/use-auth';
 import {
   registerSchema,
   type RegisterFormData,
@@ -16,6 +17,7 @@ export function RegisterForm() {
   const [accountCreated, setAccountCreated] =
   useState(false);
   const navigate = useNavigate();
+  const { isLoading, error, clearError, initiate, complete, resendOtp: resendOtpAction } = useAuth();
 const steps = [
   'Company Information',
   'Account Setup',
@@ -24,6 +26,8 @@ const steps = [
 ];
 
 const [otp, setOtp] = useState(['', '', '', '', '', '']);
+const [otpError, setOtpError] = useState(false);
+const [otpResent, setOtpResent] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +49,7 @@ const handleOtpChange = (
   const newOtp = [...otp];
   newOtp[index] = value.slice(-1);
   setOtp(newOtp);
+  setOtpError(false);
 
   if (value && index < 5) {
     (
@@ -54,29 +59,55 @@ const handleOtpChange = (
     )?.focus();
   }
 };
-const handleOtpSubmit = () => {
+const handleOtpSubmit = async () => {
   const code = otp.join('');
 
   if (code.length !== 6) {
+    setOtpError(true);
     return;
   }
 
-  
-  setAccountCreated(true);
+  clearError();
+  const success = await complete(code);
+  if (success) {
+    setAccountCreated(true);
+  } else {
+    setOtpError(true);
+  }
 };
-const resendOtp = () => {
-  console.log('Resend OTP');
+const resendOtp = async () => {
+  clearError();
+  const success = await resendOtpAction();
+  if (success) setOtpResent(true);
 };
 
   const {
     register,
-    // handleSubmit,
+    handleSubmit,
     watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: 'onChange',
   });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    clearError();
+    const success = await initiate({
+      company: {
+        name: data.company_name,
+        email: data.company_email || undefined,
+        business_type: data.business_type,
+        registration_number: data.registration_number,
+      },
+      account: {
+        name: data.account_name,
+        email: data.account_email,
+        password: data.password,
+      },
+    });
+    if (success) nextStep();
+  };
 
   const password = watch('password');
 
@@ -95,30 +126,6 @@ const progress = (uploadedCount / 4) * 100;
       setCurrentStep((prev) => prev - 1);
     }
   };
-
-  // const onSubmit = async (data: RegisterFormData) => {
-  //   if (currentStep !== 4) return;
-
-  //   // clearError();
-
-  //   // const success = await initiate({
-  //   //   company: {
-  //   //     name: data.company_name,
-  //   //     email: data.company_email || undefined,
-  //   //     business_type: data.business_type,
-  //   //     registration_number: data.registration_number,
-  //   //   },
-  //   //   account: {
-  //   //     name: data.account_name,
-  //   //     email: data.account_email,
-  //   //     password: data.password,
-  //   //   },
-  //   // });
-
-  //   if (success) {
-  //     navigate('/verify');
-  //   }
-  // };
 
 
 const handleFileUpload = (
@@ -378,6 +385,11 @@ const handleFileUpload = (
         )}
 
         {/* STEP 3 */}
+        {/* NOTE: same gap as distributor-form.tsx's document step — the backend
+            has no presign/upload endpoint for onboarding documents (only
+            v1/product/images/presign exists, for products). Files are kept
+            local-only here; createOnboardingDocument needs a real file_url,
+            which we can't produce yet. */}
 
       {currentStep === 3 && (
   <div className="bg-[#0D0D0D] border border-[#1D1D1D] rounded-[24px] p-6">
@@ -564,7 +576,7 @@ const handleFileUpload = (
         </p>
 
         {/* OTP Inputs */}
-        <div className="flex justify-center gap-3 mb-8">
+        <div className="flex justify-center gap-3 mb-4">
           {otp.map((digit, index) => (
             <input
               key={index}
@@ -578,15 +590,23 @@ const handleFileUpload = (
                   index
                 )
               }
-              className="w-12 h-12 rounded-lg bg-[#111111] border border-[#2D2D2D] text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D]"
+              className={`w-12 h-12 rounded-lg bg-[#111111] border text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D] ${
+                otpError ? 'border-red-500' : 'border-[#2D2D2D]'
+              }`}
             />
           ))}
         </div>
 
+        {otpError && <p className="text-red-500 text-xs mb-4">{error ?? 'Invalid code'}</p>}
+        {otpResent && !otpError && (
+          <p className="text-xs text-gray-400 mb-4">A new code has been sent.</p>
+        )}
+
         <button
           type="button"
           onClick={resendOtp}
-          className="text-xs text-gray-400 hover:text-[#FBC02D] mb-8"
+          disabled={isLoading}
+          className="tap-effect text-xs text-gray-400 hover:text-[#FBC02D] mb-8 disabled:opacity-50"
         >
           Didn't receive code? Resend
         </button>
@@ -594,9 +614,10 @@ const handleFileUpload = (
         <button
           type="button"
           onClick={handleOtpSubmit}
-          className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold"
+          disabled={isLoading}
+          className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
         >
-          Verify Code
+          {isLoading ? 'Verifying...' : 'Verify Code'}
         </button>
       </div>
     ) : (
@@ -632,25 +653,30 @@ const handleFileUpload = (
 
          {/* Buttons */}
 {currentStep < 4 && (
-  <div className="flex gap-4 pt-4">
-    {currentStep > 1 && (
+  <div className="flex flex-col gap-3 pt-4">
+    {error && currentStep === 2 && (
+      <p className="text-red-500 text-xs text-center">{error}</p>
+    )}
+    <div className="flex gap-4">
+      {currentStep > 1 && (
+        <button
+          type="button"
+          onClick={prevStep}
+          className="tap-effect w-full h-14 rounded-full border border-[#FBC02D] text-[#FBC02D]"
+        >
+          Back
+        </button>
+      )}
+
       <button
         type="button"
-        onClick={prevStep}
-        className="w-full h-14 rounded-full border border-[#FBC02D] text-[#FBC02D]"
+        onClick={currentStep === 2 ? () => void handleSubmit(onSubmit)() : nextStep}
+        disabled={(currentStep === 1 && !agreeTerms) || isLoading}
+        className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
       >
-        Back
+        {currentStep === 2 && isLoading ? 'Creating account...' : 'Next'}
       </button>
-    )}
-
-    <button
-      type="button"
-      onClick={nextStep}
-      disabled={currentStep === 1 && !agreeTerms}
-      className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
-    >
-      Next
-    </button>
+    </div>
   </div>
 )}
 

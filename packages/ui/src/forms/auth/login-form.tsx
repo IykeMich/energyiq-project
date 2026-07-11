@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Eye, EyeOff } from 'lucide-react';
-import { useAppDispatch, tempBypassLogin } from '@energyiq/store';
 import { cn } from '@energyiq/shared';
+import { useAuth } from '../../hooks/use-auth';
 import { loginSchema, type LoginFormData } from '../../validation/auth/login';
 
 const inputBaseClass =
@@ -13,7 +13,7 @@ const inputBaseClass =
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const { login, isLoading, error, clearError } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -29,20 +29,20 @@ export function LoginForm() {
 
   const rememberMe = watch('rememberMe');
 
-  // TEMP: auth endpoint bypassed — fake a logged-in state, then navigate to the
-  // slug-prefixed dashboard. tempBypassLogin sets slug='demo', so this matches.
-  // Remove the hardcoded slug when the real endpoint lands (see commented flow).
-  const onSubmit = () => {
-    dispatch(tempBypassLogin());
-    navigate('/demo/dashboard');
+  const onSubmit = async (data: LoginFormData) => {
+    clearError();
+    const result = await login({ email: data.email, password: data.password });
+    if (result.success) navigate(`/${result.slug}/dashboard`);
   };
-  // const onSubmit = async (data: LoginFormData) => {
-  //   const result = await login({ email: data.email, password: data.password });
-  //   if (result.success) navigate(`/${result.slug}/dashboard`);
-  // };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-6">
+      {error && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          {error}
+        </div>
+      )}
+
       {/* Email */}
       <div className="flex flex-col gap-2">
         <label htmlFor="email" className="text-sm font-normal text-white">
@@ -120,9 +120,10 @@ export function LoginForm() {
       {/* Submit */}
       <button
         type="submit"
-        className="w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors"
+        disabled={isLoading}
+        className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Log In
+        {isLoading ? 'Signing in...' : 'Log In'}
       </button>
 
       {/* Sign up link */}

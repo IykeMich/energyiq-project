@@ -51,8 +51,11 @@ export { LoginForm } from './forms/auth/login-form';
 export { RegisterForm } from './forms/auth/register-form';
 export { VerifyForm } from './forms/auth/verify-form';
 export { DistributorForm } from './forms/auth/distributor-form';
+export { ForgotPasswordForm } from './forms/auth/forgot-password-form';
+export { ResetPasswordForm } from './forms/auth/reset-password-form';
 
 // Validation schemas
 export * from './validation/auth/login';
 export * from './validation/auth/register';
 export * from './validation/auth/verify';
+export * from './validation/auth/reset-password';

@@ -1,17 +1,18 @@
 import { X } from 'lucide-react';
 import { SheetTitle } from '@energyiq/ui';
-import type { Product } from '@/ui/pages/product/mocks';
+import type { product as productDomain } from '@energyiq/domain';
 import { ProductStatusBadge } from './product-status-badge';
 
 interface ProductDetailsHeaderProps {
-  product: Product;
+  product: productDomain.Product;
   onClose: () => void;
   onEdit: () => void;
   onPause: () => void;
+  pausing?: boolean;
 }
 
 /** Fixed sheet header: title bar with close, then product identity and Edit / Pause actions. */
-export function ProductDetailsHeader({ product, onClose, onEdit, onPause }: ProductDetailsHeaderProps) {
+export function ProductDetailsHeader({ product, onClose, onEdit, onPause, pausing }: ProductDetailsHeaderProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
@@ -34,9 +35,9 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onPause }: Prod
           <h3 className="text-2xl font-bold text-[#FAFAFA]">{product.name}</h3>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center rounded-[14px] bg-[#FFFFFF1A] px-3 py-1 text-xs font-medium text-[#FAFAFA]">
-              {product.sku} {product.category}
+              {product.sku}
             </span>
-            <ProductStatusBadge value={product.status} />
+            {product.status && <ProductStatusBadge value={product.status} />}
           </div>
         </div>
 
@@ -51,9 +52,10 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onPause }: Prod
           <button
             type="button"
             onClick={onPause}
-            className="tap-effect h-8 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D] transition-colors hover:bg-[#FBC02D]/10"
+            disabled={pausing}
+            className="tap-effect h-8 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D] transition-colors hover:bg-[#FBC02D]/10 disabled:opacity-50"
           >
-            Pause Product
+            {pausing ? 'Pausing...' : 'Pause Product'}
           </button>
         </div>
       </div>
