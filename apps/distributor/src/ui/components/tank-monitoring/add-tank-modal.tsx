@@ -14,8 +14,7 @@ export function AddTankModal({
   open,
   onOpenChange,
 }: AddTankModalProps) {
-  const [productType, setProductType] =
-    useState('');
+  const [productType] = useState('');
 
   const [tankName, setTankName] =
     useState('');

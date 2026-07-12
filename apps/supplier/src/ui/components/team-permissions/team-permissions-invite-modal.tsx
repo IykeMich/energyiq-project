@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { LoadingOverlay, Modal } from '@energyiq/ui';
+import { LoadingOverlay, Modal, toast } from '@energyiq/ui';
 import { TeamPermissionsInviteField } from './team-permissions-invite-field';
 import { TeamPermissionsRoleCard } from './team-permissions-role-card';
+import { useCreateEmployeeMutation } from '@/hooks/use-employees';
 import { EMPLOYEE_ROLE_OPTIONS } from './team-permissions-mocks';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,12 +27,13 @@ export function TeamPermissionsInviteModal({
   onOpenChange,
   onSubmitted,
 }: TeamPermissionsInviteModalProps) {
+  const createMutation = useCreateEmployeeMutation();
+
   const [fullName, setFullName] = useState('');
   const [workEmail, setWorkEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [roles, setRoles] = useState<string[]>([]);
   const [touched, setTouched] = useState(EMPTY_TOUCHED);
-  const [submitting, setSubmitting] = useState(false);
 
   const fullNameValid = fullName.trim().length >= 2;
   const emailValid = EMAIL_PATTERN.test(workEmail.trim());
@@ -72,20 +74,35 @@ export function TeamPermissionsInviteModal({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setTouched({ fullName: true, workEmail: true, roles: true });
-    if (!isValid || submitting) return;
+    if (!isValid || createMutation.isPending) return;
 
-    const rolesLabel = EMPLOYEE_ROLE_OPTIONS.filter((option) => roles.includes(option.value))
+    const selectedLabels = EMPLOYEE_ROLE_OPTIONS.filter((option) => roles.includes(option.value))
       .map((option) => option.label)
       .join(' & ');
 
-    // TODO(orval): replace with the generated send-invite mutation.
-    setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSubmitting(false);
+    // Backend create accepts a single role; use the first selected role.
+    const primaryRole = roles[0] as 'admin' | 'manager' | 'finance' | 'staff';
 
-    const invitedEmail = workEmail.trim();
-    resetForm();
-    onSubmitted({ email: invitedEmail, rolesLabel });
+    createMutation.mutate(
+      {
+        name: fullName.trim(),
+        email: workEmail.trim(),
+        phone: phone.trim() || undefined,
+        role: primaryRole,
+      },
+      {
+        onSuccess: () => {
+          const invitedEmail = workEmail.trim();
+          resetForm();
+          onSubmitted({ email: invitedEmail, rolesLabel: selectedLabels });
+        },
+        onError: (error) => {
+          toast.error('Invitation failed', {
+            description: (error as Error).message || 'Could not invite employee.',
+          });
+        },
+      },
+    );
   };
 
   return (
@@ -167,7 +184,7 @@ export function TeamPermissionsInviteModal({
             </button>
             <button
               type="submit"
-              disabled={!isValid || submitting}
+              disabled={!isValid || createMutation.isPending}
               className="tap-effect h-[52px] flex-1 rounded-[28px] bg-brand font-semibold text-brand-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               Send Invitation
@@ -176,7 +193,7 @@ export function TeamPermissionsInviteModal({
         </form>
       </Modal>
 
-      {submitting && <LoadingOverlay message="Sending invitation…" />}
+      {createMutation.isPending && <LoadingOverlay message="Sending invitation…" />}
     </>
   );
 }

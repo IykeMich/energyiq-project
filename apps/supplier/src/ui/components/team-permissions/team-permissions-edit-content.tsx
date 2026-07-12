@@ -5,7 +5,7 @@ import { TeamPermissionsInviteField } from './team-permissions-invite-field';
 import { TeamPermissionsRoleChip } from './team-permissions-role-chip';
 import { TeamPermissionsStatusBadge } from './team-permissions-status-badge';
 import { TeamPermissionsPermissionCard } from './team-permissions-permission-card';
-import { EMPLOYEE_PERMISSION_OPTIONS, EMPLOYEE_STATUS_COLOR } from './team-permissions-mocks';
+import { EMPLOYEE_PERMISSION_OPTIONS, EMPLOYEE_STATUS_COLOR, EMPLOYEE_ROLE_OPTIONS } from './team-permissions-mocks';
 import type { EmployeeRow } from './team-permissions-mocks';
 
 const BRAND_GOLD = '#FBC02D';
@@ -25,9 +25,9 @@ export function TeamPermissionsEditContent({
   onDeactivate,
 }: TeamPermissionsEditContentProps) {
   const [fullName, setFullName] = useState(employee.name);
-  const [email, setEmail] = useState(employee.email);
   const [phone, setPhone] = useState(employee.phone);
-  const [department, setDepartment] = useState(employee.department);
+  const [role, setRole] = useState(employee.role);
+  const [status, setStatus] = useState(employee.status);
   const [permissions, setPermissions] = useState<string[]>(employee.permissions);
 
   const togglePermission = (id: string) => {
@@ -37,13 +37,12 @@ export function TeamPermissionsEditContent({
   };
 
   const handleSave = () => {
-    // TODO(orval): replace with the generated update-employee mutation.
     onSave({
       ...employee,
       name: fullName.trim(),
-      email: email.trim(),
       phone: phone.trim(),
-      department: department.trim(),
+      role,
+      status,
       permissions,
     });
   };
@@ -61,10 +60,10 @@ export function TeamPermissionsEditContent({
         <div className="flex flex-col gap-1.5">
           <span className="text-base font-semibold text-foreground">{employee.name}</span>
           <div className="flex items-center gap-2">
-            <TeamPermissionsStatusBadge label={employee.role} color={BRAND_GOLD} />
+            <TeamPermissionsStatusBadge label={role} color={BRAND_GOLD} />
             <TeamPermissionsStatusBadge
-              label={employee.status}
-              color={EMPLOYEE_STATUS_COLOR[employee.status]}
+              label={status}
+              color={EMPLOYEE_STATUS_COLOR[status]}
             />
           </div>
         </div>
@@ -82,8 +81,9 @@ export function TeamPermissionsEditContent({
           id="edit-email"
           label="Email Address:"
           type="email"
-          value={email}
-          onChange={setEmail}
+          value={employee.email}
+          onChange={() => {}}
+          disabled
         />
         <TeamPermissionsInviteField
           id="edit-phone"
@@ -95,16 +95,44 @@ export function TeamPermissionsEditContent({
         <TeamPermissionsInviteField
           id="edit-department"
           label="Department:"
-          value={department}
-          onChange={setDepartment}
+          value={employee.department}
+          onChange={() => {}}
+          disabled
         />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h3 className="text-base font-semibold text-foreground">Role</h3>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="w-full rounded-lg border border-border-strong bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand"
+        >
+          {EMPLOYEE_ROLE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.label}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h3 className="text-base font-semibold text-foreground">Status</h3>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as EmployeeRow['status'])}
+          className="w-full rounded-lg border border-border-strong bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-brand"
+        >
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
       </div>
 
       <div className="flex flex-col gap-3">
         <h3 className="text-base font-semibold text-foreground">Assigned Roles</h3>
         <div className="flex flex-wrap gap-2">
-          {employee.roles.map((role) => (
-            <TeamPermissionsRoleChip key={role} label={role} />
+          {employee.roles.map((r) => (
+            <TeamPermissionsRoleChip key={r} label={r} />
           ))}
         </div>
       </div>

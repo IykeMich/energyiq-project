@@ -1,6 +1,5 @@
 import { X, Pencil, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-import { RecordMeterReadingModal } from './record-meter-reading-modal';
 
 type Pump = {
   id: string;
@@ -27,8 +26,6 @@ export function PumpDetailsDrawer({
   if (!open || !pump) return null;
 
   const [showEditPump, setShowEditPump] = useState(false);
-const [showSelectPump, setShowSelectPump] = useState(false);
-const [showShiftType, setShowShiftType] = useState(false);
 const [showReadingForm, setShowReadingForm] = useState(false);
 const [showReview, setShowReview] = useState(false);
 const [showSuccess, setShowSuccess] = useState(false);

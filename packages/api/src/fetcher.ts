@@ -29,7 +29,8 @@ export async function fetcher<T>(
   url: string,
   init?: RequestInit,
 ): Promise<T> {
-  const token = getAccessToken();
+  const isPublic = url.includes('/public/');
+  const token = isPublic ? null : getAccessToken();
   const fullUrl = `${getApiBaseUrl().replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
 
   const headers: Record<string, string> = {

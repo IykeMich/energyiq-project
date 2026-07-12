@@ -2,6 +2,12 @@ import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ConfirmDialog, SuccessModal, toast } from '@energyiq/ui';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
+import {
+  useEmployeesQuery,
+  useEmployeeStatsQuery,
+  useUpdateEmployeeMutation,
+} from '@/hooks/use-employees';
+
 import { TeamPermissionsSearchBar } from './team-permissions-search-bar';
 import { TeamPermissionsStatStrip } from './team-permissions-stat-strip';
 import {
@@ -18,9 +24,9 @@ import {
   TeamPermissionsEmployeeDrawer,
   type EmployeeDrawerMode,
 } from './team-permissions-employee-drawer';
-import { EMPLOYEES_MOCK, type EmployeeRow } from './team-permissions-mocks';
+import { toEmployeeRow, toDomainRole, toDomainStatus } from './team-permissions-mapper';
+import type { EmployeeRow } from './team-permissions-mocks';
 
-/** Drives every section's state in one place (loaded vs. loading vs. empty). */
 export type TeamPermissionsStatus = 'ready' | 'loading' | 'empty';
 
 interface TeamPermissionsOverviewProps {
@@ -29,11 +35,14 @@ interface TeamPermissionsOverviewProps {
 }
 
 /**
- * Supplier Employee Management page. Search and the filter chips filter the table
- * client-side for now; swap `EMPLOYEES_MOCK` for the employees query hook once the
- * endpoint lands.
+ * Supplier Employee Management page. Wires the Team & Permissions UI to the
+ * real employee API endpoints.
  */
 export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOverviewProps) {
+  const { data: listResult, isLoading: isListLoading } = useEmployeesQuery();
+  const { data: stats, isLoading: isStatsLoading } = useEmployeeStatsQuery();
+  const updateMutation = useUpdateEmployeeMutation();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<EmployeeFilterSelection>({});
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -43,30 +52,34 @@ export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOve
   const [drawerMode, setDrawerMode] = useState<EmployeeDrawerMode>('view');
   const [pendingDeactivate, setPendingDeactivate] = useState<EmployeeRow | null>(null);
 
-  const isLoading = status === 'loading';
-  const isEmpty = status === 'empty';
+  const isLoading = status === 'loading' || isListLoading || isStatsLoading;
+  const isEmpty = status === 'empty' || (!isListLoading && listResult?.items?.length === 0);
 
-  const setFilter = (filterId: string, option: string | null) => {
-    setFilters((previous) => ({ ...previous, [filterId]: option }));
-  };
+  const employees = useMemo<EmployeeRow[]>(() => {
+    return (listResult?.items ?? []).map(toEmployeeRow);
+  }, [listResult]);
 
   const filteredEmployees = useMemo(() => {
     if (isEmpty) return [];
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const roleFilter = filters.role;
     const statusFilter = filters.status;
-    return EMPLOYEES_MOCK.filter((employee) => {
+    return employees.filter((employeeItem) => {
       const matchesQuery =
         normalizedQuery === '' ||
-        employee.name.toLowerCase().includes(normalizedQuery) ||
-        employee.email.toLowerCase().includes(normalizedQuery) ||
-        employee.role.toLowerCase().includes(normalizedQuery) ||
-        employee.department.toLowerCase().includes(normalizedQuery);
-      const matchesRole = !roleFilter || employee.role === roleFilter;
-      const matchesStatus = !statusFilter || employee.status === statusFilter;
+        employeeItem.name.toLowerCase().includes(normalizedQuery) ||
+        employeeItem.email.toLowerCase().includes(normalizedQuery) ||
+        employeeItem.role.toLowerCase().includes(normalizedQuery) ||
+        employeeItem.department.toLowerCase().includes(normalizedQuery);
+      const matchesRole = !roleFilter || employeeItem.role === roleFilter;
+      const matchesStatus = !statusFilter || employeeItem.status === statusFilter;
       return matchesQuery && matchesRole && matchesStatus;
     });
-  }, [isEmpty, searchQuery, filters]);
+  }, [isEmpty, searchQuery, filters, employees]);
+
+  const setFilter = (filterId: string, option: string | null) => {
+    setFilters((previous) => ({ ...previous, [filterId]: option }));
+  };
 
   const handleInvite = () => setInviteOpen(true);
 
@@ -81,19 +94,65 @@ export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOve
     setSelected(employee);
   };
 
-  const handleSaved = () => {
-    setSelected(null);
-    toast.success('Changes Saved', {
-      description: 'A confirmation email has been sent to the new employee.',
-    });
+  const handleSaved = (employee: EmployeeRow) => {
+    if (!employee.id) return;
+    updateMutation.mutate(
+      {
+        id: employee.id,
+        req: {
+          name: employee.name,
+          phone: employee.phone || undefined,
+          role: toDomainRole(employee.role),
+          status: toDomainStatus(employee.status),
+        },
+      },
+      {
+        onSuccess: () => {
+          setSelected(null);
+          toast.success('Changes Saved', {
+            description: 'Employee details updated successfully.',
+          });
+        },
+        onError: (error) => {
+          toast.error('Update failed', {
+            description: (error as Error).message || 'Could not update employee.',
+          });
+        },
+      },
+    );
+  };
+
+  const handleDeactivate = (employee: EmployeeRow) => {
+    if (!employee.id) return;
+    setPendingDeactivate(employee);
   };
 
   const handleDeactivateConfirmed = () => {
-    // TODO(orval): replace with the generated deactivate-employee mutation.
-    setPendingDeactivate(null);
-    toast.success('Employee De-activated', {
-      description: 'This employee no longer has access.',
-    });
+    if (!pendingDeactivate?.id) return;
+    updateMutation.mutate(
+      {
+        id: pendingDeactivate.id,
+        req: {
+          name: pendingDeactivate.name,
+          role: toDomainRole(pendingDeactivate.role),
+          status: 'suspended',
+        },
+      },
+      {
+        onSuccess: () => {
+          setPendingDeactivate(null);
+          toast.success('Employee De-activated', {
+            description: 'This employee no longer has access.',
+          });
+        },
+        onError: (error) => {
+          setPendingDeactivate(null);
+          toast.error('Deactivation failed', {
+            description: (error as Error).message || 'Could not deactivate employee.',
+          });
+        },
+      },
+    );
   };
 
   return (
@@ -105,13 +164,13 @@ export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOve
 
       <h1 className="text-2xl font-semibold text-[#FAFAFA]">Employee Management</h1>
 
-      <TeamPermissionsStatStrip placeholder={isEmpty || isLoading} />
+      <TeamPermissionsStatStrip stats={stats} />
 
       {isEmpty ? (
         <TeamPermissionsEmptyState
           onInvite={handleInvite}
           onReviewRoles={() => {
-            // TODO(orval): navigate to the roles overview once it lands.
+            // TODO: navigate to the roles overview once it lands.
           }}
         />
       ) : (
@@ -123,7 +182,7 @@ export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOve
               <button
                 type="button"
                 onClick={() => {
-                  // TODO(orval): open the manage-access flow once the endpoint lands.
+                  // TODO: open the manage-access flow once the endpoint lands.
                 }}
                 className="tap-effect rounded-lg border border-[#FBC02D] px-4 py-2 text-sm font-medium text-[#FBC02D]"
               >
@@ -153,7 +212,7 @@ export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOve
               isLoading={isLoading}
               onSelect={(employee) => openDrawer(employee, 'view')}
               onEdit={(employee) => openDrawer(employee, 'edit')}
-              onDelete={(employee) => setPendingDeactivate(employee)}
+              onDeactivate={handleDeactivate}
             />
           </div>
         </>
@@ -203,12 +262,7 @@ export function TeamPermissionsOverview({ status = 'ready' }: TeamPermissionsOve
         open={pendingDeactivate !== null}
         onOpenChange={(open) => !open && setPendingDeactivate(null)}
         title="Deactivate Employee"
-        message={
-          <>
-            Are you sure you want to deactivate this employee? They will no longer be able to access
-            the supplier platform.
-          </>
-        }
+        message={`Are you sure you want to deactivate ${pendingDeactivate?.name}? They will no longer be able to access the account.`}
         confirmLabel="Deactivate"
         intent="danger"
         onConfirm={handleDeactivateConfirmed}

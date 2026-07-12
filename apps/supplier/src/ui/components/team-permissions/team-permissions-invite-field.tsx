@@ -14,6 +14,8 @@ interface TeamPermissionsInviteFieldProps {
   hint?: string;
   /** Validation message; when set, the input shows a red border and the message. */
   error?: string;
+  /** Disable the input (e.g. for read-only fields). */
+  disabled?: boolean;
 }
 
 /** Large rounded-pill form field used inside the Invite Employee modal. */
@@ -28,6 +30,7 @@ export function TeamPermissionsInviteField({
   required,
   hint,
   error,
+  disabled,
 }: TeamPermissionsInviteFieldProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -44,9 +47,11 @@ export function TeamPermissionsInviteField({
         onBlur={onBlur}
         placeholder={placeholder}
         aria-invalid={error ? true : undefined}
+        disabled={disabled}
         className={cn(
           'h-[52px] w-full rounded-[28px] border border-border-strong bg-surface-card px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand',
           error && 'border-danger focus:border-danger',
+          disabled && 'cursor-not-allowed opacity-60',
         )}
       />
 

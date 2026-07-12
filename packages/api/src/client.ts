@@ -32,6 +32,7 @@ const instance: KyInstance = ky.create({
   hooks: {
     beforeRequest: [
       ({ request }) => {
+        if (request.url.includes('/public/')) return;
         const token = getAccessToken();
         if (token) {
           request.headers.set('Authorization', `Bearer ${token}`);

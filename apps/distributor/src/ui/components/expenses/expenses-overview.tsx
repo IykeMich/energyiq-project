@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { ExpensesSearchBar } from './expenses-search-bar';
 import { LogExpenseModal } from './log-expense-modal';
-import { EXPENSES_MOCK } from './expenses-mocks';
 import {
   Users,
   Wrench,
@@ -61,18 +60,6 @@ export function ExpensesOverview() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [logExpenseOpen, setLogExpenseOpen] = useState(false);
-
-  const filteredExpenses = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
- 
-    return EXPENSES_MOCK.filter(
-      (expense) =>
-        query === '' ||
-        expense.title.toLowerCase().includes(query) ||
-        expense.category.toLowerCase().includes(query),
-    );
-  }, [searchQuery]);
 
   const recentEntries = [
     {

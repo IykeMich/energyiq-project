@@ -10,7 +10,6 @@ interface Props {
 }
 
 export function ExpenseReceiptUpload({
-  file,
   onFileChange,
 }: Props) {
   return (

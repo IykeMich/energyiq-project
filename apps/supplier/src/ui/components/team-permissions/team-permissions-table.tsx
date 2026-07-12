@@ -11,7 +11,7 @@ import type { EmployeeRow } from './team-permissions-mocks';
 
 function buildColumns(
   onEdit: (employee: EmployeeRow) => void,
-  onDelete: (employee: EmployeeRow) => void,
+  onDeactivate: (employee: EmployeeRow) => void,
 ): Column<EmployeeRow>[] {
   return [
     {
@@ -64,9 +64,9 @@ function buildColumns(
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              onDelete(row);
+              onDeactivate(row);
             }}
-            aria-label={`Delete ${row.name}`}
+            aria-label={`Deactivate ${row.name}`}
             className="tap-effect text-[#D30A0A]"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -82,7 +82,7 @@ interface TeamPermissionsTableProps {
   isLoading?: boolean;
   onSelect: (employee: EmployeeRow) => void;
   onEdit: (employee: EmployeeRow) => void;
-  onDelete: (employee: EmployeeRow) => void;
+  onDeactivate: (employee: EmployeeRow) => void;
 }
 
 export function TeamPermissionsTable({
@@ -90,9 +90,9 @@ export function TeamPermissionsTable({
   isLoading,
   onSelect,
   onEdit,
-  onDelete,
+  onDeactivate,
 }: TeamPermissionsTableProps) {
-  const columns = useMemo(() => buildColumns(onEdit, onDelete), [onEdit, onDelete]);
+  const columns = useMemo(() => buildColumns(onEdit, onDeactivate), [onEdit, onDeactivate]);
 
   // No matches: show only the centered message (drops the column header), per the design.
   if (!isLoading && employees.length === 0) {

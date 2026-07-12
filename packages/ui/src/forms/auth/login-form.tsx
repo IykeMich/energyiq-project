@@ -16,6 +16,7 @@ export function LoginForm() {
   const { login, isLoading, error, clearError } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showMfa, setShowMfa] = useState(false);
 
   const {
     register,
@@ -24,16 +25,22 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', rememberMe: true },
+    defaultValues: { email: '', password: '', mfaCode: '', rememberMe: true },
   });
 
   const rememberMe = watch('rememberMe');
 
   const onSubmit = async (data: LoginFormData) => {
     clearError();
-    const result = await login({ email: data.email, password: data.password });
+    const result = await login({
+      email: data.email.trim(),
+      password: data.password.trim(),
+      mfa_code: data.mfaCode?.trim() || undefined,
+    });
     if (result.success) navigate(`/${result.slug}/dashboard`);
   };
+
+  const isMfaError = error?.toLowerCase().includes('mfa') || error?.toLowerCase().includes('otp');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-6">
@@ -88,6 +95,38 @@ export function LoginForm() {
           </p>
         )}
       </div>
+
+      {/* MFA Code */}
+      {(showMfa || isMfaError) && (
+        <div className="flex flex-col gap-2">
+          <label htmlFor="mfaCode" className="text-sm font-normal text-white">
+            MFA Code:
+          </label>
+          <input
+            id="mfaCode"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder="Enter 6-digit MFA code"
+            {...register('mfaCode')}
+            className={cn(inputBaseClass, errors.mfaCode && 'ring-2 ring-red-500')}
+          />
+          {errors.mfaCode && (
+            <p className="text-red-500 text-xs ml-6">{errors.mfaCode.message}</p>
+          )}
+        </div>
+      )}
+
+      {!showMfa && !isMfaError && (
+        <button
+          type="button"
+          onClick={() => setShowMfa(true)}
+          className="self-start text-sm text-[#FBC02D] hover:underline"
+        >
+          Have an MFA code?
+        </button>
+      )}
 
       {/* Stay signed in / Forgot password */}
       <div className="flex items-center justify-between flex-wrap gap-3 px-2">

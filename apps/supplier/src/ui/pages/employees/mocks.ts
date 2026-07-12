@@ -1,9 +1,5 @@
-
-
-
-
-
-
+// View-model shape used by the employee list table.
+// Real data is fetched from the employee API and mapped in EmployeeListPage.
 
 export interface Employee {
   id: string;
@@ -15,37 +11,6 @@ export interface Employee {
   lastActive: string;
 }
 
-
-export const EMPLOYEES_MOCK: Employee[] = [
-  {
-    id: 'EMP-001',
-    name: 'John Doe',
-    email: 'johndoe@yahoo.com',
-    role: 'Admin',
-    department: 'Executive',
-    status: 'active',
-    lastActive: 'Today, 10:30 AM',
-  },
-  {
-    id: 'EMP-002',
-    name: 'Sandra Roberts',
-    email: 'sandraroberts@yahoo.com',
-    role: 'Finance Manager',
-    department: 'Finance',
-    status: 'active',
-    lastActive: 'Today, 10:30 AM',
-  },
-  {
-    id: 'EMP-003',
-    name: 'Ogbuefi Ikenna',
-    email: 'ogbuefiikenna@yahoo.com',
-    role: 'Operations Manager',
-    department: 'Operations',
-    status: 'inactive',
-    lastActive: 'Today, 10:30 AM',
-  },
-];
-
 export interface EmployeeCounts {
   total: number;
   active: number;
@@ -53,22 +18,18 @@ export interface EmployeeCounts {
   pending: number;
 }
 
-export function buildEmployeeCounts(
-  employees: Employee[],
-): EmployeeCounts {
+export function buildEmployeeCounts(employees: Employee[]): EmployeeCounts {
   return employees.reduce(
-    (acc, employee) => {
+    (acc, employeeItem) => {
       acc.total += 1;
 
-      switch (employee.status) {
+      switch (employeeItem.status) {
         case 'active':
           acc.active += 1;
           break;
-
         case 'inactive':
           acc.inactive += 1;
           break;
-
         case 'pending':
           acc.pending += 1;
           break;

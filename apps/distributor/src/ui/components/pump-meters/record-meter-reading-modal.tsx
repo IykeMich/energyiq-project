@@ -11,8 +11,6 @@ export function RecordMeterReadingModal({
   onClose,
 }: Props) {
   const [step, setStep] = useState(1);
-  const [showRecordReading, setShowRecordReading] =
-  useState(false);
 
   if (!open) return null;
 
