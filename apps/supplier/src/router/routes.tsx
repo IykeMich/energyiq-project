@@ -115,6 +115,10 @@ export const router = createBrowserRouter([
               { path: '/:slug/kyc-documents/review', element: <KycReviewQueuePage /> },
               { path: '/:slug/kyc-documents/types', element: <KycDocumentTypesPage /> },
               { path: '/:slug/kyc-documents/types/new', element: <AddKycDocumentTypePage /> },
+              {
+                path: '/:slug/kyc-documents/types/:documentTypeId/edit',
+                element: <AddKycDocumentTypePage />,
+              },
               { path: '/:slug/products', element: <ProductListPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },

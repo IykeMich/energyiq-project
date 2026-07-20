@@ -3,6 +3,7 @@ import type { DocumentTypeConfig } from '@/ui/pages/kyc-documents/kyc-documents-
 interface KycDocumentTypeConfigCardProps {
   config: DocumentTypeConfig;
   onEdit: () => void;
+  onDeactivate: () => void;
 }
 
 /** A bullet dot separating meta segments in the card's detail line. */
@@ -11,7 +12,7 @@ function MetaDot() {
 }
 
 /** One configurable document-type row on the "Document Types" list page. */
-export function KycDocumentTypeConfigCard({ config, onEdit }: KycDocumentTypeConfigCardProps) {
+export function KycDocumentTypeConfigCard({ config, onEdit, onDeactivate }: KycDocumentTypeConfigCardProps) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#FFFFFF0F] px-6 py-5">
       <div className="flex flex-col gap-2">
@@ -35,13 +36,22 @@ export function KycDocumentTypeConfigCard({ config, onEdit }: KycDocumentTypeCon
           <span>{config.reminder}</span>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onEdit}
-        className="tap-effect shrink-0 rounded-full border border-[#FBC02D] px-6 py-1.5 text-xs font-medium text-[#FBC02D]"
-      >
-        Edit
-      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="tap-effect rounded-full border border-[#FBC02D] px-6 py-1.5 text-xs font-medium text-[#FBC02D]"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={onDeactivate}
+          className="tap-effect rounded-full border border-[#D30A0A] px-6 py-1.5 text-xs font-medium text-[#D30A0A]"
+        >
+          Deactivate
+        </button>
+      </div>
     </div>
   );
 }

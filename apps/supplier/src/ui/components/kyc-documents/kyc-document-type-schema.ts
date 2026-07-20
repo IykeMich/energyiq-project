@@ -2,13 +2,15 @@ import { z } from 'zod';
 
 /**
  * Validation for the "Add new document type" form. Selects are required strings;
- * `description` is the only optional field. `mode: 'onTouched'` in the form means
- * these messages surface once a field has been touched/dirtied, and `isValid`
- * gates the submit button.
+ * `description` and `documentCategory` are optional. `documentCategory` has no
+ * backing field on the document-type API (it's UI-only) so it can't be required —
+ * that would force re-entry of a value that's never persisted when editing.
+ * `mode: 'onTouched'` in the form means these messages surface once a field has
+ * been touched/dirtied, and `isValid` gates the submit button.
  */
 export const kycDocumentTypeSchema = z.object({
   documentName: z.string().trim().min(2, 'Document name is required'),
-  documentCategory: z.string().min(1, 'Select a category'),
+  documentCategory: z.string().optional(),
   required: z.string().min(1, 'Select an option'),
   expiryRequired: z.string().min(1, 'Select an option'),
   validityPeriod: z.string().min(1, 'Select a validity period'),

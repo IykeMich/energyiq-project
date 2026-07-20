@@ -4,17 +4,24 @@ import {
   X,
   FileText,
 } from 'lucide-react';
+import type { DomainDocument } from '@energyiq/api/generated/schemas';
 
 interface Props {
-  document: any;
+  document: DomainDocument;
   onClose: () => void;
   onSuccess: () => void;
 }
 
+// TODO(backend): no presign/upload endpoint exists for documents yet (same gap as
+// onboarding documents — see packages/ui/src/forms/auth/distributor-form.tsx:219), so
+// a `file_url` for POST /v1/document/create can't be produced from a picked `File`
+// here. Once a presign/upload endpoint lands: upload the file to get a URL, call
+// `usePostV1DocumentCreate()` with `{ document_type, file_name, file_size, file_url,
+// mime_type }`, invalidate the documents-list query on success, and re-enable the
+// button below.
 export function DocumentUploadModal({
   document,
   onClose,
-  onSuccess,
 }: Props) {
   const [file, setFile] =
     useState<File | null>(null);
@@ -29,7 +36,7 @@ export function DocumentUploadModal({
             </h2>
 
             <p className="text-sm text-gray-500">
-              {document.title}
+              {document.document_type}
             </p>
           </div>
 
@@ -53,9 +60,9 @@ export function DocumentUploadModal({
             <input
               type="file"
               hidden
-              onChange={(e) =>
+              onChange={(event) =>
                 setFile(
-                  e.target.files?.[0] || null
+                  event.target.files?.[0] || null
                 )
               }
             />
@@ -101,9 +108,9 @@ export function DocumentUploadModal({
           </button>
 
           <button
-            disabled={!file}
-            onClick={onSuccess}
-            className="rounded-full bg-[#F4B400] px-8 py-3 font-medium text-black"
+            disabled
+            title="Document upload is not available yet — pending a backend upload endpoint."
+            className="cursor-not-allowed rounded-full bg-[#F4B400] px-8 py-3 font-medium text-black opacity-50"
           >
             Submit for review
           </button>

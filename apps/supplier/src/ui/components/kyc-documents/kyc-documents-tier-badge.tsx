@@ -7,8 +7,10 @@ const TIER_COLOR: Record<DistributorTier, string> = {
   Bronze: '#B45309',
 };
 
-/** Small pill badge for the distributor tier column (Gold / Silver / Bronze). */
-export function KycDocumentsTierBadge({ tier }: { tier: DistributorTier }) {
+/** Small pill badge for the distributor tier column (Gold / Silver / Bronze). Renders
+ * nothing when the tier is unknown (no endpoint currently resolves a distributor's tier). */
+export function KycDocumentsTierBadge({ tier }: { tier?: DistributorTier }) {
+  if (!tier) return null;
   const color = TIER_COLOR[tier];
   return (
     <span

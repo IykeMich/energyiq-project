@@ -1,15 +1,16 @@
 import { KycDocumentTypeSummaryCard } from './kyc-document-type-summary-card';
-import { DOCUMENT_TYPE_SUMMARIES } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentTypeSummary } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
 interface KycDocumentsTypesPanelProps {
+  summaries: DocumentTypeSummary[];
   /** Navigate to the full Document Types configuration page. */
   onSeeAll: () => void;
-  /** Open a document type for editing (stubbed until the endpoint lands). */
+  /** Open a document type for editing. */
   onEditType: (typeName: string) => void;
 }
 
-/** Gold-bordered "Document Types" panel with a "See all" link and 3 type tiles. */
-export function KycDocumentsTypesPanel({ onSeeAll, onEditType }: KycDocumentsTypesPanelProps) {
+/** Gold-bordered "Document Types" panel with a "See all" link and up to 3 type tiles. */
+export function KycDocumentsTypesPanel({ summaries, onSeeAll, onEditType }: KycDocumentsTypesPanelProps) {
   return (
     <div className="rounded-[18px] border border-[#FBC02D80] p-6">
       <div className="mb-5 flex items-center justify-between">
@@ -23,7 +24,7 @@ export function KycDocumentsTypesPanel({ onSeeAll, onEditType }: KycDocumentsTyp
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {DOCUMENT_TYPE_SUMMARIES.map((summary) => (
+        {summaries.map((summary) => (
           <KycDocumentTypeSummaryCard
             key={summary.name}
             summary={summary}

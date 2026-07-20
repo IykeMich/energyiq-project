@@ -40,6 +40,7 @@ interface BaseFieldProps<FormValues extends FieldValues> {
   label: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
 }
 
 /** Single-line text input bound to react-hook-form. */
@@ -49,6 +50,7 @@ export function KycTextField<FormValues extends FieldValues>({
   label,
   placeholder,
   required,
+  disabled,
 }: BaseFieldProps<FormValues>) {
   return (
     <Controller
@@ -58,8 +60,13 @@ export function KycTextField<FormValues extends FieldValues>({
         <FieldShell label={label} required={required} error={error?.message}>
           <input
             {...field}
+            disabled={disabled}
             placeholder={placeholder}
-            className={cn(CONTROL_BASE, error ? CONTROL_ERROR : CONTROL_IDLE)}
+            className={cn(
+              CONTROL_BASE,
+              error ? CONTROL_ERROR : CONTROL_IDLE,
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
           />
         </FieldShell>
       )}

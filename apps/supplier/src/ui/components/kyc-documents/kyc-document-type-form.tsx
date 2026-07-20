@@ -1,9 +1,18 @@
+import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@energyiq/ui';
 import { cn } from '@energyiq/shared';
+import {
+  useGetV1DoctypeReadId,
+  usePostV1DoctypeCreate,
+  usePutV1DoctypeUpdateId,
+  getGetV1DoctypeListQueryKey,
+  getGetV1DoctypeReadIdQueryKey,
+} from '@energyiq/api/generated/document-types/document-types';
 import {
   KycTextField,
   KycSelectField,
@@ -15,28 +24,44 @@ import {
   type KycDocumentTypeFormData,
 } from './kyc-document-type-schema';
 import {
+  mapDocumentTypeToFormDefaults,
+  mapFormToCreateRequest,
+  mapFormToUpdateRequest,
+} from './kyc-document-type-mappers';
+import {
   DOCUMENT_CATEGORY_OPTIONS,
   REQUIRED_OPTIONS,
   EXPIRY_REQUIRED_OPTIONS,
   VALIDITY_PERIOD_OPTIONS,
   ALLOWED_FILE_TYPE_OPTIONS,
   MAX_FILE_SIZE_OPTIONS,
-  mockCreateDocumentType,
 } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
+interface KycDocumentTypeFormProps {
+  /** When set, the form edits this existing document type instead of creating a new one. */
+  documentTypeId?: string;
+}
+
 /**
- * "Add new document type" form. Uses react-hook-form + zod with `mode: 'onTouched'`
+ * "Add / Edit document type" form. Uses react-hook-form + zod with `mode: 'onTouched'`
  * so per-field errors surface once a field is touched/dirtied, and the Save button
  * stays disabled until the whole form is valid. A successful submit fires a smooth
  * sonner toast and returns to the Document Types list.
  */
-export function KycDocumentTypeForm() {
+export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { slug = 'demo' } = useParams<{ slug: string }>();
+  const isEditing = Boolean(documentTypeId);
+
+  const { data: existingDocumentType } = useGetV1DoctypeReadId(documentTypeId ?? '', {
+    query: { enabled: isEditing, queryKey: getGetV1DoctypeReadIdQueryKey(documentTypeId ?? '') },
+  });
 
   const {
     control,
     handleSubmit,
+    reset,
     formState: { isValid, isSubmitting },
   } = useForm<KycDocumentTypeFormData>({
     resolver: zodResolver(kycDocumentTypeSchema),
@@ -44,13 +69,28 @@ export function KycDocumentTypeForm() {
     defaultValues: KYC_DOCUMENT_TYPE_DEFAULTS,
   });
 
+  useEffect(() => {
+    if (existingDocumentType?.data) {
+      reset(mapDocumentTypeToFormDefaults(existingDocumentType.data.data ?? {}));
+    }
+  }, [existingDocumentType, reset]);
+
+  const createDocumentType = usePostV1DoctypeCreate();
+  const updateDocumentType = usePutV1DoctypeUpdateId();
+
   const typesListPath = `/${slug}/kyc-documents/types`;
 
   const onSubmit = async (data: KycDocumentTypeFormData) => {
-    // TODO(orval): replace with the generated create-document-type mutation.
-    await mockCreateDocumentType();
-    toast.success('Document type created', {
-      description: `'${data.documentName}' has been added to the required documents.`,
+    if (isEditing && documentTypeId) {
+      await updateDocumentType.mutateAsync({ id: documentTypeId, data: mapFormToUpdateRequest(data) });
+    } else {
+      await createDocumentType.mutateAsync({ data: mapFormToCreateRequest(data) });
+    }
+    await queryClient.invalidateQueries({ queryKey: getGetV1DoctypeListQueryKey() });
+    toast.success(isEditing ? 'Document type updated' : 'Document type created', {
+      description: isEditing
+        ? `'${data.documentName}' has been updated.`
+        : `'${data.documentName}' has been added to the required documents.`,
     });
     navigate(typesListPath);
   };
@@ -66,7 +106,9 @@ export function KycDocumentTypeForm() {
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         </button>
-        <h1 className="text-2xl font-semibold text-white">Add new document type</h1>
+        <h1 className="text-2xl font-semibold text-white">
+          {isEditing ? 'Edit document type' : 'Add new document type'}
+        </h1>
       </header>
 
       <form
@@ -83,6 +125,7 @@ export function KycDocumentTypeForm() {
             label="Document Name:"
             placeholder="e.g. Business License, Tax Certificate"
             required
+            disabled={isEditing}
           />
           <KycSelectField
             control={control}
@@ -90,7 +133,6 @@ export function KycDocumentTypeForm() {
             label="Document Category:"
             placeholder="Select category"
             options={DOCUMENT_CATEGORY_OPTIONS}
-            required
           />
           <KycSelectField
             control={control}

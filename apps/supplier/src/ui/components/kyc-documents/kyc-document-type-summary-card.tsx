@@ -17,7 +17,6 @@ export function KycDocumentTypeSummaryCard({ summary, onEdit }: KycDocumentTypeS
               <span className="text-[11px] font-light text-gray-400">Mandatory</span>
             )}
           </div>
-          <span className="text-xs text-gray-400">{summary.category}</span>
         </div>
         <button
           type="button"

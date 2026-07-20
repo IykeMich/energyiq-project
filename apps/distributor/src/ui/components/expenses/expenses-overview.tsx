@@ -112,6 +112,17 @@ export function ExpensesOverview() {
     },
   ];
 
+  const filteredEntries = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return recentEntries.filter(
+      (entry) =>
+        query === '' ||
+        entry.title.toLowerCase().includes(query) ||
+        entry.sub.toLowerCase().includes(query),
+    );
+  }, [searchQuery]);
+
   return (
     <>
      <section className="flex h-full min-h-[calc(100vh-120px)] flex-col gap-5 p-6">
@@ -204,7 +215,7 @@ export function ExpensesOverview() {
             </div>
 
            <div className="flex-1 overflow-y-auto">
-  {recentEntries.map((item, index) => (
+  {filteredEntries.map((item, index) => (
     <div
       key={index}
       className="flex items-center justify-between border-b border-[#1D1D1D] px-4 py-3 transition hover:bg-[#141414]"

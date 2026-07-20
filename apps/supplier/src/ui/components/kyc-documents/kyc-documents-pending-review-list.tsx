@@ -1,14 +1,16 @@
 import { ArrowUpRight } from 'lucide-react';
 import { KycDocumentsDocumentRow } from './kyc-documents-document-row';
-import { PENDING_REVIEW_ITEMS } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { PendingReviewItem } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
 interface KycDocumentsPendingReviewListProps {
+  items: PendingReviewItem[];
   onViewAll: () => void;
   onReview: (itemId: string) => void;
 }
 
 /** Left dashboard column: distributor documents awaiting review, each with a Review action. */
 export function KycDocumentsPendingReviewList({
+  items,
   onViewAll,
   onReview,
 }: KycDocumentsPendingReviewListProps) {
@@ -26,7 +28,10 @@ export function KycDocumentsPendingReviewList({
         </button>
       </div>
       <div className="flex flex-col gap-4">
-        {PENDING_REVIEW_ITEMS.map((item) => (
+        {items.length === 0 && (
+          <p className="py-6 text-center text-sm text-gray-400">Nothing pending review.</p>
+        )}
+        {items.map((item) => (
           <KycDocumentsDocumentRow
             key={item.id}
             distributor={item.distributor}

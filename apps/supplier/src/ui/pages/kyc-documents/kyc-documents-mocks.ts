@@ -1,15 +1,13 @@
-import {
-  FileText,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  type LucideIcon,
-} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 /**
- * Placeholder data for the KYC Documents feature. Every block is marked with a
- * TODO(orval) note showing the generated query that will replace it once the
- * compliance/KYC endpoints land.
+ * Types shared across the KYC Documents feature, plus the pieces of UI copy/options
+ * that aren't backed by an API at all (form select options, reject reasons) and the
+ * one section still on mock data: the "Document Lists" table below is per-distributor
+ * (name + tier), but no endpoint in the API returns a distributor's name or tier —
+ * only `distributor_id`. Every other section reads live data via the generated
+ * `@energyiq/api/generated` hooks (see kyc-documents-mappers.ts for the API -> UI
+ * shape mapping).
  */
 
 // ───────── KPI strip ─────────
@@ -23,38 +21,12 @@ export interface KycKpi {
   badge?: { label: string; emphasis: 'success' | 'destructive' };
 }
 
-// TODO(orval): replace with the KYC document-summary query (counts + completion rate).
-export const KYC_KPIS: KycKpi[] = [
-  { title: 'Total Documents:', value: '1,248', Icon: FileText },
-  {
-    title: 'Verified:',
-    value: '1,084',
-    Icon: CheckCircle2,
-    badge: { label: '87% Completion Rate', emphasis: 'success' },
-  },
-  { title: 'Pending  Review:', value: '126', Icon: Clock },
-  {
-    title: 'Expired:',
-    value: '12',
-    Icon: AlertTriangle,
-    badge: { label: '3 Due for Renewal', emphasis: 'destructive' },
-  },
-];
-
 // ───────── Document-type summary cards (dashboard panel) ─────────
 
 export interface DocumentTypeSummary {
   name: string;
-  category: string;
   mandatory: boolean;
 }
-
-// TODO(orval): replace with the document-types query (mandatory flag + category).
-export const DOCUMENT_TYPE_SUMMARIES: DocumentTypeSummary[] = [
-  { name: 'Business License', category: 'Legal', mandatory: true },
-  { name: 'Tax Certificate', category: 'Financial', mandatory: true },
-  { name: 'Insurance Policy', category: 'Risks', mandatory: true },
-];
 
 // ───────── Pending review / Expiring soon lists ─────────
 
@@ -65,28 +37,6 @@ export interface PendingReviewItem {
   submittedAgo: string;
 }
 
-// TODO(orval): replace with the pending-review documents query.
-export const PENDING_REVIEW_ITEMS: PendingReviewItem[] = [
-  {
-    id: 'pr-1',
-    distributor: 'Adewale Oil & Gas',
-    fileName: 'Tax Clearance_certificate_2025.pdf',
-    submittedAgo: '2hr ago',
-  },
-  {
-    id: 'pr-2',
-    distributor: 'Kano Trade Supplies',
-    fileName: 'CAC_certificate_2025.pdf',
-    submittedAgo: '5hr ago',
-  },
-  {
-    id: 'pr-3',
-    distributor: 'Emeka Gas Supplies',
-    fileName: 'Business License_2025.pdf',
-    submittedAgo: '1 day ago',
-  },
-];
-
 export interface ExpiringSoonItem {
   id: string;
   distributor: string;
@@ -94,31 +44,6 @@ export interface ExpiringSoonItem {
   daysLeft: number;
   expiresOn: string;
 }
-
-// TODO(orval): replace with the expiring-documents query.
-export const EXPIRING_SOON_ITEMS: ExpiringSoonItem[] = [
-  {
-    id: 'ex-1',
-    distributor: 'Adewale Oil & Gas',
-    fileName: 'Tax Clearance_certificate_2025.pdf',
-    daysLeft: 7,
-    expiresOn: '14 June 2026',
-  },
-  {
-    id: 'ex-2',
-    distributor: 'Sunrise Energy PHC',
-    fileName: 'Business Reg_certificate_2025.pdf',
-    daysLeft: 12,
-    expiresOn: '19 June 2026',
-  },
-  {
-    id: 'ex-3',
-    distributor: 'Delta Fuel Merchants',
-    fileName: 'Business License_2025.pdf',
-    daysLeft: 18,
-    expiresOn: '25 June 2026',
-  },
-];
 
 // ───────── Document Lists table ─────────
 
@@ -134,7 +59,10 @@ export interface DocumentListRow {
   status: DocumentStatus;
 }
 
-// TODO(orval): replace with the distributor-documents list query (paginated).
+// TODO(orval): no endpoint returns a distributor's name/tier (only `distributor_id`
+// on Document) or a per-distributor completeness rollup — this table stays mocked
+// until a distributor-list/detail endpoint exists. Every other KYC documents section
+// is wired to the real documents/document-types endpoints.
 export const DOCUMENT_LIST_ROWS: DocumentListRow[] = [
   { id: 'dl-1', distributor: 'PetroMax Energy', tier: 'Gold', documents: '5/5 Complete', lastUpdated: 'Today', status: 'Verified' },
   { id: 'dl-2', distributor: 'GUO Energy', tier: 'Silver', documents: '4/5 Complete', lastUpdated: '2hr ago', status: 'In Review' },
@@ -160,7 +88,6 @@ export interface KycDocumentFilter {
 // Distributor options are derived from the rows so they stay in sync.
 const DISTRIBUTOR_OPTIONS = [...new Set(DOCUMENT_LIST_ROWS.map((row) => row.distributor))];
 
-// TODO(orval): drive these options from the documents endpoint's facets.
 export const KYC_DOCUMENT_FILTERS: KycDocumentFilter[] = [
   { id: 'distributor', label: 'All Distributors', options: DISTRIBUTOR_OPTIONS },
   { id: 'tier', label: 'All Tiers', options: ['Gold', 'Silver', 'Bronze'] },
@@ -176,27 +103,16 @@ export const KYC_DOCUMENT_FILTERS: KycDocumentFilter[] = [
 export interface ReviewQueueItem {
   id: string;
   distributor: string;
-  tier: DistributorTier;
+  /** Undefined — no endpoint returns a distributor's tier (see note above). */
+  tier?: DistributorTier;
   fileName: string;
   submittedAgo: string;
-  /** Document image/stream URL — undefined until the real source is wired. */
+  /** Document image/stream URL — no endpoint among the 12 serves document bytes, so
+   * this stays undefined and the preview shows its placeholder. */
   documentUrl?: string;
-  /** Demo-only: approving a restricted item surfaces the "No Access" error. */
-  restricted?: boolean;
 }
 
-// TODO(orval): replace with the pending-review queue query; `documentUrl` comes
-// from the document storage/stream endpoint (the preview shows a placeholder until then).
-// `restricted` is a temporary stand-in until the real permission check / 403 lands.
-export const REVIEW_QUEUE_ITEMS: ReviewQueueItem[] = [
-  { id: 'rq-1', distributor: 'Adewale Oil & Gas', tier: 'Gold', fileName: 'Tax Clearance_certificate_2025.pdf', submittedAgo: 'Submitted 2 hours ago.' },
-  { id: 'rq-2', distributor: 'Kano Trade Supplies', tier: 'Gold', fileName: 'CAC Certificate (Renewal)_2025.pdf', submittedAgo: 'Submitted 5 hours ago.' },
-  { id: 'rq-3', distributor: 'Emeka Gas Supplies', tier: 'Gold', fileName: 'Business License_2025.pdf', submittedAgo: 'Submitted 1 day ago.' },
-  { id: 'rq-4', distributor: 'Sunrise Energy PHC', tier: 'Gold', fileName: 'Utility Bill (Onboarding)', submittedAgo: 'Submitted 2 day ago.' },
-  { id: 'rq-5', distributor: 'Delta Fuel Merchants', tier: 'Gold', fileName: 'Business Reg. Certificate (Renewal)', submittedAgo: 'Submitted 2 day ago.', restricted: true },
-];
-
-// Reasons offered when rejecting a document submission.
+// Reasons offered when rejecting a document submission (free-text UI copy, not API data).
 export const KYC_REJECT_REASONS = [
   'Invalid Document',
   'Expired Document',
@@ -204,12 +120,6 @@ export const KYC_REJECT_REASONS = [
   'Wrong Document Type',
   'Other',
 ];
-
-/** Mocked approve/reject call used to drive the "Confirming…" loading state. */
-// TODO(orval): replace with the generated approve/reject-document mutations.
-export function mockReviewAction(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 1200));
-}
 
 // ───────── Document Types configuration list ("see all" page) ─────────
 
@@ -222,54 +132,10 @@ export interface DocumentTypeConfig {
   reminder: string;
 }
 
-// TODO(orval): replace with the document-types configuration query.
-export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
-  {
-    id: 'dt-1',
-    name: 'Business Registration Certificate',
-    required: true,
-    allowedFileTypes: 'PDF, JPG, PNG',
-    renewal: 'Renew every 24 months',
-    reminder: 'Reminder: 60 days before',
-  },
-  {
-    id: 'dt-2',
-    name: 'CAC Certificate',
-    required: true,
-    allowedFileTypes: 'PDF, JPG, PNG',
-    renewal: 'Renew every 12 months',
-    reminder: 'Reminder: 30 days before',
-  },
-  {
-    id: 'dt-3',
-    name: 'Tax Clearance Certificate',
-    required: true,
-    allowedFileTypes: 'PDF, JPG, PNG',
-    renewal: 'Renew every 12 months',
-    reminder: 'Reminder: 30 days before',
-  },
-  {
-    id: 'dt-4',
-    name: 'Director NIN Slip',
-    required: true,
-    allowedFileTypes: 'PDF, JPG, PNG',
-    renewal: 'No Expiry',
-    reminder: 'Reminder: Never',
-  },
-  {
-    id: 'dt-5',
-    name: 'Utility Bill',
-    required: false,
-    allowedFileTypes: 'PDF, JPG, PNG',
-    renewal: 'Renew every 3 months',
-    reminder: 'Reminder: Never',
-  },
-];
-
 // ───────── Add-new-document-type form select options ─────────
 
-// TODO(orval): these option lists come from reference/lookup endpoints — replace
-// with the generated queries (categories, validity periods, file types, sizes).
+// These are the form's fixed choice lists (not API data) — see
+// kyc-document-type-mappers.ts for how they translate to/from the document-type API.
 export const DOCUMENT_CATEGORY_OPTIONS = [
   { value: 'Legal', label: 'Legal' },
   { value: 'Financial', label: 'Financial' },
@@ -308,12 +174,3 @@ export const MAX_FILE_SIZE_OPTIONS = [
   { value: '10 MB', label: '10 MB' },
   { value: '20 MB', label: '20 MB' },
 ];
-
-/**
- * Mocked create call used to drive the form's loading state before the success
- * toast fires. Resolves after a short delay.
- */
-// TODO(orval): replace with the generated create-document-type mutation.
-export function mockCreateDocumentType(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 900));
-}

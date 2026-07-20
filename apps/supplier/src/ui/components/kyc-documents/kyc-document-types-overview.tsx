@@ -1,16 +1,37 @@
+import { useState } from 'react';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { ConfirmDialog, toast } from '@energyiq/ui';
+import {
+  useGetV1DoctypeList,
+  useDeleteV1DoctypeDeleteId,
+  getGetV1DoctypeListQueryKey,
+} from '@energyiq/api/generated/document-types/document-types';
 import { KycDocumentTypeConfigCard } from './kyc-document-type-config-card';
-import { DOCUMENT_TYPE_CONFIGS } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import { mapDocumentTypeToConfig } from './kyc-document-type-mappers';
+import type { DocumentTypeConfig } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
-/**
- * "Document Types" configuration page: lists every document distributors must
- * submit, with an entry point to add a new type. Edit is stubbed until the
- * document-type mutation endpoint lands.
- */
+/** "Document Types" configuration page: lists every document distributors must submit. */
 export function KycDocumentTypesOverview() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { slug = 'demo' } = useParams<{ slug: string }>();
+  const [deactivateTarget, setDeactivateTarget] = useState<DocumentTypeConfig | null>(null);
+
+  const { data, isLoading } = useGetV1DoctypeList();
+  const deactivateDocumentType = useDeleteV1DoctypeDeleteId();
+  const configs = (data?.data?.data ?? []).map(mapDocumentTypeToConfig);
+
+  const handleConfirmDeactivate = async () => {
+    if (!deactivateTarget) return;
+    await deactivateDocumentType.mutateAsync({ id: deactivateTarget.id });
+    await queryClient.invalidateQueries({ queryKey: getGetV1DoctypeListQueryKey() });
+    toast.success('Document type deactivated', {
+      description: `'${deactivateTarget.name}' is no longer required from distributors.`,
+    });
+    setDeactivateTarget(null);
+  };
 
   return (
     <section className="flex flex-col gap-6">
@@ -41,17 +62,41 @@ export function KycDocumentTypesOverview() {
         </button>
       </header>
 
-      <div className="flex flex-col gap-4">
-        {DOCUMENT_TYPE_CONFIGS.map((config) => (
-          <KycDocumentTypeConfigCard
-            key={config.id}
-            config={config}
-            onEdit={() => {
-              // TODO(orval): open the edit-document-type flow once the endpoint lands.
-            }}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <p className="py-16 text-center text-sm text-gray-400">Loading document types…</p>
+      ) : configs.length === 0 ? (
+        <p className="py-16 text-center text-sm text-gray-400">No document types configured yet.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {configs.map((config) => (
+            <KycDocumentTypeConfigCard
+              key={config.id}
+              config={config}
+              onEdit={() => navigate(`/${slug}/kyc-documents/types/${config.id}/edit`)}
+              onDeactivate={() => setDeactivateTarget(config)}
+            />
+          ))}
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={deactivateTarget !== null}
+        onOpenChange={(open) => !open && setDeactivateTarget(null)}
+        title="Deactivate Document Type"
+        message={
+          <>
+            Are you sure you want to deactivate &apos;{deactivateTarget?.name}&apos;?
+            <br />
+            <span className="text-muted-foreground">
+              Distributors will no longer be asked to submit this document. Existing submissions are
+              kept for audit purposes.
+            </span>
+          </>
+        }
+        confirmLabel="Deactivate"
+        intent="danger"
+        onConfirm={handleConfirmDeactivate}
+      />
     </section>
   );
 }
