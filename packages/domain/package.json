@@ -9,7 +9,9 @@
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
     "./employee": "./src/employee/index.ts",
+    "./order": "./src/order/index.ts",
     "./product": "./src/product/index.ts",
+    "./warehouse": "./src/warehouse/index.ts",
     "./shared": "./src/shared/index.ts"
   },
   "scripts": {

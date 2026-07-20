@@ -1,52 +1,149 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ConfirmDialog, SuccessModal } from '@energyiq/ui';
+import { ConfirmDialog, SuccessModal, toast } from '@energyiq/ui';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
+import {
+  useApproveOrderMutation,
+  useRejectOrderMutation,
+  useCancelOrderMutation,
+  useDispatchOrderMutation,
+  useReceiveOrderMutation,
+} from '@/hooks/use-orders';
 import { OrdersSearchBar } from '../orders/orders-search-bar';
 import { OrderDetailHeader } from './order-detail-header';
 import { OrderDetailInfoCard } from './order-detail-info-card';
 import { OrderDetailSummaryCard } from './order-detail-summary-card';
 import { OrderDetailActions } from './order-detail-actions';
 import { OrderDetailHelpCard } from './order-detail-help-card';
+import { getAvailableActions } from './order-detail-mapper';
 import type { OrderDetailData } from './order-detail-mocks';
 
-type OpenModal = null | 'approve' | 'reject';
+type OpenModal = null | 'approve' | 'reject' | 'cancel' | 'dispatch' | 'receive';
 
 interface OrderDetailOverviewProps {
   data: OrderDetailData;
+  orderId: string;
 }
 
 /**
- * Supplier Order Details page. Search lives in the layout header (matching the
- * design's top row); the order info/items/timeline and supplier/payment summary
- * fill the body. Action flows use the shared confirm + success modals for now.
+ * Distributor Order Details page. Wires the order action buttons to the real
+ * order API endpoints.
  */
-export function OrderDetailOverview({ data }: OrderDetailOverviewProps) {
+export function OrderDetailOverview({ data, orderId }: OrderDetailOverviewProps) {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  // TODO(orval): wire this search to the global order search once the API lands.
   const [searchQuery, setSearchQuery] = useState('');
   const [modal, setModal] = useState<OpenModal>(null);
   const [success, setSuccess] = useState({ open: false, title: '', subtitle: '' });
 
+  const approveMutation = useApproveOrderMutation();
+  const rejectMutation = useRejectOrderMutation();
+  const cancelMutation = useCancelOrderMutation();
+  const dispatchMutation = useDispatchOrderMutation();
+  const receiveMutation = useReceiveOrderMutation();
+
   const goToOrders = () => navigate(`/${slug}/orders`);
   const closeModal = () => setModal(null);
 
-  const handleApprove = () => {
+  const backendStatus = data.status.label.toLowerCase();
+  const actions = getAvailableActions(backendStatus);
+
+  const runMutation = (
+    mutate: () => void,
+    successTitle: string,
+    successSubtitle: string,
+  ) => {
+    mutate();
     setModal(null);
-    setSuccess({
-      open: true,
-      title: 'Order Approved',
-      subtitle: `Order ${data.orderId} has been approved. The distributor has been notified.`,
+    setSuccess({ open: true, title: successTitle, subtitle: successSubtitle });
+  };
+
+  const handleApprove = () => {
+    approveMutation.mutate(orderId, {
+      onSuccess: () =>
+        runMutation(
+          () => {},
+          'Order Approved',
+          `Order ${data.orderId} has been approved. The supplier has been notified.`,
+        ),
+      onError: (error) => {
+        closeModal();
+        toast.error('Approval failed', { description: (error as Error).message });
+      },
     });
   };
 
   const handleReject = () => {
-    setModal(null);
-    setSuccess({
-      open: true,
-      title: 'Order Rejected',
-      subtitle: `Order ${data.orderId} has been rejected. The distributor has been notified.`,
+    rejectMutation.mutate(
+      { id: orderId, req: { reason: 'Rejected by distributor' } },
+      {
+        onSuccess: () =>
+          runMutation(
+            () => {},
+            'Order Rejected',
+            `Order ${data.orderId} has been rejected. The supplier has been notified.`,
+          ),
+        onError: (error) => {
+          closeModal();
+          toast.error('Rejection failed', { description: (error as Error).message });
+        },
+      },
+    );
+  };
+
+  const handleCancel = () => {
+    cancelMutation.mutate(orderId, {
+      onSuccess: () =>
+        runMutation(
+          () => {},
+          'Order Cancelled',
+          `Order ${data.orderId} has been cancelled.`,
+        ),
+      onError: (error) => {
+        closeModal();
+        toast.error('Cancellation failed', { description: (error as Error).message });
+      },
+    });
+  };
+
+  const handleDispatch = () => {
+    dispatchMutation.mutate(
+      {
+        id: orderId,
+        req: {
+          driver_name: 'Driver',
+          estimated_delivery: new Date().toISOString(),
+          tracking_number: 'TRACK-001',
+          vehicle_plate: 'ABC-123',
+        },
+      },
+      {
+        onSuccess: () =>
+          runMutation(
+            () => {},
+            'Order Dispatched',
+            `Order ${data.orderId} has been dispatched.`,
+          ),
+        onError: (error) => {
+          closeModal();
+          toast.error('Dispatch failed', { description: (error as Error).message });
+        },
+      },
+    );
+  };
+
+  const handleReceive = () => {
+    receiveMutation.mutate(orderId, {
+      onSuccess: () =>
+        runMutation(
+          () => {},
+          'Order Received',
+          `Order ${data.orderId} has been marked as received.`,
+        ),
+      onError: (error) => {
+        closeModal();
+        toast.error('Receive failed', { description: (error as Error).message });
+      },
     });
   };
 
@@ -67,9 +164,13 @@ export function OrderDetailOverview({ data }: OrderDetailOverviewProps) {
               data={data}
               actions={
                 <OrderDetailActions
+                  {...actions}
                   onModify={() => navigate(`/${slug}/orders/${data.orderId}/edit`)}
                   onReject={() => setModal('reject')}
                   onApprove={() => setModal('approve')}
+                  onCancel={() => setModal('cancel')}
+                  onDispatch={() => setModal('dispatch')}
+                  onReceive={() => setModal('receive')}
                 />
               }
             />
@@ -82,7 +183,7 @@ export function OrderDetailOverview({ data }: OrderDetailOverviewProps) {
         open={modal === 'approve'}
         onOpenChange={(open) => !open && closeModal()}
         title={`Confirm Approval - ${data.orderId}`}
-        message="Are you sure you want to approve this order? The distributor will be notified immediately."
+        message="Are you sure you want to approve this order? The supplier will be notified immediately."
         confirmLabel="Approve"
         intent="primary"
         onConfirm={handleApprove}
@@ -92,10 +193,40 @@ export function OrderDetailOverview({ data }: OrderDetailOverviewProps) {
         open={modal === 'reject'}
         onOpenChange={(open) => !open && closeModal()}
         title="Reject Confirmation"
-        message="Are you sure you want to reject this order? The distributor will be notified immediately."
+        message="Are you sure you want to reject this order? The supplier will be notified immediately."
         confirmLabel="Confirm Rejection"
         intent="danger"
         onConfirm={handleReject}
+      />
+
+      <ConfirmDialog
+        open={modal === 'cancel'}
+        onOpenChange={(open) => !open && closeModal()}
+        title="Cancel Confirmation"
+        message="Are you sure you want to cancel this order? This action cannot be undone."
+        confirmLabel="Cancel Order"
+        intent="danger"
+        onConfirm={handleCancel}
+      />
+
+      <ConfirmDialog
+        open={modal === 'dispatch'}
+        onOpenChange={(open) => !open && closeModal()}
+        title="Dispatch Confirmation"
+        message="Are you sure you want to dispatch this order?"
+        confirmLabel="Dispatch"
+        intent="primary"
+        onConfirm={handleDispatch}
+      />
+
+      <ConfirmDialog
+        open={modal === 'receive'}
+        onOpenChange={(open) => !open && closeModal()}
+        title="Receive Confirmation"
+        message="Confirm that you have received this order."
+        confirmLabel="Mark Received"
+        intent="primary"
+        onConfirm={handleReceive}
       />
 
       <SuccessModal

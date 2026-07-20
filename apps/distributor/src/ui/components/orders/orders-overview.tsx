@@ -2,17 +2,17 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
+import { useOrdersQuery, useOrderStatsQuery } from '@/hooks/use-orders';
 import { OrdersSearchBar } from './orders-search-bar';
 import { OrdersActionButton } from './orders-action-button';
 import { OrdersStatusTracker } from './orders-status-tracker';
 import { OrdersStatusTabs } from './orders-status-tabs';
 import { OrdersFilterChips } from './orders-filter-chips';
 import { OrdersTable } from './orders-table';
-import { ORDERS_MOCK } from './orders-mocks';
+import { toOrderRow, toBackendStatus } from './orders-mapper';
 
 /**
- * Supplier Orders page. Search and the status tabs filter the table client-side
- * for now; swap `ORDERS_MOCK` for the orders query hook once the endpoint lands.
+ * Distributor Orders page. Wires the order list UI to the real order API.
  */
 export function OrdersOverview() {
   const navigate = useNavigate();
@@ -20,17 +20,25 @@ export function OrdersOverview() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
 
+  const backendStatus = toBackendStatus(activeTab);
+  const { data: listResult, isLoading } = useOrdersQuery(
+    backendStatus ? { status: backendStatus, limit: 100 } : { limit: 100 },
+  );
+  const { data: stats } = useOrderStatsQuery();
+
+  const orders = useMemo(() => (listResult?.items ?? []).map(toOrderRow), [listResult]);
+
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    return ORDERS_MOCK.filter((order) => {
-      const matchesTab = activeTab === 'All' || order.status === activeTab;
+    return orders.filter((orderItem) => {
+      const matchesTab = activeTab === 'All' || orderItem.status === activeTab;
       const matchesQuery =
         normalizedQuery === '' ||
-        order.id.toLowerCase().includes(normalizedQuery) ||
-        order.supplier.toLowerCase().includes(normalizedQuery);
+        orderItem.id.toLowerCase().includes(normalizedQuery) ||
+        orderItem.supplier.toLowerCase().includes(normalizedQuery);
       return matchesTab && matchesQuery;
     });
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, orders]);
 
   return (
     <section className="flex flex-col gap-6">
@@ -59,11 +67,12 @@ export function OrdersOverview() {
 
       {/* Table card: status tabs, filter chips, then the orders table */}
       <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
-        <OrdersStatusTabs activeLabel={activeTab} onChange={setActiveTab} />
+        <OrdersStatusTabs activeLabel={activeTab} onChange={setActiveTab} stats={stats} />
         <OrdersFilterChips />
         <OrdersTable
           orders={filteredOrders}
-          onViewDetails={(order) => navigate(`/${slug}/orders/${order.id}`)}
+          isLoading={isLoading}
+          onViewDetails={(orderItem) => navigate(`/${slug}/orders/${orderItem.id}`)}
         />
       </div>
     </section>

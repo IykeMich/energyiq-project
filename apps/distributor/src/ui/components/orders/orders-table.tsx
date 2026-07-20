@@ -70,10 +70,11 @@ function buildColumns(onViewDetails: (order: OrderRow) => void): Column<OrderRow
 
 interface OrdersTableProps {
   orders: OrderRow[];
+  isLoading?: boolean;
   onViewDetails: (order: OrderRow) => void;
 }
 
-export function OrdersTable({ orders, onViewDetails }: OrdersTableProps) {
+export function OrdersTable({ orders, isLoading, onViewDetails }: OrdersTableProps) {
   const columns = useMemo(() => buildColumns(onViewDetails), [onViewDetails]);
 
   return (
@@ -81,6 +82,7 @@ export function OrdersTable({ orders, onViewDetails }: OrdersTableProps) {
       columns={columns}
       data={orders}
       itemsPerPage={6}
+      isLoading={isLoading}
       getRowId={(row) => row.id}
       noDataMessage="No orders match your filters"
     />

@@ -1,5 +1,7 @@
 // ───────── Warehouse Inventory ─────────
 
+import type { warehouse } from '@energyiq/domain';
+
 export type WarehouseStatus = 'active' | 'inactive';
 
 export interface Warehouse {
@@ -46,8 +48,8 @@ export interface WarehouseSummary {
   totalWarehouses: number;
 }
 
-export function buildWarehouseSummary(rows: Warehouse[]): WarehouseSummary {
-  return { totalWarehouses: rows.length };
+export function buildWarehouseSummary(rows: Warehouse[], totalFromStats?: number): WarehouseSummary {
+  return { totalWarehouses: totalFromStats ?? rows.length };
 }
 
 export type StockTone = 'success' | 'warning' | 'danger';
@@ -166,4 +168,141 @@ export function transferTimelineStep(status: TransferStatus): number {
   if (status === 'completed') return 2;
   if (status === 'pending') return 1;
   return 0;
+}
+
+// ════════════════════════════════════════════════════════════════
+// Domain → view-model mappers (used once real endpoints are wired)
+// ════════════════════════════════════════════════════════════════
+
+/** Static manager-name → manager_id mapping until employee list is wired. */
+export const MANAGER_ID_MAP: Record<string, string> = {
+  'Mr Johnson Ekanem': 'mgr-johnson',
+  'Mrs Grace Obi': 'mgr-grace',
+  'Mr Tunde Bakare': 'mgr-tunde',
+  'Ms Amaka Eze': 'mgr-amaka',
+};
+
+export function managerNameToId(name: string): string | undefined {
+  return MANAGER_ID_MAP[name];
+}
+
+export function managerIdToName(id?: string): string {
+  const entry = Object.entries(MANAGER_ID_MAP).find(([, value]) => value === id);
+  return entry?.[0] ?? 'Unknown';
+}
+
+/** Static product-name → product_id mapping until product catalog is wired. */
+export const PRODUCT_ID_MAP: Record<string, string> = {
+  'Premium Motor Spirit (PMS)': 'prod-pms',
+  'Automotive Gas Oil (AGO)': 'prod-ago',
+  'Kerosene (DPK)': 'prod-dpk',
+  'Liquefied Petroleum Gas (LPG)': 'prod-lpg',
+};
+
+export function productNameToId(name: string): string | undefined {
+  return PRODUCT_ID_MAP[name];
+}
+
+export function productIdToName(id?: string): string {
+  const entry = Object.entries(PRODUCT_ID_MAP).find(([, value]) => value === id);
+  return entry?.[0] ?? id ?? 'Unknown';
+}
+
+export function productIdToCode(id?: string): string {
+  switch (id) {
+    case 'prod-pms':
+      return 'PMS';
+    case 'prod-ago':
+      return 'AGO';
+    case 'prod-dpk':
+      return 'DPK';
+    case 'prod-lpg':
+      return 'LPG';
+    default:
+      return id?.toUpperCase() ?? 'N/A';
+  }
+}
+
+export function toWarehouseViewModel(source: warehouse.Warehouse): Warehouse {
+  const capacity = source.capacity ?? 0;
+  const percent = source.stock_level_percentage ?? 0;
+  return {
+    id: source.id ?? '',
+    name: source.name ?? '',
+    location: source.location ?? '',
+    fullLocation: source.location ?? '',
+    stockLevelPercent: percent,
+    usedL: capacity > 0 ? Math.round((capacity * percent) / 100) : 0,
+    capacityL: capacity,
+    lastUpdated: formatDate(source.updated_at ?? source.created_at),
+    status: (source.status as WarehouseStatus) ?? 'inactive',
+  };
+}
+
+export function toTransferRecordViewModel(
+  source: warehouse.StockTransfer,
+  warehouses: warehouse.Warehouse[] = [],
+): TransferRecord {
+  const fromWarehouse = warehouses.find((w) => w.id === source.from_warehouse_id);
+  const toWarehouse = warehouses.find((w) => w.id === source.to_warehouse_id);
+  const productName = productIdToName(source.product_id);
+  const productCode = productIdToCode(source.product_id);
+  const quantity = source.quantity ?? 0;
+  const date = source.created_at ?? '';
+
+  return {
+    id: source.id ?? '',
+    productCode,
+    productName,
+    fromName: fromWarehouse?.name ?? source.from_warehouse_id ?? 'Unknown',
+    toName: toWarehouse?.name ?? source.to_warehouse_id ?? 'Unknown',
+    quantity: `${quantity.toLocaleString()}L`,
+    date: formatDateTime(date),
+    dateValue: date.slice(0, 10),
+    status: mapTransferStatus(source.status),
+    initiatedBy: source.requested_by ?? 'Unknown',
+  };
+}
+
+function mapTransferStatus(
+  status?: warehouse.StockTransferStatus | string,
+): TransferStatus {
+  switch (status) {
+    case 'confirmed':
+      return 'completed';
+    case 'failed':
+    case 'cancelled':
+      return 'failed';
+    case 'pending':
+    case 'processing':
+    default:
+      return 'pending';
+  }
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '–';
+  try {
+    return new Date(value).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return value;
+  }
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return '–';
+  try {
+    const date = new Date(value);
+    return `${date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })} · ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  } catch {
+    return value;
+  }
 }

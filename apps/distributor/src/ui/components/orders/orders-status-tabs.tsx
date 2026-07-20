@@ -1,16 +1,36 @@
 import { cn } from '@energyiq/shared';
-import { ORDER_STATUS_TABS } from './orders-mocks';
+import type { order } from '@energyiq/domain';
 
 interface OrdersStatusTabsProps {
   activeLabel: string;
   onChange: (label: string) => void;
+  stats?: order.OrderStats;
+}
+
+interface OrderStatusTab {
+  label: string;
+  count: number;
+}
+
+function buildTabs(stats?: order.OrderStats): OrderStatusTab[] {
+  return [
+    { label: 'All', count: stats?.total ?? 0 },
+    { label: 'Pending', count: (stats?.submitted ?? 0) + (stats?.draft ?? 0) },
+    { label: 'Approved', count: stats?.approved ?? 0 },
+    { label: 'Rejected', count: stats?.rejected ?? 0 },
+    { label: 'Delivered', count: (stats?.received ?? 0) + (stats?.completed ?? 0) },
+    { label: 'Dispatched', count: stats?.dispatched ?? 0 },
+    { label: 'Cancelled', count: stats?.cancelled ?? 0 },
+  ];
 }
 
 /** Horizontal status summary tabs (All, Pending, Approved, …) with count pills. */
-export function OrdersStatusTabs({ activeLabel, onChange }: OrdersStatusTabsProps) {
+export function OrdersStatusTabs({ activeLabel, onChange, stats }: OrdersStatusTabsProps) {
+  const tabs = buildTabs(stats);
+
   return (
     <div className="flex flex-wrap items-center gap-6 border-b border-[#616161B2] pb-3">
-      {ORDER_STATUS_TABS.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = tab.label === activeLabel;
         return (
           <button

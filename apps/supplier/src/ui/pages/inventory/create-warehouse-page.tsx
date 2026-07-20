@@ -2,25 +2,24 @@ import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, SuccessModal } from '@energyiq/ui';
-import { mockWarehouseAction } from './mocks';
+import { useCreateWarehouseMutation } from '@/hooks/use-warehouses';
 import { CreateWarehouseForm } from '@/ui/components/warehouse/create-warehouse-form';
 
 export function CreateWarehousePage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const createMutation = useCreateWarehouseMutation();
   const [successOpen, setSuccessOpen] = useState(false);
   const [createdName, setCreatedName] = useState('');
   const [resetKey, setResetKey] = useState(0);
 
   const backToInventory = () => navigate(`/${slug}/inventory`);
 
-  const handleSave = async (name: string) => {
-    setCreatedName(name);
-    setIsProcessing(true);
-    await mockWarehouseAction();
-    setIsProcessing(false);
-    setSuccessOpen(true);
+  const handleCreate = (req: Parameters<typeof createMutation.mutate>[0]) => {
+    setCreatedName(req.name);
+    createMutation.mutate(req, {
+      onSuccess: () => setSuccessOpen(true),
+    });
   };
 
   return (
@@ -37,7 +36,11 @@ export function CreateWarehousePage() {
         <h1 className="text-2xl font-semibold text-foreground">Create Warehouse</h1>
       </header>
 
-      <CreateWarehouseForm key={resetKey} onCancel={backToInventory} onSave={handleSave} />
+      <CreateWarehouseForm
+        key={resetKey}
+        onCancel={backToInventory}
+        onSave={handleCreate}
+      />
 
       <SuccessModal
         open={successOpen}
@@ -61,7 +64,7 @@ export function CreateWarehousePage() {
         }}
       />
 
-      {isProcessing && <LoadingOverlay message="Creating warehouse..." />}
+      {createMutation.isPending && <LoadingOverlay message="Creating warehouse..." />}
     </section>
   );
 }

@@ -1,7 +1,13 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { SuccessModal } from '@energyiq/ui';
+import type { order } from '@energyiq/domain';
+import { SuccessModal, toast } from '@energyiq/ui';
+import {
+  useCreateOrderMutation,
+  useOrderQuery,
+  useUpdateOrderMutation,
+} from '@/hooks/use-orders';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { OrdersSearchBar } from '../orders/orders-search-bar';
 import { CreateOrderInformationCard } from './create-order-information-card';
@@ -27,7 +33,6 @@ import {
   SUBMITTED_ORDER_REFERENCE,
   SUMMARY_PRODUCT_IDS,
   SUPPLIER_OPTIONS,
-  getEditOrder,
   type CreateOrderDeliveryContact as DeliveryContact,
 } from './create-order-mocks';
 
@@ -61,25 +66,36 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
   const isEditMode = mode === 'edit';
-
-  // Seed the form from the order being edited (null for the blank create flow).
-  const seed = useMemo(
-    () => (isEditMode ? getEditOrder(orderId ?? '') : null),
-    [isEditMode, orderId],
-  );
-  const orderReference = seed?.orderReference ?? ORDER_REFERENCE;
+  const {
+    data: existingOrder,
+    isLoading: isLoadingOrder,
+  } = useOrderQuery(orderId ?? '', { enabled: isEditMode && Boolean(orderId) });
+  const orderReference = existingOrder?.order_number ?? orderId ?? ORDER_REFERENCE;
 
   // TODO(orval): wire this search to the global order search once the API lands.
   const [searchQuery, setSearchQuery] = useState('');
-  const [supplierId, setSupplierId] = useState(seed?.supplierId ?? DEFAULT_SUPPLIER_ID);
-  const [deliveryDate, setDeliveryDate] = useState(seed?.deliveryDate ?? DEFAULT_DELIVERY_DATE);
-  const [lineItems, setLineItems] = useState<CreateOrderLineItem[]>(seed?.lineItems ?? []);
-  const [deliveryMethodId, setDeliveryMethodId] = useState(
-    seed?.deliveryMethodId ?? DEFAULT_DELIVERY_METHOD_ID,
-  );
-  const [contact, setContact] = useState<DeliveryContact>(seed?.contact ?? DEFAULT_DELIVERY_CONTACT);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [supplierId, setSupplierId] = useState(DEFAULT_SUPPLIER_ID);
+  const [deliveryDate, setDeliveryDate] = useState(DEFAULT_DELIVERY_DATE);
+  const [lineItems, setLineItems] = useState<CreateOrderLineItem[]>([]);
+  const [deliveryMethodId, setDeliveryMethodId] = useState(DEFAULT_DELIVERY_METHOD_ID);
+  const [contact, setContact] = useState<DeliveryContact>(DEFAULT_DELIVERY_CONTACT);
   const [successKind, setSuccessKind] = useState<SuccessKind | null>(null);
+  const [successOrder, setSuccessOrder] = useState<order.Order | null>(null);
+
+  // Seed the edit form from the order being edited once it loads.
+  useEffect(() => {
+    if (!existingOrder) return;
+    setLineItems(toLineItems(existingOrder.items));
+  }, [existingOrder]);
+
+  const createMutation = useCreateOrderMutation();
+  const updateMutation = useUpdateOrderMutation();
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  const closeSuccess = () => {
+    setSuccessKind(null);
+    setSuccessOrder(null);
+  };
 
   const goToOrders = () => navigate(`/${slug}/orders`);
   const goToHome = () => navigate(`/${slug}/dashboard`);
@@ -145,19 +161,53 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
     };
   }, [lineItems, deliveryMethodId]);
 
+  const buildOrderItems = () =>
+    lineItems.map((item) => ({ product_id: item.productId, quantity: item.quantity }));
+
   const handleSubmit = () => {
     if (isEmpty) return;
-    setIsSubmitting(true);
-    // TODO(orval): replace the timeout with the create/update mutation; drive the
-    // overlay from its pending state and open the modal on success.
-    window.setTimeout(() => {
-      setIsSubmitting(false);
-      setSuccessKind('submitted');
-    }, 1200);
+
+    if (isEditMode && orderId) {
+      updateMutation.mutate(
+        {
+          id: orderId,
+          req: { items: buildOrderItems(), reason: 'Order modified by distributor' },
+        },
+        {
+          onSuccess: (data) => {
+            setSuccessOrder(data);
+            setSuccessKind('submitted');
+          },
+          onError: (error: Error) => {
+            toast.error('Update failed', { description: error.message });
+          },
+        },
+      );
+      return;
+    }
+
+    createMutation.mutate(
+      {
+        items: buildOrderItems(),
+        notes: `Delivery method: ${deliveryMethodId}. Contact: ${contact.contactPerson}, ${contact.email}, ${contact.address}`,
+      },
+      {
+        onSuccess: (data) => {
+          setSuccessOrder(data);
+          setSuccessKind('submitted');
+        },
+        onError: (error: Error) => {
+          toast.error('Create failed', { description: error.message });
+        },
+      },
+    );
   };
 
   const handleSaveDraft = () => {
-    // TODO(orval): replace with the save-draft mutation once the API lands.
+    // Draft persistence is not supported by the current order API.
+    toast.info('Draft saved locally', {
+      description: 'Draft orders are not persisted to the backend yet.',
+    });
     setSuccessKind('draft');
   };
 
@@ -189,7 +239,13 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
                 a confirmation once reviewed.
               </>
             ),
-            highlight: { label: 'Order Reference:', value: SUBMITTED_ORDER_REFERENCE },
+            highlight: {
+              label: 'Order Reference:',
+              value:
+                successOrder?.order_number ??
+                createMutation.data?.order_number ??
+                SUBMITTED_ORDER_REFERENCE,
+            },
             primaryAction: { label: 'Track Order', onClick: goToOrders },
             secondaryAction: { label: 'Go to Home', onClick: goToHome },
           }
@@ -258,6 +314,7 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
               onSaveDraft={handleSaveDraft}
               onSubmit={handleSubmit}
               submitLabel={isEditMode ? 'Save Changes' : 'Create New Order'}
+              isSubmitting={isSubmitting}
               bindingNoticeInline={!isEditMode}
             />
             {isEditMode && <CreateOrderBindingNotice variant="card" />}
@@ -265,11 +322,11 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
         </div>
       </section>
 
-      {isSubmitting && <CreateOrderLoadingOverlay />}
+      {(isSubmitting || (isEditMode && isLoadingOrder)) && <CreateOrderLoadingOverlay />}
 
       <SuccessModal
         open={successKind !== null}
-        onOpenChange={(open) => !open && setSuccessKind(null)}
+        onOpenChange={(open) => !open && closeSuccess()}
         tone="brand"
         buttonLayout="stack"
         title={successContent.title}
@@ -280,4 +337,23 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
       />
     </>
   );
+}
+
+function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
+  if (!items) return [];
+  if (Array.isArray(items)) {
+    return items
+      .map((item) => {
+        const record = item as Record<string, unknown>;
+        const productId = (record.product_id as string) ?? '';
+        const quantity = Number(record.quantity ?? 0);
+        if (!productId || Number.isNaN(quantity)) return null;
+        return { productId, quantity };
+      })
+      .filter((item): item is CreateOrderLineItem => item !== null);
+  }
+  return Object.entries(items).map(([productId, quantity]) => ({
+    productId,
+    quantity: Number(quantity) || 0,
+  }));
 }

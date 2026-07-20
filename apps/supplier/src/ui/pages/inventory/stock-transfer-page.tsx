@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, SuccessModal } from '@energyiq/ui';
-import { mockWarehouseAction } from './mocks';
+import {
+  useWarehousesQuery,
+  useCreateStockTransferMutation,
+} from '@/hooks/use-warehouses';
+import { toWarehouseViewModel } from './mocks';
 import {
   WarehouseStockTransfer,
   type StockTransferPayload,
@@ -12,25 +16,40 @@ import { ConfirmTransferModal } from '@/ui/components/warehouse/confirm-transfer
 export function StockTransferPage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
+  const { data: warehousesResult } = useWarehousesQuery();
+  const createTransferMutation = useCreateStockTransferMutation();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [payload, setPayload] = useState<StockTransferPayload | null>(null);
   const [resetKey, setResetKey] = useState(0);
 
   const backToInventory = () => navigate(`/${slug}/inventory`);
 
+  const warehouses = useMemo(
+    () => (warehousesResult?.items ?? []).map(toWarehouseViewModel),
+    [warehousesResult],
+  );
+
   const handleReview = (next: StockTransferPayload) => {
     setPayload(next);
     setConfirmOpen(true);
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
+    if (!payload) return;
     setConfirmOpen(false);
-    setIsProcessing(true);
-    await mockWarehouseAction();
-    setIsProcessing(false);
-    setSuccessOpen(true);
+    createTransferMutation.mutate(
+      {
+        product_id: payload.productId,
+        from_warehouse_id: payload.fromId,
+        to_warehouse_id: payload.toId,
+        quantity: Number.parseFloat(payload.quantity) || 0,
+        notes: payload.notes,
+      },
+      {
+        onSuccess: () => setSuccessOpen(true),
+      },
+    );
   };
 
   return (
@@ -52,7 +71,12 @@ export function StockTransferPage() {
         </div>
       </header>
 
-      <WarehouseStockTransfer key={resetKey} onCancel={backToInventory} onReview={handleReview} />
+      <WarehouseStockTransfer
+        key={resetKey}
+        warehouses={warehouses}
+        onCancel={backToInventory}
+        onReview={handleReview}
+      />
 
       <ConfirmTransferModal
         open={confirmOpen}
@@ -80,7 +104,7 @@ export function StockTransferPage() {
         }}
       />
 
-      {isProcessing && <LoadingOverlay message="Processing Transfer..." />}
+      {createTransferMutation.isPending && <LoadingOverlay message="Processing Transfer..." />}
     </section>
   );
 }

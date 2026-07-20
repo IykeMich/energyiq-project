@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
-import { TRANSFER_PRODUCT_OPTIONS, WAREHOUSES_MOCK } from '@/ui/pages/inventory/mocks';
+import {
+  TRANSFER_PRODUCT_OPTIONS,
+  productNameToId,
+  type Warehouse,
+} from '@/ui/pages/inventory/mocks';
 import { Field, SelectField, TextAreaField, TextField } from '@/ui/components/product/wizard-fields';
 import { WarehouseTransferCard } from './warehouse-transfer-card';
 
 export interface StockTransferPayload {
   product: string;
+  productId: string;
+  fromId: string;
   fromName: string;
   fromLocation: string;
+  toId: string;
   toName: string;
   toLocation: string;
   quantity: string;
@@ -14,11 +21,12 @@ export interface StockTransferPayload {
 }
 
 interface WarehouseStockTransferProps {
+  warehouses: Warehouse[];
   onCancel: () => void;
   onReview: (payload: StockTransferPayload) => void;
 }
 
-export function WarehouseStockTransfer({ onCancel, onReview }: WarehouseStockTransferProps) {
+export function WarehouseStockTransfer({ warehouses, onCancel, onReview }: WarehouseStockTransferProps) {
   const [product, setProduct] = useState('');
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
@@ -27,25 +35,25 @@ export function WarehouseStockTransfer({ onCancel, onReview }: WarehouseStockTra
 
   const warehouseOptions = useMemo(
     () =>
-      WAREHOUSES_MOCK.map((warehouse) => ({
+      warehouses.map((warehouse) => ({
         value: warehouse.id,
         label: `${warehouse.name} (${warehouse.stockLevelPercent}%)`,
       })),
-    [],
+    [warehouses],
   );
 
-  const fromWarehouse = WAREHOUSES_MOCK.find((warehouse) => warehouse.id === fromId);
-  const toWarehouse = WAREHOUSES_MOCK.find((warehouse) => warehouse.id === toId);
+  const fromWarehouse = warehouses.find((warehouse) => warehouse.id === fromId);
+  const toWarehouse = warehouses.find((warehouse) => warehouse.id === toId);
   const available = fromWarehouse?.usedL ?? 0;
 
-  const canReview = Boolean(product && fromId && toId && quantity.trim());
+  const canReview = Boolean(product && fromId && toId && quantity.trim() && fromId !== toId);
 
   return (
     <div className="border border-border-subtle rounded-[28px] p-7 flex flex-col gap-6">
       <h2 className="text-base font-semibold text-foreground">Transfer Details</h2>
 
       <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-        {WAREHOUSES_MOCK.map((warehouse) => (
+        {warehouses.map((warehouse) => (
           <WarehouseTransferCard key={warehouse.id} warehouse={warehouse} />
         ))}
       </div>
@@ -85,8 +93,11 @@ export function WarehouseStockTransfer({ onCancel, onReview }: WarehouseStockTra
           onClick={() =>
             onReview({
               product,
+              productId: productNameToId(product) ?? '',
+              fromId,
               fromName: fromWarehouse?.name ?? '',
               fromLocation: fromWarehouse?.fullLocation ?? '',
+              toId,
               toName: toWarehouse?.name ?? '',
               toLocation: toWarehouse?.fullLocation ?? '',
               quantity,

@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { TRANSFERS_MOCK, type TransferRecord } from './mocks';
+import {
+  useStockTransfersQuery,
+  useWarehousesQuery,
+} from '@/hooks/use-warehouses';
+import { toTransferRecordViewModel } from './mocks';
+import type { TransferRecord } from './mocks';
 import {
   TransferHistoryFilterBar,
   type TransferStatusFilter,
@@ -12,12 +17,20 @@ import { TransferDetailModal } from '@/ui/components/warehouse/transfer-detail-m
 export function TransferHistoryPage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  // TODO(orval): replace with the generated list-transfers query.
-  const [rows] = useState<TransferRecord[]>(TRANSFERS_MOCK);
+  const { data: transfersResult, isLoading, error } = useStockTransfersQuery();
+  const { data: warehousesResult } = useWarehousesQuery();
+
   const [selected, setSelected] = useState<TransferRecord | null>(null);
   const [statusFilter, setStatusFilter] = useState<TransferStatusFilter>('all');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+
+  const warehouses = useMemo(() => warehousesResult?.items ?? [], [warehousesResult]);
+
+  const rows = useMemo<TransferRecord[]>(
+    () => (transfersResult?.items ?? []).map((transfer) => toTransferRecordViewModel(transfer, warehouses)),
+    [transfersResult, warehouses],
+  );
 
   const visibleRows = useMemo(
     () =>
@@ -58,7 +71,17 @@ export function TransferHistoryPage() {
         onToDateChange={setToDate}
       />
 
-      <TransferHistoryTable rows={visibleRows} onView={setSelected} />
+      {isLoading ? (
+        <div className="flex h-[400px] items-center justify-center rounded-[18px] bg-surface-card">
+          <p className="text-muted-foreground">Loading transfer history…</p>
+        </div>
+      ) : error ? (
+        <div className="flex h-[400px] items-center justify-center rounded-[18px] bg-surface-card">
+          <p className="text-danger">Failed to load transfer history. Please try again.</p>
+        </div>
+      ) : (
+        <TransferHistoryTable rows={visibleRows} onView={setSelected} />
+      )}
 
       <TransferDetailModal
         open={selected !== null}

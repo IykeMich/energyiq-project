@@ -1,13 +1,19 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog, LoadingOverlay, SuccessModal } from '@energyiq/ui';
+import type { warehouse } from '@energyiq/domain';
 import {
   STOCK_COMPOSITION,
-  WAREHOUSES_MOCK,
   buildWarehouseSummary,
-  mockWarehouseAction,
+  toWarehouseViewModel,
   type Warehouse,
 } from './mocks';
+import {
+  useWarehousesQuery,
+  useWarehouseStatsQuery,
+  useUpdateWarehouseMutation,
+  useDeleteWarehouseMutation,
+} from '@/hooks/use-warehouses';
 import { WarehouseInventorySummary } from '@/ui/components/warehouse/warehouse-inventory-summary';
 import {
   WarehouseFilterBar,
@@ -19,33 +25,54 @@ import { EditWarehouseModal } from '@/ui/components/warehouse/edit-warehouse-mod
 export function WarehouseInventoryPage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  // TODO(orval): replace with the generated list-warehouses query.
-  const [rows, setRows] = useState<Warehouse[]>(WAREHOUSES_MOCK);
-  const summary = buildWarehouseSummary(rows);
+
+  const { data: listResult, isLoading, error } = useWarehousesQuery();
+  const { data: stats } = useWarehouseStatsQuery();
+  const updateMutation = useUpdateWarehouseMutation();
+  const deleteMutation = useDeleteWarehouseMutation();
 
   const [statusFilter, setStatusFilter] = useState<WarehouseStatusFilter>('all');
-  const visibleRows = rows.filter((row) => statusFilter === 'all' || row.status === statusFilter);
-
   const [editing, setEditing] = useState<Warehouse | null>(null);
   const [deleting, setDeleting] = useState<Warehouse | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [savedName, setSavedName] = useState('');
 
-  const handleSave = async () => {
-    setSavedName(editing?.name ?? '');
-    setEditing(null);
-    setIsProcessing(true);
-    await mockWarehouseAction();
-    setIsProcessing(false);
-    setSuccessOpen(true);
+  const rows = useMemo<Warehouse[]>(() => {
+    return (listResult?.items ?? []).map(toWarehouseViewModel);
+  }, [listResult]);
+
+  const summary = useMemo(
+    () => buildWarehouseSummary(rows, stats?.total_warehouses),
+    [rows, stats],
+  );
+
+  const visibleRows = useMemo(
+    () => rows.filter((row) => statusFilter === 'all' || row.status === statusFilter),
+    [rows, statusFilter],
+  );
+
+  const handleSave = (req: warehouse.WarehouseUpdateRequest) => {
+    if (!editing?.id) return;
+    setSavedName(req.name);
+    updateMutation.mutate(
+      { id: editing.id, req },
+      {
+        onSuccess: () => {
+          setEditing(null);
+          setSuccessOpen(true);
+        },
+      },
+    );
   };
 
   const handleDeleteConfirmed = () => {
-    if (!deleting) return;
-    setRows((prev) => prev.filter((warehouse) => warehouse.id !== deleting.id));
-    setDeleting(null);
+    if (!deleting?.id) return;
+    deleteMutation.mutate(deleting.id, {
+      onSuccess: () => setDeleting(null),
+    });
   };
+
+  const isProcessing = updateMutation.isPending || deleteMutation.isPending;
 
   return (
     <section className="flex flex-col gap-6">
@@ -76,12 +103,22 @@ export function WarehouseInventoryPage() {
         </div>
       </div>
 
-      <WarehouseListTable
-        rows={visibleRows}
-        onEdit={setEditing}
-        onDelete={setDeleting}
-        onTransferHistory={() => navigate(`/${slug}/inventory/transfer-history`)}
-      />
+      {isLoading ? (
+        <div className="flex h-[400px] items-center justify-center rounded-[18px] bg-surface-card">
+          <p className="text-muted-foreground">Loading warehouses…</p>
+        </div>
+      ) : error ? (
+        <div className="flex h-[400px] items-center justify-center rounded-[18px] bg-surface-card">
+          <p className="text-danger">Failed to load warehouses. Please try again.</p>
+        </div>
+      ) : (
+        <WarehouseListTable
+          rows={visibleRows}
+          onEdit={setEditing}
+          onDelete={setDeleting}
+          onTransferHistory={() => navigate(`/${slug}/inventory/transfer-history`)}
+        />
+      )}
 
       <EditWarehouseModal
         open={editing !== null}
@@ -114,7 +151,7 @@ export function WarehouseInventoryPage() {
         onConfirm={handleDeleteConfirmed}
       />
 
-      {isProcessing && <LoadingOverlay message="Updating warehouse..." />}
+      {isProcessing && <LoadingOverlay message="Updating warehouse…" />}
     </section>
   );
 }

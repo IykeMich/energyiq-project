@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal } from '@energyiq/ui';
 import { cn } from '@energyiq/shared';
+import type { warehouse } from '@energyiq/domain';
 import {
-  WAREHOUSES_MOCK,
   WAREHOUSE_LOCATION_OPTIONS,
   WAREHOUSE_MANAGER_OPTIONS,
+  WAREHOUSE_NAME_OPTIONS,
   WAREHOUSE_STATUS_OPTIONS,
   defaultWarehouseProducts,
+  managerNameToId,
   type EditWarehouseProduct,
   type Warehouse,
 } from '@/ui/pages/inventory/mocks';
@@ -18,10 +20,8 @@ interface EditWarehouseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   warehouse: Warehouse | null;
-  onSave: () => void;
+  onSave: (req: warehouse.WarehouseUpdateRequest) => void;
 }
-
-const WAREHOUSE_NAME_OPTIONS = WAREHOUSES_MOCK.map((warehouse) => warehouse.name);
 
 export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: EditWarehouseModalProps) {
   const [tab, setTab] = useState<Tab>('basic');
@@ -30,6 +30,11 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
   const [manager, setManager] = useState('');
   const [status, setStatus] = useState('active');
   const [products, setProducts] = useState<EditWarehouseProduct[]>([]);
+
+  const nameOptions = useMemo(
+    () => (warehouse?.name ? [...new Set([warehouse.name, ...WAREHOUSE_NAME_OPTIONS])] : WAREHOUSE_NAME_OPTIONS),
+    [warehouse?.name],
+  );
 
   useEffect(() => {
     if (open) {
@@ -47,6 +52,25 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
 
   const removeProduct = (id: string) =>
     setProducts((prev) => prev.filter((product) => product.id !== id));
+
+  const handleSave = () => {
+    const managerId = managerNameToId(manager);
+    const productAssignments: warehouse.WarehouseProductAssignment[] = products.map((product) => ({
+      product_id: product.id,
+      quantity: parseQuantity(product.stockQuantity),
+      max_stock: parseQuantity(product.stockQuantity),
+      reorder_point: 0,
+      storage_location: '',
+    }));
+
+    onSave({
+      name,
+      location,
+      manager_id: managerId,
+      status: status as warehouse.WarehouseStatus,
+      products: productAssignments,
+    });
+  };
 
   return (
     <Modal
@@ -68,7 +92,7 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
       {tab === 'basic' ? (
         <div className="flex flex-col gap-5">
           <Field label="Warehouse Name:">
-            <SelectField value={name} onChange={setName} options={WAREHOUSE_NAME_OPTIONS} placeholder="Select warehouse" />
+            <SelectField value={name} onChange={setName} options={nameOptions} placeholder="Select warehouse" />
           </Field>
           <Field label="Location:">
             <SelectField value={location} onChange={setLocation} options={WAREHOUSE_LOCATION_OPTIONS} placeholder="Select location" />
@@ -122,7 +146,7 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
       <div className="flex justify-end mt-8">
         <button
           type="button"
-          onClick={onSave}
+          onClick={handleSave}
           className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12"
         >
           Save
@@ -130,6 +154,12 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
       </div>
     </Modal>
   );
+}
+
+function parseQuantity(value: string): number {
+  const digits = value.replace(/[^0-9.]/g, '');
+  const parsed = Number.parseFloat(digits);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function TabButton({

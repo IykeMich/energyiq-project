@@ -25,6 +25,8 @@ interface CreateOrderSummaryCardProps {
   onSubmit: () => void;
   /** Primary button label ("Create New Order" for create, "Save Changes" for edit). */
   submitLabel?: string;
+  /** Whether the primary action is in flight — disables the submit button. */
+  isSubmitting?: boolean;
   /**
    * Render the binding notice inside this card (create). The edit flow sets this
    * false and renders the notice as a standalone card below the summary instead.
@@ -39,6 +41,7 @@ export function CreateOrderSummaryCard({
   onSaveDraft,
   onSubmit,
   submitLabel = 'Create New Order',
+  isSubmitting = false,
   bindingNoticeInline = true,
 }: CreateOrderSummaryCardProps) {
   return (
@@ -83,10 +86,10 @@ export function CreateOrderSummaryCard({
         <button
           type="button"
           onClick={onSubmit}
-          disabled={isEmpty}
+          disabled={isEmpty || isSubmitting}
           className="tap-effect h-[52px] rounded-full bg-[#FBC02D] text-base font-semibold text-[#121212] disabled:opacity-50"
         >
-          {submitLabel}
+          {isSubmitting ? 'Submitting…' : submitLabel}
         </button>
         <button
           type="button"

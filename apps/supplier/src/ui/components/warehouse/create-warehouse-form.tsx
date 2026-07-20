@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import type { warehouse } from '@energyiq/domain';
 import {
   WAREHOUSE_LOCATION_OPTIONS,
   WAREHOUSE_MANAGER_OPTIONS,
   WAREHOUSE_NAME_OPTIONS,
+  managerNameToId,
 } from '@/ui/pages/inventory/mocks';
 import { Field, SelectField, ToggleSwitch } from '@/ui/components/product/wizard-fields';
 
 interface CreateWarehouseFormProps {
   onCancel: () => void;
-  onSave: (name: string) => void;
+  onSave: (req: warehouse.WarehouseCreateRequest) => void;
 }
 
 export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormProps) {
@@ -18,6 +20,15 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
   const [active, setActive] = useState(false);
 
   const canSave = Boolean(name && location && manager);
+
+  const handleSave = () => {
+    onSave({
+      name,
+      location,
+      manager_id: managerNameToId(manager),
+      status: active ? 'active' : 'inactive',
+    });
+  };
 
   return (
     <div className="border border-border-subtle rounded-[28px] p-7 flex flex-col gap-6">
@@ -51,7 +62,7 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
         <button
           type="button"
           disabled={!canSave}
-          onClick={() => onSave(name)}
+          onClick={handleSave}
           className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Save
