@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ConfirmDialog, LoadingOverlay, SuccessModal } from '@energyiq/ui';
+import { ConfirmDialog, LoadingOverlay, toast } from '@energyiq/ui';
 import type { warehouse } from '@energyiq/domain';
 import {
   STOCK_COMPOSITION,
@@ -30,12 +30,12 @@ export function WarehouseInventoryPage() {
   const { data: stats } = useWarehouseStatsQuery();
   const updateMutation = useUpdateWarehouseMutation();
   const deleteMutation = useDeleteWarehouseMutation();
+  
 
   const [statusFilter, setStatusFilter] = useState<WarehouseStatusFilter>('all');
   const [editing, setEditing] = useState<Warehouse | null>(null);
   const [deleting, setDeleting] = useState<Warehouse | null>(null);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [savedName, setSavedName] = useState('');
+  console.log(editing);
 
   const rows = useMemo<Warehouse[]>(() => {
     return (listResult?.items ?? []).map(toWarehouseViewModel);
@@ -53,13 +53,19 @@ export function WarehouseInventoryPage() {
 
   const handleSave = (req: warehouse.WarehouseUpdateRequest) => {
     if (!editing?.id) return;
-    setSavedName(req.name);
     updateMutation.mutate(
       { id: editing.id, req },
       {
         onSuccess: () => {
           setEditing(null);
-          setSuccessOpen(true);
+          toast.success('Warehouse Updated Successfully', {
+            description: `${req.name} has been updated. The changes are now reflected across your inventory.`,
+          });
+        },
+        onError: () => {
+          toast.error('Update Failed', {
+            description: `${req.name} was not updated due to a connection problem. Try again later.`,
+          });
         },
       },
     );
@@ -68,7 +74,18 @@ export function WarehouseInventoryPage() {
   const handleDeleteConfirmed = () => {
     if (!deleting?.id) return;
     deleteMutation.mutate(deleting.id, {
-      onSuccess: () => setDeleting(null),
+      onSuccess: () => {
+        setDeleting(null);
+        toast.success('Warehouse Removed', {
+          description: `${deleting.name} has been removed.`,
+        });
+      },
+      onError: () => {
+        setDeleting(null);
+        toast.error('Removal Failed', {
+          description: `${deleting.name} was not removed due to a connection problem. Try again later.`,
+        });
+      },
     });
   };
 
@@ -125,21 +142,6 @@ export function WarehouseInventoryPage() {
         onOpenChange={(open) => !open && setEditing(null)}
         warehouse={editing}
         onSave={handleSave}
-      />
-
-      <SuccessModal
-        open={successOpen}
-        onOpenChange={setSuccessOpen}
-        tone="brand"
-        title="Warehouse Updated Successfully"
-        subtitle={
-          <>
-            <span className="text-brand font-semibold">{savedName || 'The warehouse'}</span> has been
-            updated. The changes are now reflected across your inventory.
-          </>
-        }
-        primaryAction={{ label: 'Done', onClick: () => setSuccessOpen(false) }}
-        buttonLayout="stack"
       />
 
       <ConfirmDialog

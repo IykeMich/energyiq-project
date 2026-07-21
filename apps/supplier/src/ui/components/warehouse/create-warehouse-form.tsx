@@ -2,11 +2,9 @@ import { useState } from 'react';
 import type { warehouse } from '@energyiq/domain';
 import {
   WAREHOUSE_LOCATION_OPTIONS,
-  WAREHOUSE_MANAGER_OPTIONS,
   WAREHOUSE_NAME_OPTIONS,
-  managerNameToId,
 } from '@/ui/pages/inventory/mocks';
-import { Field, SelectField, ToggleSwitch } from '@/ui/components/product/wizard-fields';
+import { Field, SelectField, TextField, ToggleSwitch } from '@/ui/components/product/wizard-fields';
 
 interface CreateWarehouseFormProps {
   onCancel: () => void;
@@ -16,16 +14,16 @@ interface CreateWarehouseFormProps {
 export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormProps) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
-  const [manager, setManager] = useState('');
+  const [capacity, setCapacity] = useState('');
   const [active, setActive] = useState(false);
 
-  const canSave = Boolean(name && location && manager);
+  const canSave = Boolean(name && location && capacity);
 
   const handleSave = () => {
     onSave({
       name,
       location,
-      manager_id: managerNameToId(manager),
+      capacity: Number.parseFloat(capacity) || 0,
       status: active ? 'active' : 'inactive',
     });
   };
@@ -43,8 +41,8 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
       </Field>
 
       <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
-        <Field label="Select Manager:">
-          <SelectField value={manager} onChange={setManager} options={WAREHOUSE_MANAGER_OPTIONS} placeholder="Select manager" />
+        <Field label="Capacity (L):">
+          <TextField type="number" value={capacity} onChange={setCapacity} placeholder="e.g. 60000" />
         </Field>
         <Field label="Status:">
           <ToggleSwitch checked={active} onChange={setActive} />

@@ -7,8 +7,6 @@ import {
   WAREHOUSE_MANAGER_OPTIONS,
   WAREHOUSE_NAME_OPTIONS,
   WAREHOUSE_STATUS_OPTIONS,
-  defaultWarehouseProducts,
-  managerNameToId,
   type EditWarehouseProduct,
   type Warehouse,
 } from '@/ui/pages/inventory/mocks';
@@ -36,16 +34,28 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
     [warehouse?.name],
   );
 
-  useEffect(() => {
-    if (open) {
-      setTab('basic');
-      setName(warehouse?.name ?? '');
-      setLocation(warehouse?.fullLocation ?? '');
-      setManager(WAREHOUSE_MANAGER_OPTIONS[0]);
-      setStatus(warehouse?.status ?? 'active');
-      setProducts(defaultWarehouseProducts());
-    }
-  }, [open, warehouse]);
+ useEffect(() => {
+  if (open && warehouse) {
+    setTab('basic');
+
+    setName(warehouse.name ?? '');
+
+    setLocation(warehouse.fullLocation ?? '');
+
+    setManager(warehouse.managerId ?? '');
+
+    setStatus(warehouse.status ?? 'active');
+
+    setProducts(
+      warehouse.productPreview?.map((product) => ({
+        id: product.productId,
+        name: product.name,
+        stockQuantity: `${product.quantity}`,
+        pricePerUnit: '',
+      })) ?? []
+    );
+  }
+}, [open, warehouse]);
 
   const updateProduct = (id: string, patch: Partial<EditWarehouseProduct>) =>
     setProducts((prev) => prev.map((product) => (product.id === id ? { ...product, ...patch } : product)));
@@ -53,24 +63,33 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
   const removeProduct = (id: string) =>
     setProducts((prev) => prev.filter((product) => product.id !== id));
 
-  const handleSave = () => {
-    const managerId = managerNameToId(manager);
-    const productAssignments: warehouse.WarehouseProductAssignment[] = products.map((product) => ({
+ const handleSave = () => {
+ const managerId = warehouse?.managerId;
+
+  const productAssignments: warehouse.WarehouseProductAssignment[] =
+    products.map((product) => ({
       product_id: product.id,
       quantity: parseQuantity(product.stockQuantity),
       max_stock: parseQuantity(product.stockQuantity),
       reorder_point: 0,
       storage_location: '',
+      remove: false,
     }));
 
-    onSave({
-      name,
-      location,
-      manager_id: managerId,
-      status: status as warehouse.WarehouseStatus,
-      products: productAssignments,
-    });
+  const payload: warehouse.WarehouseUpdateRequest = {
+    name,
+    location,
+    // capacity: warehouse?.capacity ?? 0, // Uncomment if WarehouseUpdateRequest requires it
+    manager_id: managerId,
+    status: status as warehouse.WarehouseStatus,
+    products: productAssignments,
   };
+
+  console.log('Warehouse ID:', warehouse?.id);
+  console.log('Update Payload:', payload);
+
+  onSave(payload);
+};
 
   return (
     <Modal

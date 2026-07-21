@@ -71,6 +71,8 @@ export interface Product {
   warehouse_ids?: string[];
   created_at?: string;
   updated_at?: string;
+  moq:number;
+  gold_discount:boolean;
 }
 
 export interface ProductUpsertRequest {

@@ -21,15 +21,15 @@ export interface Warehouse {
 }
 
 // TODO(orval): replace with the generated list-warehouses query.
-export const WAREHOUSES_MOCK: Warehouse[] = [
-  { id: 'wh-awka',    name: 'Awka Central Depot', location: 'Awka',          fullLocation: 'Awka, Anambra State.',   stockLevelPercent: 62, usedL: 37_200, capacityL: 60_000,  lastUpdated: '29 Oct 2025', status: 'active' },
-  { id: 'wh-onitsha', name: 'Onitsha Main Depot',  location: 'Onitsha',       fullLocation: 'Onitsha, Anambra State.', stockLevelPercent: 78, usedL: 93_600, capacityL: 120_000, lastUpdated: '30 Oct 2025', status: 'active' },
-  { id: 'wh-nnewi',   name: 'Nnewi Depot',         location: 'Nnewi',         fullLocation: 'Nnewi, Anambra State.',   stockLevelPercent: 48, usedL: 24_000, capacityL: 50_000,  lastUpdated: '25 Oct 2025', status: 'active' },
-  { id: 'wh-lagos',   name: 'Main Depot',          location: 'Lagos',         fullLocation: 'Ajah, Lagos State.',      stockLevelPercent: 58, usedL: 29_000, capacityL: 50_000,  lastUpdated: '31 Oct 2025', status: 'active' },
-  { id: 'wh-lekki',   name: 'Lekki Depot',         location: 'Lekki',         fullLocation: 'Lekki, Lagos State.',     stockLevelPercent: 80, usedL: 32_000, capacityL: 40_000,  lastUpdated: '31 Oct 2025', status: 'inactive' },
-  { id: 'wh-abuja',   name: 'Abuja Depot',         location: 'Abuja',         fullLocation: 'Wuse, Abuja.',            stockLevelPercent: 92, usedL: 92_000, capacityL: 100_000, lastUpdated: '31 Oct 2025', status: 'active' },
-  { id: 'wh-ph',      name: 'PH Depot',            location: 'Port Harcourt', fullLocation: 'Port Harcourt, Rivers State.', stockLevelPercent: 28, usedL: 14_000, capacityL: 50_000, lastUpdated: '31 Oct 2025', status: 'active' },
-];
+// export const WAREHOUSES_MOCK: Warehouse[] = [
+//   { id: 'wh-awka',    name: 'Awka Central Depot', location: 'Awka',          fullLocation: 'Awka, Anambra State.',   stockLevelPercent: 62, usedL: 37_200, capacityL: 60_000,  lastUpdated: '29 Oct 2025', status: 'active' },
+//   { id: 'wh-onitsha', name: 'Onitsha Main Depot',  location: 'Onitsha',       fullLocation: 'Onitsha, Anambra State.', stockLevelPercent: 78, usedL: 93_600, capacityL: 120_000, lastUpdated: '30 Oct 2025', status: 'active' },
+//   { id: 'wh-nnewi',   name: 'Nnewi Depot',         location: 'Nnewi',         fullLocation: 'Nnewi, Anambra State.',   stockLevelPercent: 48, usedL: 24_000, capacityL: 50_000,  lastUpdated: '25 Oct 2025', status: 'active' },
+//   { id: 'wh-lagos',   name: 'Main Depot',          location: 'Lagos',         fullLocation: 'Ajah, Lagos State.',      stockLevelPercent: 58, usedL: 29_000, capacityL: 50_000,  lastUpdated: '31 Oct 2025', status: 'active' },
+//   { id: 'wh-lekki',   name: 'Lekki Depot',         location: 'Lekki',         fullLocation: 'Lekki, Lagos State.',     stockLevelPercent: 80, usedL: 32_000, capacityL: 40_000,  lastUpdated: '31 Oct 2025', status: 'inactive' },
+//   { id: 'wh-abuja',   name: 'Abuja Depot',         location: 'Abuja',         fullLocation: 'Wuse, Abuja.',            stockLevelPercent: 92, usedL: 92_000, capacityL: 100_000, lastUpdated: '31 Oct 2025', status: 'active' },
+//   { id: 'wh-ph',      name: 'PH Depot',            location: 'Port Harcourt', fullLocation: 'Port Harcourt, Rivers State.', stockLevelPercent: 28, usedL: 14_000, capacityL: 50_000, lastUpdated: '31 Oct 2025', status: 'active' },
+// ];
 
 export interface StockSegment {
   label: string;
@@ -202,6 +202,29 @@ export const PRODUCT_ID_MAP: Record<string, string> = {
 export function productNameToId(name: string): string | undefined {
   return PRODUCT_ID_MAP[name];
 }
+export interface Warehouse {
+  id: string;
+  name: string;
+  location: string;
+  fullLocation: string;
+  stockLevelPercent: number;
+  usedL: number;
+  capacityL: number;
+  lastUpdated: string;
+  status: WarehouseStatus;
+
+  // Real UUID from the API
+  managerId: string;
+
+  // Products returned from GET /warehouses
+  productPreview: {
+    productId: string;
+    name: string;
+    quantity: number;
+    sku: string;
+    unit: string;
+  }[];
+}
 
 export function productIdToName(id?: string): string {
   const entry = Object.entries(PRODUCT_ID_MAP).find(([, value]) => value === id);
@@ -226,16 +249,39 @@ export function productIdToCode(id?: string): string {
 export function toWarehouseViewModel(source: warehouse.Warehouse): Warehouse {
   const capacity = source.capacity ?? 0;
   const percent = source.stock_level_percentage ?? 0;
+
   return {
     id: source.id ?? '',
     name: source.name ?? '',
     location: source.location ?? '',
     fullLocation: source.location ?? '',
+
     stockLevelPercent: percent,
-    usedL: capacity > 0 ? Math.round((capacity * percent) / 100) : 0,
+
+    usedL:
+      capacity > 0
+        ? Math.round((capacity * percent) / 100)
+        : 0,
+
     capacityL: capacity,
-    lastUpdated: formatDate(source.updated_at ?? source.created_at),
-    status: (source.status as WarehouseStatus) ?? 'inactive',
+
+    lastUpdated: formatDate(
+      source.updated_at ?? source.created_at,
+    ),
+
+    status:
+      (source.status as WarehouseStatus) ?? 'inactive',
+
+    managerId: source.manager_id ?? '',
+
+    productPreview:
+      source.product_preview?.map((product) => ({
+        productId: product.product_id ?? '',
+        name: product.name ?? '',
+        quantity: product.quantity ?? 0,
+        sku: product.sku ?? '',
+        unit: product.unit ?? '',
+      })) ?? [],
   };
 }
 
@@ -292,6 +338,7 @@ function formatDate(value?: string): string {
     return value;
   }
 }
+
 
 function formatDateTime(value?: string): string {
   if (!value) return '–';

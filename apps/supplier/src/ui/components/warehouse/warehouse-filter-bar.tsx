@@ -25,8 +25,8 @@ export function WarehouseFilterBar({ status, onStatusChange }: WarehouseFilterBa
   const activeLabel = STATUS_ITEMS.find((item) => item.value === status)?.label ?? 'Status';
 
   return (
-    <div className="bg-surface-card rounded-[18px] px-4 py-3 flex flex-wrap items-center gap-3 self-start">
-      <div className="flex items-center gap-2 text-xs font-medium text-foreground mr-2">
+    <div className="flex flex-wrap items-center gap-3 self-start">
+      <div className="flex items-center gap-2 text-xs font-medium text-foreground">
         <span className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center">
           <SlidersHorizontal className="w-3.5 h-3.5 text-foreground" />
         </span>
@@ -36,10 +36,9 @@ export function WarehouseFilterBar({ status, onStatusChange }: WarehouseFilterBa
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="h-7 px-3 rounded-full bg-foreground/10 text-foreground text-xs font-medium flex items-center gap-2"
+            className="h-8 px-4 rounded-full bg-brand text-brand-foreground text-xs font-semibold flex items-center gap-2"
           >
-            {status === 'all' ? 'Status' : activeLabel}
-            {status !== 'all' && <span className="w-1.5 h-1.5 rounded-full bg-brand" />}
+            {activeLabel}
             <ChevronDown className="w-3 h-3" />
           </button>
         </DropdownMenuTrigger>

@@ -13,6 +13,7 @@ export interface Warehouse {
   status?: WarehouseStatus | string;
   supplier_id?: string;
   stock_level_percentage?: number;
+  product_preview?: ProductPreview[];
   created_at?: string;
   updated_at?: string;
 }

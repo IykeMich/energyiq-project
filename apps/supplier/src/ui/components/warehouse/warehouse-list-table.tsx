@@ -1,9 +1,9 @@
 import { Pencil, Trash2 } from 'lucide-react';
 import type { Warehouse } from '@/ui/pages/inventory/mocks';
-import { ProductStatusBadge } from '@/ui/components/product/product-status-badge';
 import { WarehouseStockLevelCell } from './warehouse-stock-level-cell';
 
-const GRID = 'grid grid-cols-[1.4fr_1fr_1.4fr_1fr_0.9fr_0.7fr] items-center gap-4';
+const GRID = 'grid grid-cols-[1.5fr_1fr_1.4fr_1fr_0.9fr_0.7fr] items-center gap-4';
+const ITEMS_PER_PAGE = 10;
 
 interface WarehouseListTableProps {
   rows: Warehouse[];
@@ -13,6 +13,9 @@ interface WarehouseListTableProps {
 }
 
 export function WarehouseListTable({ rows, onEdit, onDelete, onTransferHistory }: WarehouseListTableProps) {
+  const total = rows.length;
+  const showingText = total > 0 ? `Showing 1 to ${total} of ${total} Entries` : 'Showing 0 to 0 of 0 Entries';
+
   return (
     <div className="bg-surface-card rounded-[18px] p-5 flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
@@ -29,9 +32,9 @@ export function WarehouseListTable({ rows, onEdit, onDelete, onTransferHistory }
         </button>
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col rounded-[16px] border border-border-subtle overflow-hidden">
         {/* Header */}
-        <div className={`${GRID} rounded-[16px] border border-brand/30 bg-brand/10 px-5 py-4`}>
+        <div className={`${GRID} bg-[#1F1F1F] px-5 py-4`}>
           <span className="text-sm font-semibold text-foreground">Warehouse Name</span>
           <span className="text-sm font-semibold text-foreground">Location</span>
           <span className="text-sm font-semibold text-foreground">Stock Level</span>
@@ -43,13 +46,16 @@ export function WarehouseListTable({ rows, onEdit, onDelete, onTransferHistory }
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-12">No warehouses match.</p>
         ) : (
-          rows.map((warehouse) => (
-            <div key={warehouse.id} className={`${GRID} px-5 py-4`}>
+          rows.map((warehouse, index) => (
+            <div
+              key={warehouse.id}
+              className={`${GRID} px-5 py-4 ${index !== rows.length - 1 ? 'border-b border-border-subtle' : ''}`}
+            >
               <span className="text-sm text-foreground">{warehouse.name}</span>
               <span className="text-sm text-foreground">{warehouse.location}</span>
               <WarehouseStockLevelCell percent={warehouse.stockLevelPercent} />
               <span className="text-sm text-foreground">{warehouse.lastUpdated}</span>
-              <ProductStatusBadge value={warehouse.status} />
+              <StatusBadge status={warehouse.status} />
               <div className="flex items-center gap-4">
                 <button
                   type="button"
@@ -73,11 +79,56 @@ export function WarehouseListTable({ rows, onEdit, onDelete, onTransferHistory }
         )}
       </div>
 
-      {rows.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          Showing 1 to {rows.length} of {rows.length}
-        </p>
-      )}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{showingText}</p>
+        {total > ITEMS_PER_PAGE && (
+          <div className="flex items-center gap-2">
+            <PaginationButton disabled>Prev</PaginationButton>
+            <PaginationButton active>1</PaginationButton>
+            {total > ITEMS_PER_PAGE && <PaginationButton>2</PaginationButton>}
+            <PaginationButton>Next</PaginationButton>
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: Warehouse['status'] }) {
+  const isActive = status === 'active';
+  return (
+    <span
+      className={`self-start inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+        isActive ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'
+      }`}
+    >
+      {isActive ? 'Active' : 'Inactive'}
+    </span>
+  );
+}
+
+function PaginationButton({
+  children,
+  active,
+  disabled,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={`h-8 min-w-[2rem] px-2 rounded-lg text-xs font-semibold transition-colors ${
+        active
+          ? 'bg-brand text-brand-foreground'
+          : disabled
+            ? 'bg-foreground/5 text-muted-foreground cursor-not-allowed'
+            : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

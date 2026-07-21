@@ -7,14 +7,17 @@ import { PRODUCT_CATALOG, type CreateOrderProductOption } from './create-order-m
 
 export interface CreateOrderLineItem {
   productId: string;
-  quantity: number;
-}
+  name: string;
+  unit: string;
+  unitPrice: number;
+  quantity: number
+}CreateOrderAddProductModal
 
 interface CreateOrderProductsCardProps {
   lineItems: CreateOrderLineItem[];
   onQuantityChange: (productId: string, quantity: number) => void;
   onRemove: (productId: string) => void;
-  onAdd: (productId: string) => void;
+  onAdd: (product: CreateOrderProductOption) => void;
 }
 
 const COLUMN_LABELS = ['Product', 'Unit Price', 'Quantity', 'Sub-Total'];
@@ -32,10 +35,10 @@ export function CreateOrderProductsCard({
 }: CreateOrderProductsCardProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  const addedIds = new Set(lineItems.map((item) => item.productId));
-  const addableProducts = PRODUCT_CATALOG.filter(
-    (product) => product.available && !addedIds.has(product.id),
-  );
+  // const addedIds = new Set(lineItems.map((item) => item.productId));
+  // const addableProducts = PRODUCT_CATALOG.filter(
+  //   (product) => product.available && !addedIds.has(product.id),
+  // );
 
   return (
     <CreateOrderCard
@@ -84,11 +87,10 @@ export function CreateOrderProductsCard({
       </button>
 
       <CreateOrderAddProductModal
-        open={isAddOpen}
-        onOpenChange={setIsAddOpen}
-        options={addableProducts}
-        onAdd={onAdd}
-      />
+  open={isAddOpen}
+  onOpenChange={setIsAddOpen}
+  onAdd={onAdd}
+/>
     </CreateOrderCard>
   );
 }

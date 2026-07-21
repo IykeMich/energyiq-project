@@ -31,10 +31,11 @@ import {
   ORDER_REFERENCE,
   PRODUCT_CATALOG,
   SUBMITTED_ORDER_REFERENCE,
-  SUMMARY_PRODUCT_IDS,
+  // SUMMARY_PRODUCT_IDS,
   SUPPLIER_OPTIONS,
   type CreateOrderDeliveryContact as DeliveryContact,
 } from './create-order-mocks';
+import type { CreateOrderProductOption } from './create-order-mocks';
 
 interface CreateOrderOverviewProps {
   /** 'create' starts blank; 'edit' seeds the form from the order being edited. */
@@ -100,11 +101,22 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   const goToOrders = () => navigate(`/${slug}/orders`);
   const goToHome = () => navigate(`/${slug}/dashboard`);
 
-  const addProduct = (productId: string) => {
-    const product = PRODUCT_CATALOG.find((candidate) => candidate.id === productId);
-    if (!product || lineItems.some((item) => item.productId === productId)) return;
-    setLineItems((items) => [...items, { productId, quantity: product.moq }]);
-  };
+ const addProduct = (product: CreateOrderProductOption) => {
+  if (lineItems.some((item) => item.productId === product.id)) {
+    return;
+  }
+
+  setLineItems((items) => [
+    ...items,
+    {
+      productId: product.id,
+      name: product.name,
+      unit: product.unit,
+      unitPrice: product.unitPrice,
+      quantity: 1,
+    },
+  ]);
+};
 
   const changeQuantity = (productId: string, quantity: number) => {
     setLineItems((items) =>
@@ -118,48 +130,39 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
 
   const isEmpty = lineItems.length === 0;
 
-  const summary = useMemo<CreateOrderSummaryData>(() => {
-    // Per-product subtotal + quantity lookups keyed by product id.
-    const subtotalByProduct = new Map<string, number>();
-    const quantityByProduct = new Map<string, number>();
-    let subtotal = 0;
-    let discount = 0;
+const summary = useMemo<CreateOrderSummaryData>(() => {
+  let subtotal = 0;
+  let discount = 0;
 
-    for (const item of lineItems) {
-      const product = PRODUCT_CATALOG.find((candidate) => candidate.id === item.productId);
-      if (!product) continue;
-      const lineTotal = product.unitPrice * item.quantity;
-      subtotalByProduct.set(item.productId, lineTotal);
-      quantityByProduct.set(item.productId, item.quantity);
-      subtotal += lineTotal;
-      if (product.goldDiscount) discount += lineTotal * GOLD_DISCOUNT_RATE;
-    }
+  const lineItemsSummary = lineItems.map((item) => {
+    const lineTotal = item.unitPrice * item.quantity;
 
-    const deliveryFee = DELIVERY_METHODS.find((method) => method.id === deliveryMethodId)?.fee ?? 0;
-    const total = subtotal - discount + deliveryFee;
+    subtotal += lineTotal;
 
-    const fuelLineItems = SUMMARY_PRODUCT_IDS.map((productId) => {
-      const product = PRODUCT_CATALOG.find((candidate) => candidate.id === productId);
-      const quantity = quantityByProduct.get(productId) ?? 0;
-      const shortLabel = product?.shortLabel ?? productId;
-      // Show "PMS × 5,000L" once the product is on the order, else just "PMS".
-      const label =
-        quantity > 0
-          ? `${shortLabel} × ${quantity.toLocaleString()}${product?.unitAbbrev ?? ''}`
-          : shortLabel;
-      return { label, amount: subtotalByProduct.get(productId) ?? 0 };
-    });
+    // If every product gets the Gold discount
+    discount += lineTotal * GOLD_DISCOUNT_RATE;
 
     return {
-      lineItems: fuelLineItems,
-      subtotal,
-      discount,
-      deliveryFee,
-      total,
-      // TODO(orval): the backend will return the true outstanding balance for the order.
-      balance: total,
+      label: `${item.name} × ${item.quantity}${item.unit}`,
+      amount: lineTotal,
     };
-  }, [lineItems, deliveryMethodId]);
+  });
+
+  const deliveryFee =
+    DELIVERY_METHODS.find((method) => method.id === deliveryMethodId)?.fee ?? 0;
+
+  const total = subtotal - discount + deliveryFee;
+
+  return {
+    lineItems: lineItemsSummary,
+    subtotal,
+    discount,
+    deliveryFee,
+    total,
+    // TODO(orval): Replace with backend balance when available.
+    balance: total,
+  };
+}, [lineItems, deliveryMethodId]);
 
   const buildOrderItems = () =>
     lineItems.map((item) => ({ product_id: item.productId, quantity: item.quantity }));
@@ -314,7 +317,7 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
               onSaveDraft={handleSaveDraft}
               onSubmit={handleSubmit}
               submitLabel={isEditMode ? 'Save Changes' : 'Create New Order'}
-              isSubmitting={isSubmitting}
+              // isSubmitting={isSubmitting}
               bindingNoticeInline={!isEditMode}
             />
             {isEditMode && <CreateOrderBindingNotice variant="card" />}
@@ -341,19 +344,43 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
 
 function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
   if (!items) return [];
+
   if (Array.isArray(items)) {
     return items
       .map((item) => {
         const record = item as Record<string, unknown>;
+
         const productId = (record.product_id as string) ?? '';
         const quantity = Number(record.quantity ?? 0);
+
         if (!productId || Number.isNaN(quantity)) return null;
-        return { productId, quantity };
+
+        const product = PRODUCT_CATALOG.find(
+          (product) => product.id === productId,
+        );
+
+        return {
+          productId,
+          name: product?.name ?? 'Unknown Product',
+          unit: product?.unit ?? '',
+          unitPrice: product?.unitPrice ?? 0,
+          quantity,
+        };
       })
       .filter((item): item is CreateOrderLineItem => item !== null);
   }
-  return Object.entries(items).map(([productId, quantity]) => ({
-    productId,
-    quantity: Number(quantity) || 0,
-  }));
+
+  return Object.entries(items).map(([productId, quantity]) => {
+    const product = PRODUCT_CATALOG.find(
+      (product) => product.id === productId,
+    );
+
+    return {
+      productId,
+      name: product?.name ?? 'Unknown Product',
+      unit: product?.unit ?? '',
+      unitPrice: product?.unitPrice ?? 0,
+      quantity: Number(quantity) || 0,
+    };
+  });
 }
