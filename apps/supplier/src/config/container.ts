@@ -1,7 +1,8 @@
-import { auth, employee, product, warehouse } from '@energyiq/domain';
+import { auth, employee, order, product, warehouse } from '@energyiq/domain';
 import {
   AuthApiAdapter,
   EmployeeApiAdapter,
+  OrderApiAdapter,
   ProductApiAdapter,
   WarehouseApiAdapter,
   configureClient,
@@ -29,12 +30,14 @@ const authApi = new AuthApiAdapter();
 const employeeApi = new EmployeeApiAdapter();
 const productApi = new ProductApiAdapter();
 const warehouseApi = new WarehouseApiAdapter();
+const orderApi = new OrderApiAdapter();
 
 // Domain use cases
 export const authUseCases = new auth.AuthUseCases(authApi, tokenStorage, userStorage);
 export const employeeUseCases = new employee.EmployeeUseCases(employeeApi);
 export const productUseCases = new product.ProductUseCases(productApi);
 export const warehouseUseCases = new warehouse.WarehouseUseCases(warehouseApi);
+export const orderUseCases = new order.OrderUseCases(orderApi);
 
 // Wire token getter + refresh into both HTTP clients (manual + Orval).
 configureClient(

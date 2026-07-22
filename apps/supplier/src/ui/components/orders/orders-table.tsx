@@ -3,7 +3,7 @@ import { Pencil, XCircle } from 'lucide-react';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
 import { OrdersStatusBadge } from './orders-status-badge';
-import { ORDER_STATUS_COLOR, PAYMENT_STATUS_COLOR } from './orders-mocks';
+import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL } from './orders-mocks';
 import type { OrderRow } from './orders-mocks';
 
 interface OrderRowActionsProps {
@@ -54,14 +54,7 @@ function buildColumns(
       header: 'Status',
       accessor: 'status',
       render: (_value, row) => (
-        <OrdersStatusBadge label={row.status} color={ORDER_STATUS_COLOR[row.status]} />
-      ),
-    },
-    {
-      header: 'Payment',
-      accessor: 'payment',
-      render: (_value, row) => (
-        <OrdersStatusBadge label={row.payment} color={PAYMENT_STATUS_COLOR[row.payment]} />
+        <OrdersStatusBadge label={ORDER_STATUS_LABEL[row.status]} color={ORDER_STATUS_COLOR[row.status]} />
       ),
     },
     {
@@ -77,11 +70,12 @@ function buildColumns(
 
 interface OrdersTableProps {
   orders: OrderRow[];
+  isLoading?: boolean;
   onEdit: (order: OrderRow) => void;
-  onCancel: (order: OrderRow) => void;
+  onCancel: (order: OrderRow) => void | Promise<void>;
 }
 
-export function OrdersTable({ orders, onEdit, onCancel }: OrdersTableProps) {
+export function OrdersTable({ orders, isLoading, onEdit, onCancel }: OrdersTableProps) {
   const columns = useMemo(() => buildColumns(onEdit, onCancel), [onEdit, onCancel]);
 
   return (
@@ -89,6 +83,7 @@ export function OrdersTable({ orders, onEdit, onCancel }: OrdersTableProps) {
       columns={columns}
       data={orders}
       itemsPerPage={6}
+      isLoading={isLoading}
       getRowId={(row) => row.id}
       noDataMessage="No orders match your filters"
     />

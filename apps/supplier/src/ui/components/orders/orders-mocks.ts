@@ -1,70 +1,76 @@
-// Replica data for the supplier Orders page design.
-// TODO(orval): replace each block with the matching generated query hook once the API lands.
+import type { order } from '@energyiq/domain';
+import { formatDate } from '@energyiq/shared';
 
-export type OrderStatus = 'Approved' | 'Dispatched' | 'Pending' | 'Delivered' | 'Rejected';
-export type PaymentStatus = 'Paid' | 'Pending' | 'Failed';
+// Supplier Orders page. Status vocabulary matches GET /v1/order/list exactly (see
+// order.OrderStatus in @energyiq/domain) so table/tab labels never drift from truth.
+// "Payment" and a resolved distributor *name* have no backing field on domain.Order
+// (only a raw distributor_id — there's no supplier-facing distributor-lookup endpoint
+// yet either) — TODO(orval): add a distributor name once that endpoint exists.
+
+export type OrderStatus =
+  | 'draft'
+  | 'submitted'
+  | 'approved'
+  | 'rejected'
+  | 'dispatched'
+  | 'received'
+  | 'completed'
+  | 'cancelled'
+  | 'disputed';
 
 export interface OrderRow {
   id: string;
-  /** Display date as shown in the design (e.g. "18-Nov-2025"). */
+  /** Display date, formatted from `submitted_at`/`created_at`. */
   date: string;
-  /** Counterparty distributor for this supplier order. */
+  /** Raw `distributor_id` — no supplier-facing distributor-name lookup exists yet. */
   distributor: string;
   items: number;
   /** Raw amount in Naira; formatted for display in the table. */
   amount: number;
   status: OrderStatus;
-  payment: PaymentStatus;
 }
-
-// The first rows mirror the design exactly; the remainder repeat the sample so the
-// footer reads "of 100 Entries". TODO(orval): replace with the orders query hook.
-const ORDERS_SAMPLE: Omit<OrderRow, 'id'>[] = [
-  { date: '18-Nov-2025', distributor: 'Zenith Traders (Silver)', items: 3, amount: 1250000, status: 'Approved', payment: 'Pending' },
-  { date: '19-Nov-2025', distributor: 'Ideal Supplies (Bronze)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Delivered', payment: 'Paid' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Pending' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Pending' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Rejected', payment: 'Paid' },
-  { date: '20-Nov-2025', distributor: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
-];
-
-export const ORDERS_MOCK: OrderRow[] = Array.from({ length: 100 }, (_, index) => ({
-  id: `ORD-${String(index + 1).padStart(3, '0')}`,
-  ...ORDERS_SAMPLE[index % ORDERS_SAMPLE.length],
-}));
 
 /** Badge text color per status; the badge background reuses the same hue at low opacity. */
 export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
-  Approved: '#388E3C',
-  Dispatched: '#1B22AF',
-  Pending: '#FB8C1C',
-  Delivered: '#008080',
-  Rejected: '#D30A0A',
+  draft: '#9CA3AF',
+  submitted: '#FB8C1C',
+  approved: '#388E3C',
+  rejected: '#D30A0A',
+  dispatched: '#1B22AF',
+  received: '#008080',
+  completed: '#16A34A',
+  cancelled: '#6B7280',
+  disputed: '#D97706',
 };
 
-export const PAYMENT_STATUS_COLOR: Record<PaymentStatus, string> = {
-  Paid: '#388E3C',
-  Pending: '#FB8C1C',
-  Failed: '#D30A0A',
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  dispatched: 'Dispatched',
+  received: 'Received',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  disputed: 'Disputed',
 };
 
 export interface OrderStatusTab {
   label: string;
+  /** Status this tab filters by; omitted for "All". */
+  status?: OrderStatus;
   count: number;
 }
 
-// The "All" tab is selected by default in the design.
-export const ORDER_STATUS_TABS: OrderStatusTab[] = [
-  { label: 'All', count: 100 },
-  { label: 'Pending', count: 20 },
-  { label: 'Approved', count: 10 },
-  { label: 'Rejected', count: 10 },
-  { label: 'Delivered', count: 100 },
-  { label: 'Dispatched', count: 100 },
-  { label: 'Cancelled', count: 20 },
+/** The status tabs shown on the orders table, in display order — "All" first. */
+export const ORDER_STATUS_TAB_DEFS: Omit<OrderStatusTab, 'count'>[] = [
+  { label: 'All' },
+  { label: 'Submitted', status: 'submitted' },
+  { label: 'Approved', status: 'approved' },
+  { label: 'Rejected', status: 'rejected' },
+  { label: 'Dispatched', status: 'dispatched' },
+  { label: 'Received', status: 'received' },
+  { label: 'Cancelled', status: 'cancelled' },
 ];
 
 export interface OrderFilter {
@@ -73,14 +79,78 @@ export interface OrderFilter {
   options: string[];
 }
 
-// Presentational filter dropdowns above the table.
-// TODO(orval): source these option lists from their reference endpoints.
+// Presentational filter dropdown above the table. Distributor/payment filters were
+// dropped: there's no data to back a distributor-name picker or payment status.
 export const ORDER_FILTERS: OrderFilter[] = [
   { id: 'date', label: 'Date', options: ['Today', 'This Week', 'This Month', 'This Year'] },
-  {
-    id: 'distributor',
-    label: 'Distributor',
-    options: ['Zenith Traders', 'Ideal Supplies', 'Rapid Logistics'],
-  },
-  { id: 'payment-status', label: 'Payment Status', options: ['Paid', 'Pending', 'Failed'] },
 ];
+
+const KNOWN_ORDER_STATUSES = new Set<OrderStatus>([
+  'draft',
+  'submitted',
+  'approved',
+  'rejected',
+  'dispatched',
+  'received',
+  'completed',
+  'cancelled',
+  'disputed',
+]);
+
+function toOrderStatus(status: order.OrderStatus | string | undefined): OrderStatus {
+  return status && KNOWN_ORDER_STATUSES.has(status as OrderStatus) ? (status as OrderStatus) : 'draft';
+}
+
+/** `items` has no schema on the API (typed as a bare `object`) — count defensively. */
+function countItems(items: order.Order['items']): number {
+  if (!items) return 0;
+  if (Array.isArray(items)) return items.length;
+  return Object.keys(items).length;
+}
+
+/** `GET /v1/order/list` row -> the orders table row shape. */
+export function mapOrderToRow(source: order.Order): OrderRow {
+  const timestamp = source.submitted_at ?? source.created_at;
+  return {
+    id: source.order_number ?? source.id ?? '',
+    date: timestamp ? formatDate(timestamp) : '—',
+    distributor: source.distributor_id ?? 'Unknown',
+    items: countItems(source.items),
+    amount: source.total ?? 0,
+    status: toOrderStatus(source.status),
+  };
+}
+
+/** Builds the status tabs (with real counts) from `GET /v1/order/list/stats`. */
+export function mapOrderStatsToTabs(stats: order.OrderStats | undefined): OrderStatusTab[] {
+  return ORDER_STATUS_TAB_DEFS.map((def) => ({
+    ...def,
+    count: def.status ? (stats?.[def.status] ?? 0) : (stats?.total ?? 0),
+  }));
+}
+
+/** `Today` / `This Week` / `This Month` / `This Year` -> `{ date_from, date_to }` (YYYY-MM-DD). */
+export function dateFilterToRange(option: string | null): { date_from?: string; date_to?: string } {
+  if (!option) return {};
+  const now = new Date();
+  const toIso = (date: Date) => date.toISOString().slice(0, 10);
+  const start = new Date(now);
+
+  switch (option) {
+    case 'Today':
+      break;
+    case 'This Week':
+      start.setDate(now.getDate() - now.getDay());
+      break;
+    case 'This Month':
+      start.setDate(1);
+      break;
+    case 'This Year':
+      start.setMonth(0, 1);
+      break;
+    default:
+      return {};
+  }
+
+  return { date_from: toIso(start), date_to: toIso(now) };
+}

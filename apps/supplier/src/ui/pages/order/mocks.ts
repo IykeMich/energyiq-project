@@ -1,4 +1,10 @@
-import { ORDERS_MOCK as ORDERS_LIST_MOCK } from '@/ui/components/orders/orders-mocks';
+// This page (Order Detail / Reject / Modify / Dispatch) still runs on mock data.
+// `domain.Order.items` and `.shipping_address` are untyped `object` fields in the
+// swagger (no schema at all), so line items, distributor identity, and shipping
+// details can't be faithfully rendered from the real GET /v1/order/read/{id}
+// response without knowing their actual runtime shape — wiring this page from a
+// guess would risk silently showing wrong amounts. The Orders *list* (orders-overview.tsx)
+// is wired to the real endpoint; this page is next once that shape is confirmed.
 
 export type OrderStatus =
   | 'pending'
@@ -12,22 +18,14 @@ export type OrderStatus =
 export type OrderDetailStage = 'awaiting_approval' | 'awaiting_delivery' | 'rejected';
 
 /**
- * Derive the detail stage from the order's status in the supplier orders list
- * (the list the user clicked from). Dispatched/Delivered orders can no longer be
- * rejected; already-rejected orders load in the disabled state.
- * TODO(orval): source the stage from the order endpoint once it lands.
+ * Derive the detail stage from this (still-mocked) page's own order status.
+ * Already-rejected orders load in the disabled state.
+ * TODO(orval): source the stage from GET /v1/order/read/{id} once this page is wired
+ * — see the note atop this file about the still-unknown `items`/`shipping_address` shape.
  */
 export function getOrderStage(id: string): OrderDetailStage {
-  const listOrder = ORDERS_LIST_MOCK.find((order) => order.id === id);
-  switch (listOrder?.status) {
-    case 'Dispatched':
-    case 'Delivered':
-      return 'awaiting_delivery';
-    case 'Rejected':
-      return 'rejected';
-    default:
-      return 'awaiting_approval';
-  }
+  const listOrder = ORDERS_MOCK.find((order) => order.id === id);
+  return listOrder?.status === 'rejected' ? 'rejected' : 'awaiting_approval';
 }
 
 export type PaymentStatus = 'paid' | 'unpaid' | 'pending' | 'failed';

@@ -139,7 +139,7 @@ export function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="tap-effect bg-surface-card border border-border-strong h-[52px] rounded-[28px] px-5 w-full flex items-center justify-between transition-colors hover:border-brand"
+      className="bg-surface-card border border-border-strong h-[52px] rounded-[28px] px-5 w-full flex items-center justify-between transition-colors hover:border-brand"
     >
       <span className={cn('text-sm font-medium', checked ? 'text-success' : 'text-muted-foreground')}>
         {checked ? onLabel : offLabel}
@@ -161,6 +161,56 @@ export function ToggleSwitch({
   );
 }
 
+export type FormActionVariant = 'cancel' | 'forward';
+
+const FORM_ACTION_VARIANT_CLASSES: Record<FormActionVariant, string> = {
+  cancel: 'h-10.5 rounded-[28px] bg-[#616161B2] text-[#121212] font-semibold px-8',
+  forward:
+    'h-10.5 rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 disabled:opacity-50 disabled:cursor-not-allowed',
+};
+
+interface FormActionButtonProps {
+  variant: FormActionVariant;
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: 'button' | 'submit';
+  children: ReactNode;
+}
+
+/** Shared Cancel/Save-style pill button for wizard and modal forms — pick `variant` for the look. */
+export function FormActionButton({ variant, type = 'button', children, ...props }: FormActionButtonProps) {
+  return (
+    <button type={type} className={FORM_ACTION_VARIANT_CLASSES[variant]} {...props}>
+      {children}
+    </button>
+  );
+}
+
+export type ToolbarActionVariant = 'outline' | 'filled';
+
+const TOOLBAR_ACTION_VARIANT_CLASSES: Record<ToolbarActionVariant, string> = {
+  outline:
+    'tap-effect h-[42px] px-6 rounded-full border border-brand text-brand font-semibold text-sm hover:bg-brand/10',
+  filled: 'tap-effect h-[42px] px-6 rounded-full bg-brand text-brand-foreground font-semibold text-sm hover:opacity-90',
+};
+
+interface ToolbarActionButtonProps {
+  variant: ToolbarActionVariant;
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: 'button' | 'submit';
+  children: ReactNode;
+}
+
+/** Shared page-header toolbar pill button (e.g. "Transfer Stock" / "Create Warehouse") — pick `variant` for the look. */
+export function ToolbarActionButton({ variant, type = 'button', children, ...props }: ToolbarActionButtonProps) {
+  return (
+    <button type={type} className={TOOLBAR_ACTION_VARIANT_CLASSES[variant]} {...props}>
+      {children}
+    </button>
+  );
+}
+
 export function SelectField({ value, onChange, placeholder, options, error }: SelectFieldProps) {
   const normalized = options.map((option) => (typeof option === 'string' ? { value: option, label: option } : option));
   return (
@@ -168,7 +218,7 @@ export function SelectField({ value, onChange, placeholder, options, error }: Se
       <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
         <SelectTrigger
           className={cn(
-            'bg-surface-card border-border-strong data-[size=default]:h-[52px] w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand',
+            'bg-surface-card border-border-strong data-[size=default]:h-13 w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand',
             error && 'border-destructive focus:ring-destructive',
           )}
         >
@@ -188,7 +238,8 @@ export function SelectField({ value, onChange, placeholder, options, error }: Se
             <SelectItem
               key={option.value}
               value={option.value}
-              className="h-11 rounded-[14px] pl-4 text-sm text-foreground"
+              className="h-11 rounded-[14px] pl-4 text-sm text-foreground transition-colors hover:bg-foreground/5
+              cursor-pointer data-[highlighted]:bg-foreground/10 data-[highlighted]:text-foreground data-[state=checked]:bg-brand/10 data-[state=checked]:text-brand-foreground"
             >
               {option.label}
             </SelectItem>

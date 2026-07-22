@@ -18,6 +18,22 @@ export interface Warehouse {
   capacityL: number;
   lastUpdated: string;
   status: WarehouseStatus;
+
+  /** Real UUID from the API. */
+  managerId: string;
+
+  /** Per-product stock rows returned by GET /warehouses/{id}. */
+  productPreview: {
+    productId: string;
+    name: string;
+    quantity: number;
+    sku: string;
+    unit: string;
+    /** From the additive `products` field — 0/'' when the backend hasn't sent it yet. */
+    maxStock: number;
+    reorderPoint: number;
+    storageLocation: string;
+  }[];
 }
 
 // TODO(orval): replace with the generated list-warehouses query.
@@ -100,14 +116,17 @@ export interface EditWarehouseProduct {
   name: string;
   stockQuantity: string;
   pricePerUnit: string;
+  maxStock: string;
+  reorderPoint: string;
+  storageLocation: string;
 }
 
 // TODO(orval): replace with the warehouse's product stock query.
 export function defaultWarehouseProducts(): EditWarehouseProduct[] {
   return [
-    { id: 'ewp-petrol',   name: 'Petrol',   stockQuantity: '3,000L', pricePerUnit: '700' },
-    { id: 'ewp-diesel',   name: 'Diesel',   stockQuantity: '3,000L', pricePerUnit: '700' },
-    { id: 'ewp-kerosene', name: 'Kerosene', stockQuantity: '3,000L', pricePerUnit: '700' },
+    { id: 'ewp-petrol',   name: 'Petrol',   stockQuantity: '3,000L', pricePerUnit: '700', maxStock: '5000', reorderPoint: '500', storageLocation: '' },
+    { id: 'ewp-diesel',   name: 'Diesel',   stockQuantity: '3,000L', pricePerUnit: '700', maxStock: '5000', reorderPoint: '500', storageLocation: '' },
+    { id: 'ewp-kerosene', name: 'Kerosene', stockQuantity: '3,000L', pricePerUnit: '700', maxStock: '5000', reorderPoint: '500', storageLocation: '' },
   ];
 }
 
@@ -202,29 +221,6 @@ export const PRODUCT_ID_MAP: Record<string, string> = {
 export function productNameToId(name: string): string | undefined {
   return PRODUCT_ID_MAP[name];
 }
-export interface Warehouse {
-  id: string;
-  name: string;
-  location: string;
-  fullLocation: string;
-  stockLevelPercent: number;
-  usedL: number;
-  capacityL: number;
-  lastUpdated: string;
-  status: WarehouseStatus;
-
-  // Real UUID from the API
-  managerId: string;
-
-  // Products returned from GET /warehouses
-  productPreview: {
-    productId: string;
-    name: string;
-    quantity: number;
-    sku: string;
-    unit: string;
-  }[];
-}
 
 export function productIdToName(id?: string): string {
   const entry = Object.entries(PRODUCT_ID_MAP).find(([, value]) => value === id);
@@ -249,6 +245,14 @@ export function productIdToCode(id?: string): string {
 export function toWarehouseViewModel(source: warehouse.Warehouse): Warehouse {
   const capacity = source.capacity ?? 0;
   const percent = source.stock_level_percentage ?? 0;
+
+  // `products` is an additive field on GET /v1/warehouses/{id} — older responses
+  // simply omit it, so this map is empty and every product falls back to 0/''.
+  const productDetailsById = new Map(
+    (source.products ?? [])
+      .filter((product) => product.product_id)
+      .map((product) => [product.product_id, product]),
+  );
 
   return {
     id: source.id ?? '',
@@ -275,13 +279,19 @@ export function toWarehouseViewModel(source: warehouse.Warehouse): Warehouse {
     managerId: source.manager_id ?? '',
 
     productPreview:
-      source.product_preview?.map((product) => ({
-        productId: product.product_id ?? '',
-        name: product.name ?? '',
-        quantity: product.quantity ?? 0,
-        sku: product.sku ?? '',
-        unit: product.unit ?? '',
-      })) ?? [],
+      source.product_preview?.map((product) => {
+        const detail = product.product_id ? productDetailsById.get(product.product_id) : undefined;
+        return {
+          productId: product.product_id ?? '',
+          name: product.name ?? '',
+          quantity: product.quantity ?? 0,
+          sku: product.sku ?? '',
+          unit: product.unit ?? '',
+          maxStock: detail?.max_stock ?? 0,
+          reorderPoint: detail?.reorder_point ?? 0,
+          storageLocation: detail?.storage_location ?? '',
+        };
+      }) ?? [],
   };
 }
 

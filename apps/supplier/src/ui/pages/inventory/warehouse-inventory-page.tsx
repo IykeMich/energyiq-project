@@ -21,6 +21,7 @@ import {
 } from '@/ui/components/warehouse/warehouse-filter-bar';
 import { WarehouseListTable } from '@/ui/components/warehouse/warehouse-list-table';
 import { EditWarehouseModal } from '@/ui/components/warehouse/edit-warehouse-modal';
+import { ToolbarActionButton } from '@/ui/components/product/wizard-fields';
 
 export function WarehouseInventoryPage() {
   const navigate = useNavigate();
@@ -100,32 +101,24 @@ export function WarehouseInventoryPage() {
         composition={STOCK_COMPOSITION}
       />
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap mt-4">
         <WarehouseFilterBar status={statusFilter} onStatusChange={setStatusFilter} />
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(`/${slug}/inventory/transfer`)}
-            className="h-[46px] px-6 rounded-full border border-brand text-brand font-semibold text-sm"
-          >
+          <ToolbarActionButton variant="outline" onClick={() => navigate(`/${slug}/inventory/transfer`)}>
             Transfer Stock
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(`/${slug}/inventory/create-warehouse`)}
-            className="h-[46px] px-6 rounded-full bg-brand text-brand-foreground font-semibold text-sm"
-          >
+          </ToolbarActionButton>
+          <ToolbarActionButton variant="filled" onClick={() => navigate(`/${slug}/inventory/create-warehouse`)}>
             Create Warehouse
-          </button>
+          </ToolbarActionButton>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex h-[400px] items-center justify-center rounded-[18px] bg-surface-card">
+        <div className="flex h-100 items-center justify-center rounded-[18px] bg-surface-card">
           <p className="text-muted-foreground">Loading warehouses…</p>
         </div>
       ) : error ? (
-        <div className="flex h-[400px] items-center justify-center rounded-[18px] bg-surface-card">
+        <div className="flex h-100 items-center justify-center rounded-[18px] bg-surface-card">
           <p className="text-danger">Failed to load warehouses. Please try again.</p>
         </div>
       ) : (
