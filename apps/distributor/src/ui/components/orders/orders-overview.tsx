@@ -34,6 +34,7 @@ export function OrdersOverview() {
       const matchesTab = activeTab === 'All' || orderItem.status === activeTab;
       const matchesQuery =
         normalizedQuery === '' ||
+        orderItem.orderNumber.toLowerCase().includes(normalizedQuery) ||
         orderItem.id.toLowerCase().includes(normalizedQuery) ||
         orderItem.supplier.toLowerCase().includes(normalizedQuery);
       return matchesTab && matchesQuery;
@@ -73,6 +74,7 @@ export function OrdersOverview() {
           orders={filteredOrders}
           isLoading={isLoading}
           onViewDetails={(orderItem) => navigate(`/${slug}/orders/${orderItem.id}`)}
+          onEdit={(orderItem) => navigate(`/${slug}/orders/${orderItem.id}/edit`)}
         />
       </div>
     </section>

@@ -38,6 +38,7 @@ export function AddProductModal({ open, onOpenChange, orderId, onAdd }: AddProdu
     if (!canAdd || !product) return;
     onAdd({
       id: `${product.id}-${Date.now()}`,
+      productId: product.id,
       name: product.name,
       quantityLabel: `${qtyNumber.toLocaleString()} ${product.unit}`,
       quantity: qtyNumber,

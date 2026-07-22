@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getOrderDispatch } from '@/ui/pages/order/mocks';
+import { LoadingOverlay, toast } from '@energyiq/ui';
+import { useOrderQuery, useDispatchOrderMutation } from '@/hooks/use-orders';
+import { toOrderDispatch } from '@/ui/pages/order/mocks';
 import { OrderProgressStepper } from './order-progress-stepper';
 import { OrderSummaryCard } from './order-summary-card';
 import { OrderDeliveryDetailsCard } from './order-delivery-details-card';
@@ -26,16 +28,96 @@ interface OrderDispatchFlowProps {
 export function OrderDispatchFlow({ orderId }: OrderDispatchFlowProps) {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  const dispatch = useMemo(() => getOrderDispatch(orderId), [orderId]);
+  const { data: order, isLoading, error } = useOrderQuery(orderId);
+  const dispatchMutation = useDispatchOrderMutation();
+
+  const dispatch = useMemo(() => (order ? toOrderDispatch(order) : null), [order]);
 
   const [stage, setStage] = useState<DispatchStage>('assign');
   const [assignment, setAssignment] = useState<DispatchAssignmentValues>({
-    ...dispatch.assignment,
+    driverName: '',
+    vehiclePlate: '',
+    trackingNumber: '',
+    estimatedDelivery: '',
     dispatchNote: '',
   });
 
+  useEffect(() => {
+    if (dispatch) {
+      setAssignment((prev) => ({
+        ...dispatch.assignment,
+        dispatchNote: prev.dispatchNote,
+      }));
+    }
+  }, [dispatch]);
+
   const goToOrders = () => navigate(`/${slug}/orders`);
   const goHome = () => navigate(`/${slug}/dashboard`);
+
+  if (isLoading) {
+    return <LoadingOverlay message="Loading dispatch details..." />;
+  }
+
+  if (error) {
+    return (
+      <section className="flex flex-col gap-6">
+        <header className="flex items-center gap-3.5">
+          <button
+            type="button"
+            onClick={goToOrders}
+            aria-label="Back to orders"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-2xl font-semibold text-foreground">{orderId}</h1>
+        </header>
+        <p className="text-sm text-muted-foreground">Unable to load dispatch details. Please try again.</p>
+      </section>
+    );
+  }
+
+  if (!dispatch) {
+    return (
+      <section className="flex flex-col gap-6">
+        <header className="flex items-center gap-3.5">
+          <button
+            type="button"
+            onClick={goToOrders}
+            aria-label="Back to orders"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-2xl font-semibold text-foreground">{orderId}</h1>
+        </header>
+        <p className="text-sm text-muted-foreground">Order not found.</p>
+      </section>
+    );
+  }
+
+  const handleConfirm = () => {
+    dispatchMutation.mutate(
+      {
+        id: orderId,
+        req: {
+          driver_name: assignment.driverName,
+          vehicle_plate: assignment.vehiclePlate,
+          tracking_number: assignment.trackingNumber,
+          estimated_delivery: assignment.estimatedDelivery,
+          note: assignment.dispatchNote,
+        },
+      },
+      {
+        onSuccess: () => setStage('success'),
+        onError: (err) => {
+          toast.error('Dispatch failed', {
+            description: err instanceof Error ? err.message : 'Unable to dispatch order. Please try again.',
+          });
+        },
+      },
+    );
+  };
 
   return (
     <section className="flex flex-col gap-6">
@@ -92,11 +174,13 @@ export function OrderDispatchFlow({ orderId }: OrderDispatchFlowProps) {
               assignment={assignment}
               quantities={dispatch.dispatchedQuantities}
               onSaveDraft={goToOrders}
-              onConfirm={() => setStage('success')}
+              onConfirm={handleConfirm}
             />
           )}
         </>
       )}
+
+      {dispatchMutation.isPending && <LoadingOverlay message="Dispatching order..." />}
     </section>
   );
 }

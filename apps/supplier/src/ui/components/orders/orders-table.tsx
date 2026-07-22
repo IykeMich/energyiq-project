@@ -77,11 +77,12 @@ function buildColumns(
 
 interface OrdersTableProps {
   orders: OrderRow[];
+  isLoading?: boolean;
   onEdit: (order: OrderRow) => void;
   onCancel: (order: OrderRow) => void;
 }
 
-export function OrdersTable({ orders, onEdit, onCancel }: OrdersTableProps) {
+export function OrdersTable({ orders, isLoading, onEdit, onCancel }: OrdersTableProps) {
   const columns = useMemo(() => buildColumns(onEdit, onCancel), [onEdit, onCancel]);
 
   return (
@@ -89,6 +90,7 @@ export function OrdersTable({ orders, onEdit, onCancel }: OrdersTableProps) {
       columns={columns}
       data={orders}
       itemsPerPage={6}
+      isLoading={isLoading}
       getRowId={(row) => row.id}
       noDataMessage="No orders match your filters"
     />

@@ -1,21 +1,5 @@
-// Replica data for the supplier Orders page design.
-// TODO(orval): replace each block with the matching generated query hook once the API lands.
-
-export type OrderStatus = 'Approved' | 'Dispatched' | 'Pending' | 'Delivered' | 'Rejected';
-export type PaymentStatus = 'Paid' | 'Pending' | 'Failed';
-
-export interface OrderRow {
-  id: string;
-  /** Display date as shown in the design (e.g. "18-Nov-2025"). */
-  date: string;
-  /** Counterparty distributor for this supplier order. */
-  distributor: string;
-  items: number;
-  /** Raw amount in Naira; formatted for display in the table. */
-  amount: number;
-  status: OrderStatus;
-  payment: PaymentStatus;
-}
+import type { OrderStatus, PaymentStatus, OrderRow, OrderStatusTab } from './orders-types';
+export type { OrderStatus, PaymentStatus, OrderRow, OrderStatusTab } from './orders-types';
 
 // The first rows mirror the design exactly; the remainder repeat the sample so the
 // footer reads "of 100 Entries". TODO(orval): replace with the orders query hook.
@@ -36,9 +20,10 @@ export const ORDERS_MOCK: OrderRow[] = Array.from({ length: 100 }, (_, index) =>
   ...ORDERS_SAMPLE[index % ORDERS_SAMPLE.length],
 }));
 
-/** Badge text color per status; the badge background reuses the same hue at low opacity. */
+/** Badge text color per status; the badge background reuses it at low opacity. */
 export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
   Approved: '#388E3C',
+  Cancelled: '#D30A0A',
   Dispatched: '#1B22AF',
   Pending: '#FB8C1C',
   Delivered: '#008080',
@@ -50,11 +35,6 @@ export const PAYMENT_STATUS_COLOR: Record<PaymentStatus, string> = {
   Pending: '#FB8C1C',
   Failed: '#D30A0A',
 };
-
-export interface OrderStatusTab {
-  label: string;
-  count: number;
-}
 
 // The "All" tab is selected by default in the design.
 export const ORDER_STATUS_TABS: OrderStatusTab[] = [

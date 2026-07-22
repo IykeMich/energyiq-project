@@ -2,24 +2,67 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog, LoadingOverlay, toast } from '@energyiq/ui';
-import { getOrderDetail, getOrderStage } from './mocks';
+import {
+  useOrderQuery,
+  useApproveOrderMutation,
+  useRejectOrderMutation,
+  useCancelOrderMutation,
+  useUpdateOrderMutation,
+} from '@/hooks/use-orders';
+import { toOrderDetail, toOrderDetailStage, type OrderLineItem } from './mocks';
 import { OrderInfoCard } from '@/ui/components/order/order-info-card';
 import { OrderDistributorCard } from '@/ui/components/order/order-distributor-card';
 import { RejectOrderModal } from '@/ui/components/order/reject-order-modal';
 import { ModifyOrderModal } from '@/ui/components/order/modify-order-modal';
 
-type OpenModal = null | 'reject' | 'modify' | 'confirmApprove' | 'confirmReject' | 'confirmModify';
+type OpenModal = null | 'reject' | 'modify' | 'confirmApprove' | 'confirmReject' | 'confirmModify' | 'confirmCancel';
 
 export function OrderDetailPage() {
   const navigate = useNavigate();
   const { slug = '', id = '' } = useParams<{ slug: string; id: string }>();
   const [modal, setModal] = useState<OpenModal>(null);
   const [pendingReject, setPendingReject] = useState<{ reason: string; note: string } | null>(null);
-  const [stage, setStage] = useState(() => getOrderStage(id));
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingModify, setPendingModify] = useState<OrderLineItem[] | null>(null);
 
-  const detail = useMemo(() => getOrderDetail(id), [id]);
+  const { data: order, isLoading, error } = useOrderQuery(id);
+
+  const detail = useMemo(() => (order ? toOrderDetail(order) : null), [order]);
+  const stage = useMemo(() => toOrderDetailStage(order?.status), [order?.status]);
+
+  const approveMutation = useApproveOrderMutation();
+  const rejectMutation = useRejectOrderMutation();
+  const cancelMutation = useCancelOrderMutation();
+  const updateMutation = useUpdateOrderMutation();
+
+  const isProcessing =
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    cancelMutation.isPending ||
+    updateMutation.isPending;
+
   const actionsDisabled = stage === 'rejected';
+
+  if (isLoading) {
+    return <LoadingOverlay message="Loading order details..." />;
+  }
+
+  if (error) {
+    return (
+      <section className="flex flex-col gap-3">
+        <h1 className="text-2xl font-semibold text-foreground">Unable to load order</h1>
+        <p className="text-sm text-muted-foreground">
+          Something went wrong while loading this order. Please try again.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate(`/${slug}/orders`)}
+          className="self-start mt-2 h-10 px-5 rounded-full bg-brand text-brand-foreground font-semibold text-sm"
+        >
+          Back to Orders
+        </button>
+      </section>
+    );
+  }
 
   if (!detail) {
     return (
@@ -39,34 +82,68 @@ export function OrderDetailPage() {
     );
   }
 
+  const handleModifySave = (lineItems: OrderLineItem[]) => {
+    setPendingModify(lineItems);
+    setModal('confirmModify');
+  };
+
   const handleModifyConfirmed = () => {
+    if (!detail || !pendingModify) return;
     setModal(null);
-    setIsProcessing(true);
-    // TODO(orval): replace the timer with the modify mutation's pending/settled state.
-    setTimeout(() => {
-      setIsProcessing(false);
-      toast.success('Success', {
-        description: `'${detail.summary.id}' has been modified. ${detail.distributor.name} will receive a notification soon.`,
-      });
-    }, 1200);
+    const items = pendingModify.map((item) => ({
+      product_id: item.productId,
+      quantity: item.quantity,
+    }));
+    updateMutation.mutate(
+      { id, req: { items, reason: 'Order modified by supplier' } },
+      {
+        onSuccess: () => {
+          setPendingModify(null);
+          toast.success('Success', {
+            description: `'${detail.summary.id}' has been modified. ${detail.distributor.name} will receive a notification soon.`,
+          });
+        },
+      },
+    );
   };
 
   const handleApproveConfirmed = () => {
     setModal(null);
-    // Approving an order continues into the dispatch wizard.
-    navigate(`/${slug}/orders/${detail.summary.id}/dispatch`);
+    approveMutation.mutate(id, {
+      onSuccess: () => {
+        navigate(`/${slug}/orders/${detail.summary.id}/dispatch`);
+      },
+    });
   };
 
   const handleRejectConfirmed = () => {
     if (!pendingReject) return;
     setModal(null);
-    // Rejecting transitions the page itself: red "Order Rejected" pill + disabled actions.
-    setStage('rejected');
-    setPendingReject(null);
+    rejectMutation.mutate(
+      { id, req: { reason: pendingReject.reason, note: pendingReject.note } },
+      {
+        onSuccess: () => {
+          setPendingReject(null);
+          toast.success('Order rejected', {
+            description: `Order '${id}' has been rejected. The distributor will be notified.`,
+          });
+        },
+      },
+    );
+  };
+
+  const handleCancelConfirmed = () => {
+    setModal(null);
+    cancelMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success('Order cancelled', {
+          description: `Order '${id}' has been cancelled.`,
+        });
+      },
+    });
   };
 
   const handleRejectClick = () => {
-    // A dispatched order can no longer be rejected — surface a toast instead of the modal.
     if (stage === 'awaiting_delivery') {
       toast.error('This order cannot be rejected at its current stage');
       return;
@@ -156,6 +233,18 @@ export function OrderDetailPage() {
               >
                 Approve Order
               </button>
+              <button
+                type="button"
+                onClick={() => setModal('confirmCancel')}
+                disabled={actionsDisabled}
+                className={
+                  actionsDisabled
+                    ? 'h-13.25 rounded-[28px] bg-foreground/10 text-muted-foreground font-semibold cursor-not-allowed'
+                    : 'h-13.25 rounded-[28px] border border-border-strong text-foreground font-semibold'
+                }
+              >
+                Cancel Order
+              </button>
             </>
           }
         />
@@ -175,8 +264,7 @@ export function OrderDetailPage() {
         open={modal === 'modify'}
         onOpenChange={(o) => !o && setModal(null)}
         detail={detail}
-        // TODO(orval): persist the edited line items via the modify mutation.
-        onSave={() => setModal('confirmModify')}
+        onSave={handleModifySave}
       />
 
       <ConfirmDialog
@@ -207,6 +295,16 @@ export function OrderDetailPage() {
         confirmLabel="Confirm Changes"
         intent="primary"
         onConfirm={handleModifyConfirmed}
+      />
+
+      <ConfirmDialog
+        open={modal === 'confirmCancel'}
+        onOpenChange={(o) => !o && setModal(null)}
+        title="Cancel Confirmation"
+        message={`Are you sure you want to cancel Order ${detail.summary.id}? The distributor will be notified immediately.`}
+        confirmLabel="Cancel Order"
+        intent="danger"
+        onConfirm={handleCancelConfirmed}
       />
 
       {isProcessing && <LoadingOverlay message="Saving changes..." />}

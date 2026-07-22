@@ -165,7 +165,7 @@ export function OrderDetailOverview({ data, orderId }: OrderDetailOverviewProps)
               actions={
                 <OrderDetailActions
                   {...actions}
-                  onModify={() => navigate(`/${slug}/orders/${data.orderId}/edit`)}
+                  onModify={() => navigate(`/${slug}/orders/${orderId}/edit`)}
                   onReject={() => setModal('reject')}
                   onApprove={() => setModal('approve')}
                   onCancel={() => setModal('cancel')}

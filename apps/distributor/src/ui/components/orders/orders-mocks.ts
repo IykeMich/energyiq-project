@@ -6,6 +6,7 @@ export type PaymentStatus = 'Paid' | 'Pending' | 'Failed';
 
 export interface OrderRow {
   id: string;
+  orderNumber: string;
   /** Display date as shown in the design (e.g. "18-Nov-2025"). */
   date: string;
   supplier: string;
@@ -17,15 +18,15 @@ export interface OrderRow {
 }
 
 export const ORDERS_MOCK: OrderRow[] = [
-  { id: 'ORD-001', date: '18-Nov-2025', supplier: 'Zenith Traders (Silver)', items: 3, amount: 1250000, status: 'Approved', payment: 'Pending' },
-  { id: 'ORD-002', date: '19-Nov-2025', supplier: 'Ideal Supplies (Bronze)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
-  { id: 'ORD-003', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
-  { id: 'ORD-004', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
-  { id: 'ORD-005', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Delivered', payment: 'Paid' },
-  { id: 'ORD-006', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Pending' },
-  { id: 'ORD-007', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Pending' },
-  { id: 'ORD-008', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Rejected', payment: 'Paid' },
-  { id: 'ORD-009', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
+  { id: 'ORD-001', orderNumber: 'ORD-001', date: '18-Nov-2025', supplier: 'Zenith Traders (Silver)', items: 3, amount: 1250000, status: 'Approved', payment: 'Pending' },
+  { id: 'ORD-002', orderNumber: 'ORD-002', date: '19-Nov-2025', supplier: 'Ideal Supplies (Bronze)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
+  { id: 'ORD-003', orderNumber: 'ORD-003', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
+  { id: 'ORD-004', orderNumber: 'ORD-004', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Paid' },
+  { id: 'ORD-005', orderNumber: 'ORD-005', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Delivered', payment: 'Paid' },
+  { id: 'ORD-006', orderNumber: 'ORD-006', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Pending' },
+  { id: 'ORD-007', orderNumber: 'ORD-007', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Dispatched', payment: 'Pending' },
+  { id: 'ORD-008', orderNumber: 'ORD-008', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Rejected', payment: 'Paid' },
+  { id: 'ORD-009', orderNumber: 'ORD-009', date: '20-Nov-2025', supplier: 'Rapid Logistics (Gold)', items: 6, amount: 1150000, status: 'Pending', payment: 'Failed' },
 ];
 
 /** Badge text color per status; the badge background reuses the same hue at low opacity. */
