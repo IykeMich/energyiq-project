@@ -22,7 +22,7 @@ function buildColumns(onAction: (row: DocumentListRow) => void): Column<Document
           />
           <Avatar className="h-7 w-7">
             <AvatarFallback className="bg-[#FBC02D] text-[10px] text-[#121212]">
-              {getInitials(row.distributor)}
+              {row.initials || getInitials(row.distributor)}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium text-[#FAFAFA]">{row.distributor}</span>
@@ -39,7 +39,7 @@ function buildColumns(onAction: (row: DocumentListRow) => void): Column<Document
     {
       header: 'Status',
       accessor: 'status',
-      render: (_value, row) => <KycDocumentsStatusBadge status={row.status} />,
+      render: (_value, row) => <KycDocumentsStatusBadge status={row.status} label={row.statusLabel} />,
     },
     {
       header: 'Action',
@@ -53,7 +53,7 @@ function buildColumns(onAction: (row: DocumentListRow) => void): Column<Document
           }}
           className="tap-effect text-sm font-medium text-[#FBC02D] underline-offset-2 hover:underline"
         >
-          {row.status === 'In Review' ? 'Review' : 'View'}
+          {row.status === 'in_review' ? 'Review' : 'View'}
         </button>
       ),
     },

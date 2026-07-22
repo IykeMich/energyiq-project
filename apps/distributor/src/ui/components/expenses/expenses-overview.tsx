@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { ExpensesSearchBar } from './expenses-search-bar';
@@ -10,6 +10,13 @@ import {
   Zap,
   Receipt,
 } from 'lucide-react';
+
+interface ExpenseEntry {
+  title: string;
+  sub: string;
+  amount: string;
+  date: string;
+}
 
 export function ExpensesOverview() {
 
@@ -61,7 +68,7 @@ export function ExpensesOverview() {
   const [searchQuery, setSearchQuery] = useState('');
   const [logExpenseOpen, setLogExpenseOpen] = useState(false);
 
-  const recentEntries = [
+  const recentEntries: ExpenseEntry[] = [
     {
       title: 'Staff salaries',
       sub: 'Staff costs · Recurring monthly',

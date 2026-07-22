@@ -5,6 +5,7 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
+import type { GetV1WarehousesTransfersSort } from './getV1WarehousesTransfersSort';
 import type { GetV1WarehousesTransfersStatus } from './getV1WarehousesTransfersStatus';
 
 export type GetV1WarehousesTransfersParams = {
@@ -20,6 +21,10 @@ date_from?: string;
  * End date in YYYY-MM-DD
  */
 date_to?: string;
+/**
+ * Sort by created date
+ */
+sort?: GetV1WarehousesTransfersSort;
 /**
  * Page size, max 100
  */

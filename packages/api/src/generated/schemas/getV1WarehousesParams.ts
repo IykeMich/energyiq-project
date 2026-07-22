@@ -5,6 +5,7 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
+import type { GetV1WarehousesSort } from './getV1WarehousesSort';
 import type { GetV1WarehousesStatus } from './getV1WarehousesStatus';
 
 export type GetV1WarehousesParams = {
@@ -16,6 +17,10 @@ status?: GetV1WarehousesStatus;
  * Search by warehouse name or location
  */
 search?: string;
+/**
+ * Sort by created date
+ */
+sort?: GetV1WarehousesSort;
 /**
  * Page size, max 100
  */

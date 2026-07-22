@@ -13,10 +13,9 @@ export function KycDocumentTypeSummaryCard({ summary, onEdit }: KycDocumentTypeS
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-white">{summary.name}</span>
-            {summary.mandatory && (
-              <span className="text-[11px] font-light text-gray-400">Mandatory</span>
-            )}
+            <span className="text-[11px] font-light text-gray-400">{summary.requiredLabel}</span>
           </div>
+          <span className="text-[11px] text-gray-500">{summary.categoryLabel}</span>
         </div>
         <button
           type="button"

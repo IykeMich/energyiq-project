@@ -35,32 +35,32 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Defines a supplier document requirement such as Business License, Tax Certificate, Insurance Policy or Utility Bill. Prerequisites: supplier admin role; file types, max size and expiry policy are validated.
+ * Saves one document type using the Figma-facing document details form fields such as document name, expiry requirement, validity period, allowed file types, max file size, and description.
  * @summary Create document type
  */
-export type postV1DoctypeCreateResponse201 = {
+export type postV1DocumentTypeCreateResponse201 = {
   data: HttpDocumentTypeResponse
   status: 201
 }
 
-export type postV1DoctypeCreateResponseSuccess = (postV1DoctypeCreateResponse201) & {
+export type postV1DocumentTypeCreateResponseSuccess = (postV1DocumentTypeCreateResponse201) & {
   headers: Headers;
 };
 ;
 
-export type postV1DoctypeCreateResponse = (postV1DoctypeCreateResponseSuccess)
+export type postV1DocumentTypeCreateResponse = (postV1DocumentTypeCreateResponseSuccess)
 
-export const getPostV1DoctypeCreateUrl = () => {
-
-
+export const getPostV1DocumentTypeCreateUrl = () => {
 
 
-  return `/v1/doctype/create`
+
+
+  return `/v1/document-type/create`
 }
 
-export const postV1DoctypeCreate = async (httpDocumentTypeCreateRequest: HttpDocumentTypeCreateRequest, options?: RequestInit): Promise<postV1DoctypeCreateResponse> => {
+export const postV1DocumentTypeCreate = async (httpDocumentTypeCreateRequest: HttpDocumentTypeCreateRequest, options?: RequestInit): Promise<postV1DocumentTypeCreateResponse> => {
 
-  return fetcher<postV1DoctypeCreateResponse>(getPostV1DoctypeCreateUrl(),
+  return fetcher<postV1DocumentTypeCreateResponse>(getPostV1DocumentTypeCreateUrl(),
   {
     ...options,
     method: 'POST',
@@ -73,11 +73,11 @@ export const postV1DoctypeCreate = async (httpDocumentTypeCreateRequest: HttpDoc
 
 
 
-export const getPostV1DoctypeCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DoctypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DoctypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext> => {
+export const getPostV1DocumentTypeCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext> => {
 
-const mutationKey = ['postV1DoctypeCreate'];
+const mutationKey = ['postV1DocumentTypeCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -87,10 +87,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DoctypeCreate>>, {data: HttpDocumentTypeCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, {data: HttpDocumentTypeCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  postV1DoctypeCreate(data,requestOptions)
+          return  postV1DocumentTypeCreate(data,requestOptions)
         }
 
 
@@ -100,50 +100,50 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type PostV1DoctypeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DoctypeCreate>>>
-    export type PostV1DoctypeCreateMutationBody = HttpDocumentTypeCreateRequest
-    export type PostV1DoctypeCreateMutationError = unknown
+    export type PostV1DocumentTypeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>>
+    export type PostV1DocumentTypeCreateMutationBody = HttpDocumentTypeCreateRequest
+    export type PostV1DocumentTypeCreateMutationError = unknown
 
     /**
  * @summary Create document type
  */
-export const usePostV1DoctypeCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DoctypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1DocumentTypeCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1DoctypeCreate>>,
+        Awaited<ReturnType<typeof postV1DocumentTypeCreate>>,
         TError,
         {data: HttpDocumentTypeCreateRequest},
         TContext
       > => {
-      return useMutation(getPostV1DoctypeCreateMutationOptions(options));
+      return useMutation(getPostV1DocumentTypeCreateMutationOptions(options));
     }
     /**
  * Soft-deactivates a document type so historical document submissions remain auditable.
  * @summary Delete document type
  */
-export type deleteV1DoctypeDeleteIdResponse200 = {
+export type deleteV1DocumentTypeDeleteIdResponse200 = {
   data: ResponseEmptyResponse
   status: 200
 }
 
-export type deleteV1DoctypeDeleteIdResponseSuccess = (deleteV1DoctypeDeleteIdResponse200) & {
+export type deleteV1DocumentTypeDeleteIdResponseSuccess = (deleteV1DocumentTypeDeleteIdResponse200) & {
   headers: Headers;
 };
 ;
 
-export type deleteV1DoctypeDeleteIdResponse = (deleteV1DoctypeDeleteIdResponseSuccess)
+export type deleteV1DocumentTypeDeleteIdResponse = (deleteV1DocumentTypeDeleteIdResponseSuccess)
 
-export const getDeleteV1DoctypeDeleteIdUrl = (id: string,) => {
-
-
+export const getDeleteV1DocumentTypeDeleteIdUrl = (id: string,) => {
 
 
-  return `/v1/doctype/delete/${id}`
+
+
+  return `/v1/document-type/delete/${id}`
 }
 
-export const deleteV1DoctypeDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DoctypeDeleteIdResponse> => {
+export const deleteV1DocumentTypeDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentTypeDeleteIdResponse> => {
 
-  return fetcher<deleteV1DoctypeDeleteIdResponse>(getDeleteV1DoctypeDeleteIdUrl(id),
+  return fetcher<deleteV1DocumentTypeDeleteIdResponse>(getDeleteV1DocumentTypeDeleteIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -155,11 +155,11 @@ export const deleteV1DoctypeDeleteId = async (id: string, options?: RequestInit)
 
 
 
-export const getDeleteV1DoctypeDeleteIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DoctypeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1DoctypeDeleteId>>, TError,{id: string}, TContext> => {
+export const getDeleteV1DocumentTypeDeleteIdMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['deleteV1DoctypeDeleteId'];
+const mutationKey = ['deleteV1DocumentTypeDeleteId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -169,10 +169,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1DoctypeDeleteId>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, {id: string}> = (props) => {
           const {id} = props ?? {};
 
-          return  deleteV1DoctypeDeleteId(id,requestOptions)
+          return  deleteV1DocumentTypeDeleteId(id,requestOptions)
         }
 
 
@@ -182,50 +182,50 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type DeleteV1DoctypeDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1DoctypeDeleteId>>>
+    export type DeleteV1DocumentTypeDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>>
 
-    export type DeleteV1DoctypeDeleteIdMutationError = unknown
+    export type DeleteV1DocumentTypeDeleteIdMutationError = unknown
 
     /**
  * @summary Delete document type
  */
-export const useDeleteV1DoctypeDeleteId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DoctypeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const useDeleteV1DocumentTypeDeleteId = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1DoctypeDeleteId>>,
+        Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>,
         TError,
         {id: string},
         TContext
       > => {
-      return useMutation(getDeleteV1DoctypeDeleteIdMutationOptions(options));
+      return useMutation(getDeleteV1DocumentTypeDeleteIdMutationOptions(options));
     }
     /**
- * Lists active and inactive document requirements for supplier configuration and upload forms.
+ * Lists document types using the Figma-facing document details field names for table and modal flows.
  * @summary List document types
  */
-export type getV1DoctypeListResponse200 = {
+export type getV1DocumentTypeListResponse200 = {
   data: HttpDocumentTypeListResponse
   status: 200
 }
 
-export type getV1DoctypeListResponseSuccess = (getV1DoctypeListResponse200) & {
+export type getV1DocumentTypeListResponseSuccess = (getV1DocumentTypeListResponse200) & {
   headers: Headers;
 };
 ;
 
-export type getV1DoctypeListResponse = (getV1DoctypeListResponseSuccess)
+export type getV1DocumentTypeListResponse = (getV1DocumentTypeListResponseSuccess)
 
-export const getGetV1DoctypeListUrl = () => {
-
-
+export const getGetV1DocumentTypeListUrl = () => {
 
 
-  return `/v1/doctype/list`
+
+
+  return `/v1/document-type/list`
 }
 
-export const getV1DoctypeList = async ( options?: RequestInit): Promise<getV1DoctypeListResponse> => {
+export const getV1DocumentTypeList = async ( options?: RequestInit): Promise<getV1DocumentTypeListResponse> => {
 
-  return fetcher<getV1DoctypeListResponse>(getGetV1DoctypeListUrl(),
+  return fetcher<getV1DocumentTypeListResponse>(getGetV1DocumentTypeListUrl(),
   {
     ...options,
     method: 'GET'
@@ -238,45 +238,45 @@ export const getV1DoctypeList = async ( options?: RequestInit): Promise<getV1Doc
 
 
 
-export const getGetV1DoctypeListQueryKey = () => {
+export const getGetV1DocumentTypeListQueryKey = () => {
     return [
-    `/v1/doctype/list`
+    `/v1/document-type/list`
     ] as const;
     }
 
 
-export const getGetV1DoctypeListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DoctypeList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DoctypeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentTypeListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1DoctypeListQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetV1DocumentTypeListQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DoctypeList>>> = ({ signal }) => getV1DoctypeList({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DocumentTypeList>>> = ({ signal }) => getV1DocumentTypeList({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DoctypeList>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetV1DoctypeListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DoctypeList>>>
-export type GetV1DoctypeListQueryError = unknown
+export type GetV1DocumentTypeListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentTypeList>>>
+export type GetV1DocumentTypeListQueryError = unknown
 
 
 /**
  * @summary List document types
  */
 
-export function useGetV1DoctypeList<TData = Awaited<ReturnType<typeof getV1DoctypeList>>, TError = unknown>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DoctypeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export function useGetV1DocumentTypeList<TData = Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError = unknown>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetV1DoctypeListQueryOptions(options)
+  const queryOptions = getGetV1DocumentTypeListQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -289,32 +289,32 @@ export function useGetV1DoctypeList<TData = Awaited<ReturnType<typeof getV1Docty
 
 
 /**
- * Returns one document type configuration for edit screens.
+ * Returns one document type in the same field naming used by the Figma document details form.
  * @summary Get document type
  */
-export type getV1DoctypeReadIdResponse200 = {
+export type getV1DocumentTypeReadIdResponse200 = {
   data: HttpDocumentTypeResponse
   status: 200
 }
 
-export type getV1DoctypeReadIdResponseSuccess = (getV1DoctypeReadIdResponse200) & {
+export type getV1DocumentTypeReadIdResponseSuccess = (getV1DocumentTypeReadIdResponse200) & {
   headers: Headers;
 };
 ;
 
-export type getV1DoctypeReadIdResponse = (getV1DoctypeReadIdResponseSuccess)
+export type getV1DocumentTypeReadIdResponse = (getV1DocumentTypeReadIdResponseSuccess)
 
-export const getGetV1DoctypeReadIdUrl = (id: string,) => {
-
-
+export const getGetV1DocumentTypeReadIdUrl = (id: string,) => {
 
 
-  return `/v1/doctype/read/${id}`
+
+
+  return `/v1/document-type/read/${id}`
 }
 
-export const getV1DoctypeReadId = async (id: string, options?: RequestInit): Promise<getV1DoctypeReadIdResponse> => {
+export const getV1DocumentTypeReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentTypeReadIdResponse> => {
 
-  return fetcher<getV1DoctypeReadIdResponse>(getGetV1DoctypeReadIdUrl(id),
+  return fetcher<getV1DocumentTypeReadIdResponse>(getGetV1DocumentTypeReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -327,45 +327,45 @@ export const getV1DoctypeReadId = async (id: string, options?: RequestInit): Pro
 
 
 
-export const getGetV1DoctypeReadIdQueryKey = (id: string,) => {
+export const getGetV1DocumentTypeReadIdQueryKey = (id: string,) => {
     return [
-    `/v1/doctype/read/${id}`
+    `/v1/document-type/read/${id}`
     ] as const;
     }
 
 
-export const getGetV1DoctypeReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DoctypeReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DoctypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentTypeReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1DoctypeReadIdQueryKey(id);
+  const queryKey =  queryOptions?.queryKey ?? getGetV1DocumentTypeReadIdQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DoctypeReadId>>> = ({ signal }) => getV1DoctypeReadId(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>> = ({ signal }) => getV1DocumentTypeReadId(id, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DoctypeReadId>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetV1DoctypeReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DoctypeReadId>>>
-export type GetV1DoctypeReadIdQueryError = unknown
+export type GetV1DocumentTypeReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>>
+export type GetV1DocumentTypeReadIdQueryError = unknown
 
 
 /**
  * @summary Get document type
  */
 
-export function useGetV1DoctypeReadId<TData = Awaited<ReturnType<typeof getV1DoctypeReadId>>, TError = unknown>(
- id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DoctypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export function useGetV1DocumentTypeReadId<TData = Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError = unknown>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetV1DoctypeReadIdQueryOptions(id,options)
+  const queryOptions = getGetV1DocumentTypeReadIdQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -378,33 +378,33 @@ export function useGetV1DoctypeReadId<TData = Awaited<ReturnType<typeof getV1Doc
 
 
 /**
- * Updates validation rules, required flag, tier applicability and expiry reminders for an existing document type. Name is immutable to preserve historical submissions.
+ * Updates one document type using the Figma-facing document details form fields. The backend keeps the internal document key stable for historical records.
  * @summary Update document type
  */
-export type putV1DoctypeUpdateIdResponse200 = {
+export type putV1DocumentTypeUpdateIdResponse200 = {
   data: HttpDocumentTypeResponse
   status: 200
 }
 
-export type putV1DoctypeUpdateIdResponseSuccess = (putV1DoctypeUpdateIdResponse200) & {
+export type putV1DocumentTypeUpdateIdResponseSuccess = (putV1DocumentTypeUpdateIdResponse200) & {
   headers: Headers;
 };
 ;
 
-export type putV1DoctypeUpdateIdResponse = (putV1DoctypeUpdateIdResponseSuccess)
+export type putV1DocumentTypeUpdateIdResponse = (putV1DocumentTypeUpdateIdResponseSuccess)
 
-export const getPutV1DoctypeUpdateIdUrl = (id: string,) => {
-
-
+export const getPutV1DocumentTypeUpdateIdUrl = (id: string,) => {
 
 
-  return `/v1/doctype/update/${id}`
+
+
+  return `/v1/document-type/update/${id}`
 }
 
-export const putV1DoctypeUpdateId = async (id: string,
-    httpDocumentTypeUpdateRequest: HttpDocumentTypeUpdateRequest, options?: RequestInit): Promise<putV1DoctypeUpdateIdResponse> => {
+export const putV1DocumentTypeUpdateId = async (id: string,
+    httpDocumentTypeUpdateRequest: HttpDocumentTypeUpdateRequest, options?: RequestInit): Promise<putV1DocumentTypeUpdateIdResponse> => {
 
-  return fetcher<putV1DoctypeUpdateIdResponse>(getPutV1DoctypeUpdateIdUrl(id),
+  return fetcher<putV1DocumentTypeUpdateIdResponse>(getPutV1DocumentTypeUpdateIdUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -417,11 +417,11 @@ export const putV1DoctypeUpdateId = async (id: string,
 
 
 
-export const getPutV1DoctypeUpdateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DoctypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1DoctypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext> => {
+export const getPutV1DocumentTypeUpdateIdMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext> => {
 
-const mutationKey = ['putV1DoctypeUpdateId'];
+const mutationKey = ['putV1DocumentTypeUpdateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -431,10 +431,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DoctypeUpdateId>>, {id: string;data: HttpDocumentTypeUpdateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, {id: string;data: HttpDocumentTypeUpdateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  putV1DoctypeUpdateId(id,data,requestOptions)
+          return  putV1DocumentTypeUpdateId(id,data,requestOptions)
         }
 
 
@@ -444,20 +444,20 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type PutV1DoctypeUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DoctypeUpdateId>>>
-    export type PutV1DoctypeUpdateIdMutationBody = HttpDocumentTypeUpdateRequest
-    export type PutV1DoctypeUpdateIdMutationError = unknown
+    export type PutV1DocumentTypeUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>>
+    export type PutV1DocumentTypeUpdateIdMutationBody = HttpDocumentTypeUpdateRequest
+    export type PutV1DocumentTypeUpdateIdMutationError = unknown
 
     /**
  * @summary Update document type
  */
-export const usePutV1DoctypeUpdateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DoctypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1DocumentTypeUpdateId = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof putV1DoctypeUpdateId>>,
+        Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>,
         TError,
         {id: string;data: HttpDocumentTypeUpdateRequest},
         TContext
       > => {
-      return useMutation(getPutV1DoctypeUpdateIdMutationOptions(options));
+      return useMutation(getPutV1DocumentTypeUpdateIdMutationOptions(options));
     }

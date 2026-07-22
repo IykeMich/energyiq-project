@@ -4,9 +4,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ConfirmDialog, toast } from '@energyiq/ui';
 import {
-  useGetV1DoctypeList,
-  useDeleteV1DoctypeDeleteId,
-  getGetV1DoctypeListQueryKey,
+  useGetV1DocumentTypeList,
+  useDeleteV1DocumentTypeDeleteId,
+  getGetV1DocumentTypeListQueryKey,
 } from '@energyiq/api/generated/document-types/document-types';
 import { KycDocumentTypeConfigCard } from './kyc-document-type-config-card';
 import { mapDocumentTypeToConfig } from './kyc-document-type-mappers';
@@ -19,14 +19,14 @@ export function KycDocumentTypesOverview() {
   const { slug = 'demo' } = useParams<{ slug: string }>();
   const [deactivateTarget, setDeactivateTarget] = useState<DocumentTypeConfig | null>(null);
 
-  const { data, isLoading } = useGetV1DoctypeList();
-  const deactivateDocumentType = useDeleteV1DoctypeDeleteId();
+  const { data, isLoading } = useGetV1DocumentTypeList();
+  const deactivateDocumentType = useDeleteV1DocumentTypeDeleteId();
   const configs = (data?.data?.data ?? []).map(mapDocumentTypeToConfig);
 
   const handleConfirmDeactivate = async () => {
     if (!deactivateTarget) return;
     await deactivateDocumentType.mutateAsync({ id: deactivateTarget.id });
-    await queryClient.invalidateQueries({ queryKey: getGetV1DoctypeListQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: getGetV1DocumentTypeListQueryKey() });
     toast.success('Document type deactivated', {
       description: `'${deactivateTarget.name}' is no longer required from distributors.`,
     });
@@ -52,14 +52,23 @@ export function KycDocumentTypesOverview() {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate(`/${slug}/kyc-documents/types/new`)}
-          className="tap-effect inline-flex items-center gap-1.5 rounded-full bg-[#FBC02D] px-5 py-2.5 text-sm font-semibold text-[#121212]"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add new type
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(`/${slug}/kyc-documents/categories`)}
+            className="tap-effect inline-flex items-center gap-1.5 rounded-full border border-[#FBC02D] px-5 py-2.5 text-sm font-semibold text-[#FBC02D]"
+          >
+            Manage Categories
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/${slug}/kyc-documents/types/new`)}
+            className="tap-effect inline-flex items-center gap-1.5 rounded-full bg-[#FBC02D] px-5 py-2.5 text-sm font-semibold text-[#121212]"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Add new type
+          </button>
+        </div>
       </header>
 
       {isLoading ? (

@@ -3,7 +3,7 @@ import { useGetV1DocumentReadId } from '@energyiq/api/generated/documents/docume
 import { DocumentActivity } from './document-activity';
 import { DocumentPreviewCard } from './doc-preview-card';
 import { StatusBadge } from './document-status-badge';
-import { toDisplayStatus, formatDate, daysRemaining, buildActivity } from './document-mappers';
+import { buildDetailActivity } from './document-mappers';
 
 interface Props {
   documentId: string;
@@ -12,7 +12,7 @@ interface Props {
 
 export function DocumentDetails({ documentId, onBack }: Props) {
   const { data, isLoading } = useGetV1DocumentReadId(documentId);
-  const document = data?.data?.data;
+  const document = data?.data.data;
 
   const BackButton = (
     <button
@@ -35,19 +35,21 @@ export function DocumentDetails({ documentId, onBack }: Props) {
     );
   }
 
-  const status = toDisplayStatus(document);
+  const isExpiring = document.status === 'expiring' || document.status === 'expiring_soon';
 
   return (
     <div className="space-y-6">
       {BackButton}
 
       <div>
-        <h1 className="text-xl font-semibold text-white">{document.document_type}</h1>
+        <h1 className="text-xl font-semibold text-white">
+          {document.preview_title ?? document.document_type_label}
+        </h1>
 
         <div className="mt-3 flex items-center gap-3">
           <span className="text-sm text-gray-500">Regulatory • Required document</span>
 
-          <StatusBadge status={status} />
+          <StatusBadge status={document.status ?? ''} label={document.status_label} />
         </div>
       </div>
 
@@ -60,35 +62,31 @@ export function DocumentDetails({ documentId, onBack }: Props) {
               <div>
                 <p className="text-gray-500">Document Type</p>
 
-                <p className="mt-1 text-white">{document.document_type}</p>
+                <p className="mt-1 text-white">{document.document_type_label ?? '-'}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Uploaded On</p>
 
-                <p className="mt-1 text-white">{formatDate(document.created_at)}</p>
+                <p className="mt-1 text-white">{document.submitted_at_label ?? '-'}</p>
               </div>
 
               <div>
-                <p className="text-gray-500">Reviewed By</p>
+                <p className="text-gray-500">Distributor</p>
 
-                <p className="mt-1 text-white">{document.reviewed_by ?? '-'}</p>
+                <p className="mt-1 text-white">{document.distributor_name ?? '-'}</p>
               </div>
 
               <div>
-                <p className="text-gray-500">Approved On</p>
+                <p className="text-gray-500">Status</p>
 
-                <p className="mt-1 text-white">
-                  {document.status === 'approved' ? formatDate(document.reviewed_at) : '-'}
-                </p>
+                <p className="mt-1 text-white">{document.status_note ?? document.status_label ?? '-'}</p>
               </div>
 
               <div>
                 <p className="text-gray-500">Valid Until</p>
 
-                <p className="mt-1 text-[#F4B400]">
-                  {document.expires_at ? formatDate(document.expires_at) : '-'}
-                </p>
+                <p className="mt-1 text-[#F4B400]">{document.expires_at_label ?? '-'}</p>
               </div>
 
               <div>
@@ -101,17 +99,17 @@ export function DocumentDetails({ documentId, onBack }: Props) {
         </div>
 
         <div className="space-y-6">
-          <DocumentActivity activity={buildActivity(document)} />
+          <DocumentActivity activity={buildDetailActivity(document)} />
 
-          {status === 'expiring' && (
+          {isExpiring && (
             <div className="rounded-3xl border border-[#2A2A2A] bg-[#121212] p-5">
-              <p className="text-xs text-gray-500">Expiry Countdown</p>
+              <p className="text-xs text-gray-500">Expiry</p>
 
-              <h2 className="mt-2 text-4xl font-bold text-[#F4B400]">
-                {daysRemaining(document.expires_at)}
+              <h2 className="mt-2 text-2xl font-bold text-[#F4B400]">
+                {document.expires_at_label ?? '-'}
               </h2>
 
-              <p className="text-xs text-gray-500">days remaining</p>
+              <p className="text-xs text-gray-500">Valid until this date</p>
             </div>
           )}
         </div>

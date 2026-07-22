@@ -1,4 +1,4 @@
-import type { DomainDocument } from '@energyiq/api/generated/schemas';
+import type { DomainDocument, DomainDocumentDetail } from '@energyiq/api/generated/schemas';
 
 /** Display status shown in the UI — `expiring` is derived, not an API status value. */
 export type DisplayDocumentStatus = 'approved' | 'rejected' | 'pending' | 'expired' | 'expiring';
@@ -40,32 +40,34 @@ export interface DocumentActivityEntry {
   date: string;
 }
 
-/** No audit-log endpoint exists among the 12 — derive a minimal timeline from the
- * document's own submitted/reviewed timestamps instead of leaving it empty. */
-export function buildActivity(document: DomainDocument): DocumentActivityEntry[] {
+/**
+ * `GET /v1/document/read/{id}` now returns `DomainDocumentDetail` — a "Figma-facing"
+ * payload of pre-formatted display strings (no raw `reviewed_at`/`reviewed_by` fields
+ * anymore, only `submitted_at_label` and a generic `status_note`). Build the same
+ * minimal timeline from what's actually available rather than the old raw timestamps.
+ */
+export function buildDetailActivity(document: DomainDocumentDetail): DocumentActivityEntry[] {
   const entries: DocumentActivityEntry[] = [];
 
-  if (document.created_at) {
+  if (document.submitted_at_label) {
     entries.push({
       title: 'Submitted',
       description: `${document.file_name ?? 'Document'} was submitted for review.`,
-      date: formatDate(document.created_at),
+      date: document.submitted_at_label,
     });
   }
 
-  if (document.status === 'approved' && document.reviewed_at) {
-    entries.push({
-      title: 'Approved',
-      description: 'This document was reviewed and approved.',
-      date: formatDate(document.reviewed_at),
-    });
-  }
-
-  if (document.status === 'rejected' && document.reviewed_at) {
+  if (document.status === 'rejected') {
     entries.push({
       title: 'Rejected',
-      description: document.rejection_reason ?? 'This document was rejected.',
-      date: formatDate(document.reviewed_at),
+      description: document.rejection_reason ?? document.status_note ?? 'This document was rejected.',
+      date: document.status_label ?? '',
+    });
+  } else if (document.status_note) {
+    entries.push({
+      title: document.status_label ?? 'Status update',
+      description: document.status_note,
+      date: document.status_label ?? '',
     });
   }
 

@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@energyiq/ui';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { useOrdersQuery, useOrderStatsQuery, useCancelOrderMutation } from '@/hooks/use-orders';
+import { useDistributorsQuery } from '@/hooks/use-distributor';
 import { OrdersSearchBar } from './orders-search-bar';
 import { OrdersStatusTabs } from './orders-status-tabs';
 import { OrdersFilterChips, type OrderFilterSelection } from './orders-filter-chips';
@@ -17,10 +18,10 @@ import {
 } from './orders-mocks';
 
 /**
- * Supplier Orders page. Wired to GET /v1/order/list + /v1/order/list/stats.
- * Search still filters client-side (id / raw distributor_id — no distributor-name
- * endpoint exists yet); the status tab and date filter are sent to the API as real
- * query params so pagination/counts stay accurate.
+ * Supplier Orders page. Wired to GET /v1/order/list + /v1/order/list/stats, with
+ * distributor names resolved from GET /v1/distributor/list. Search still filters
+ * client-side (id / distributor name); the status tab and date filter are sent to
+ * the API as real query params so pagination/counts stay accurate.
  */
 export function OrdersOverview() {
   const navigate = useNavigate();
@@ -44,9 +45,25 @@ export function OrdersOverview() {
   });
   const { data: stats } = useOrderStatsQuery({ date_from, date_to });
   const cancelOrder = useCancelOrderMutation();
+  const { data: distributorsResult } = useDistributorsQuery({ limit: 100 });
 
   const tabs = useMemo(() => mapOrderStatsToTabs(stats), [stats]);
-  const rows = useMemo(() => (listResult?.items ?? []).map(mapOrderToRow), [listResult]);
+  const distributorNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of distributorsResult?.items ?? []) {
+      if (item.id) map.set(item.id, item.name ?? item.id);
+    }
+    return map;
+  }, [distributorsResult]);
+  const rows = useMemo(
+    () =>
+      (listResult?.items ?? []).map((order) => {
+        const row = mapOrderToRow(order);
+        const resolvedName = order.distributor_id && distributorNameById.get(order.distributor_id);
+        return resolvedName ? { ...row, distributor: resolvedName } : row;
+      }),
+    [listResult, distributorNameById],
+  );
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();

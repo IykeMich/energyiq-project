@@ -27,7 +27,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Approve a pending request as the checker.
+ * Approve a pending request as a staff checker. Account-owner identities are not users and cannot participate in maker-checker resolution.
  * @summary Approve request
  */
 export type postV1ApprovalApproveIdResponse200 = {
@@ -109,7 +109,7 @@ export const usePostV1ApprovalApproveId = <TError = unknown,
       return useMutation(getPostV1ApprovalApproveIdMutationOptions(options));
     }
     /**
- * Cancel a pending request as the maker.
+ * Cancel a pending request as the original staff maker. Account-owner identities are not users and cannot participate in maker-checker resolution.
  * @summary Cancel request
  */
 export type postV1ApprovalCancelIdResponse200 = {
@@ -369,7 +369,7 @@ export function useGetV1ApprovalReadId<TData = Awaited<ReturnType<typeof getV1Ap
 
 
 /**
- * Reject a pending request as the checker.
+ * Reject a pending request as a staff checker. Account-owner identities are not users and cannot participate in maker-checker resolution.
  * @summary Reject request
  */
 export type postV1ApprovalRejectIdResponse200 = {

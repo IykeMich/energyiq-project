@@ -33,7 +33,7 @@ export function KycDocumentTypeConfigCard({ config, onEdit, onDeactivate }: KycD
           <MetaDot />
           <span>{config.renewal}</span>
           <MetaDot />
-          <span>{config.reminder}</span>
+          <span>{config.category}</span>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">

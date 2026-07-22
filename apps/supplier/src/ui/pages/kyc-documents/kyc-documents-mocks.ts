@@ -1,13 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 
 /**
- * Types shared across the KYC Documents feature, plus the pieces of UI copy/options
- * that aren't backed by an API at all (form select options, reject reasons) and the
- * one section still on mock data: the "Document Lists" table below is per-distributor
- * (name + tier), but no endpoint in the API returns a distributor's name or tier —
- * only `distributor_id`. Every other section reads live data via the generated
- * `@energyiq/api/generated` hooks (see kyc-documents-mappers.ts for the API -> UI
- * shape mapping).
+ * Types shared across the KYC Documents feature. Everything on this dashboard —
+ * KPIs, the Document Types panel, Pending Review, Expiring Soon, the Document Lists
+ * table, and its filters — now reads from the single `GET /v1/document/overview`
+ * "dashboard" endpoint (see kyc-documents-mappers.ts for the API -> UI shape mapping).
+ * The remaining static UI copy below (form select options) has no API backing.
  */
 
 // ───────── KPI strip ─────────
@@ -24,8 +22,10 @@ export interface KycKpi {
 // ───────── Document-type summary cards (dashboard panel) ─────────
 
 export interface DocumentTypeSummary {
+  id: string;
   name: string;
-  mandatory: boolean;
+  requiredLabel: string;
+  categoryLabel: string;
 }
 
 // ───────── Pending review / Expiring soon lists ─────────
@@ -41,70 +41,51 @@ export interface ExpiringSoonItem {
   id: string;
   distributor: string;
   fileName: string;
-  daysLeft: number;
-  expiresOn: string;
+  daysLeftLabel: string;
+  expiresOnLabel: string;
 }
 
 // ───────── Document Lists table ─────────
 
-export type DistributorTier = 'Gold' | 'Silver' | 'Bronze';
-export type DocumentStatus = 'Verified' | 'In Review' | 'Incomplete' | 'Expiring soon';
+/** Matches the dashboard's `status` enum exactly — `statuses` filter dropdown works exclusively (`status`, in query params). */
+export type DocumentStatus = 'verified' | 'in_review' | 'incomplete' | 'expiring_soon';
 
 export interface DocumentListRow {
   id: string;
   distributor: string;
-  tier: DistributorTier;
+  initials: string;
+  tier: string;
   documents: string;
   lastUpdated: string;
   status: DocumentStatus;
+  statusLabel: string;
+  /** Row action from the API (e.g. 'review' | 'view') — drives the row-click destination. */
+  action: string;
 }
-
-// TODO(orval): no endpoint returns a distributor's name/tier (only `distributor_id`
-// on Document) or a per-distributor completeness rollup — this table stays mocked
-// until a distributor-list/detail endpoint exists. Every other KYC documents section
-// is wired to the real documents/document-types endpoints.
-export const DOCUMENT_LIST_ROWS: DocumentListRow[] = [
-  { id: 'dl-1', distributor: 'PetroMax Energy', tier: 'Gold', documents: '5/5 Complete', lastUpdated: 'Today', status: 'Verified' },
-  { id: 'dl-2', distributor: 'GUO Energy', tier: 'Silver', documents: '4/5 Complete', lastUpdated: '2hr ago', status: 'In Review' },
-  { id: 'dl-3', distributor: 'Delta Fuel Merchants', tier: 'Gold', documents: '4/5 Complete', lastUpdated: '3d ago', status: 'Verified' },
-  { id: 'dl-4', distributor: 'Sunrise Energy PHC', tier: 'Gold', documents: '4/5 Complete', lastUpdated: '5d ago', status: 'Verified' },
-  { id: 'dl-5', distributor: 'GUO Energy', tier: 'Bronze', documents: '3/5 Complete', lastUpdated: '21 May', status: 'Incomplete' },
-  { id: 'dl-6', distributor: 'Delta Fuel Merchants', tier: 'Silver', documents: '4/5 Complete', lastUpdated: '18 May', status: 'Verified' },
-  { id: 'dl-7', distributor: 'Sunrise Energy PHC', tier: 'Gold', documents: '5/5 Complete', lastUpdated: '15 May', status: 'Expiring soon' },
-];
 
 // ───────── "Filter By" chips above the Document Lists table ─────────
 
-/** Map of filter id (a DocumentListRow key) -> selected option, or null when unset. */
+/** Map of filter id -> selected option *value* (not label), or null when unset. */
 export type KycDocumentFilterSelection = Record<string, string | null>;
 
-export interface KycDocumentFilter {
-  /** Matches a key on DocumentListRow so filtering stays generic. */
-  id: 'distributor' | 'tier' | 'status';
+export interface KycDocumentFilterOption {
+  value: string;
   label: string;
-  options: string[];
 }
 
-// Distributor options are derived from the rows so they stay in sync.
-const DISTRIBUTOR_OPTIONS = [...new Set(DOCUMENT_LIST_ROWS.map((row) => row.distributor))];
-
-export const KYC_DOCUMENT_FILTERS: KycDocumentFilter[] = [
-  { id: 'distributor', label: 'All Distributors', options: DISTRIBUTOR_OPTIONS },
-  { id: 'tier', label: 'All Tiers', options: ['Gold', 'Silver', 'Bronze'] },
-  {
-    id: 'status',
-    label: 'All Status',
-    options: ['Verified', 'In Review', 'Incomplete', 'Expiring soon'],
-  },
-];
+export interface KycDocumentFilter {
+  id: string;
+  label: string;
+  options: KycDocumentFilterOption[];
+}
 
 // ───────── Review Queue (Compliance Centre) ─────────
 
 export interface ReviewQueueItem {
   id: string;
   distributor: string;
-  /** Undefined — no endpoint returns a distributor's tier (see note above). */
-  tier?: DistributorTier;
+  /** Undefined — `GET /v1/document/list` (still used by the Review Queue page) has no tier field. */
+  tier?: string;
   fileName: string;
   submittedAgo: string;
   /** Document image/stream URL — no endpoint among the 12 serves document bytes, so
@@ -129,20 +110,16 @@ export interface DocumentTypeConfig {
   required: boolean;
   allowedFileTypes: string;
   renewal: string;
-  reminder: string;
+  /** Resolved document category label (`document_category` from the API) — replaces the old reminder text. */
+  category: string;
 }
 
 // ───────── Add-new-document-type form select options ─────────
 
 // These are the form's fixed choice lists (not API data) — see
 // kyc-document-type-mappers.ts for how they translate to/from the document-type API.
-export const DOCUMENT_CATEGORY_OPTIONS = [
-  { value: 'Legal', label: 'Legal' },
-  { value: 'Financial', label: 'Financial' },
-  { value: 'Risks', label: 'Risks' },
-  { value: 'Compliance', label: 'Compliance' },
-  { value: 'Identity', label: 'Identity' },
-];
+// Category options come from a real endpoint now (GET /v1/document-category/list),
+// fetched directly in kyc-document-type-form.tsx — no static list here anymore.
 
 export const REQUIRED_OPTIONS = [
   { value: 'Required', label: 'Required (Mandatory)' },

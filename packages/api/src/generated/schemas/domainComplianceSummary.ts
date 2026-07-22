@@ -9,7 +9,7 @@
 export interface DomainComplianceSummary {
   expired?: number;
   expiring_soon?: number;
-  pending_review?: number;
+  review_queue?: number;
   total_documents?: number;
   verified?: number;
 }

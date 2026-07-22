@@ -5,10 +5,10 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { DomainDocument } from './domainDocument';
+import type { DomainDocumentDetail } from './domainDocumentDetail';
 
 export interface HttpDocumentResponse {
-  data?: DomainDocument;
+  data?: DomainDocumentDetail;
   responseCode?: string;
   responseMessage?: string;
 }

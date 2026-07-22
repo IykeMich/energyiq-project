@@ -1,16 +1,15 @@
 import { z } from 'zod';
 
 /**
- * Validation for the "Add new document type" form. Selects are required strings;
- * `description` and `documentCategory` are optional. `documentCategory` has no
- * backing field on the document-type API (it's UI-only, persisted locally — see
- * `kyc-document-type-mappers.ts`) so it stays optional rather than required.
- * `mode: 'onTouched'` in the form means these messages surface once a field has
- * been touched/dirtied, and `isValid` gates the submit button.
+ * Validation for the "Add/Edit document type" form. Field names mirror
+ * `HttpDocumentTypeCreateRequest`/`HttpDocumentTypeUpdateRequest` (both require
+ * `document_category_id` now — the backend added a real Document Categories
+ * reference table). `mode: 'onTouched'` in the form means these messages surface
+ * once a field has been touched/dirtied, and `isValid` gates the submit button.
  */
 export const kycDocumentTypeSchema = z.object({
   documentName: z.string().trim().min(2, 'Document name is required'),
-  documentCategory: z.string().optional(),
+  documentCategoryId: z.string().min(1, 'Select a category'),
   required: z.string().min(1, 'Select an option'),
   expiryRequired: z.string().min(1, 'Select an option'),
   validityPeriod: z.string().min(1, 'Select a validity period'),
@@ -23,7 +22,7 @@ export type KycDocumentTypeFormData = z.infer<typeof kycDocumentTypeSchema>;
 
 export const KYC_DOCUMENT_TYPE_DEFAULTS: KycDocumentTypeFormData = {
   documentName: '',
-  documentCategory: '',
+  documentCategoryId: '',
   required: '',
   expiryRequired: '',
   validityPeriod: '',

@@ -5,7 +5,6 @@ interface OrdersStatusTabsProps {
   tabs: OrderStatusTab[];
   activeLabel: string;
   onChange: (label: string) => void;
-  tabs: OrderStatusTab[];
 }
 
 /** Horizontal status summary tabs (All, Submitted, Approved, …) with count pills. */

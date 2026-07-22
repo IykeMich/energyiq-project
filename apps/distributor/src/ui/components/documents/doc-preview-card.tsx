@@ -1,9 +1,8 @@
 import { Download, Eye } from 'lucide-react';
-import type { DomainDocument } from '@energyiq/api/generated/schemas';
-import { formatDate } from './document-mappers';
+import type { DomainDocumentDetail } from '@energyiq/api/generated/schemas';
 
 interface Props {
-  document: DomainDocument;
+  document: DomainDocumentDetail;
 }
 
 export function DocumentPreviewCard({ document }: Props) {
@@ -14,7 +13,7 @@ export function DocumentPreviewCard({ document }: Props) {
 
         <p className="text-sm text-white">{document.file_name}</p>
 
-        <p className="mt-2 text-xs text-gray-500">Uploaded {formatDate(document.created_at)}</p>
+        <p className="mt-2 text-xs text-gray-500">Uploaded {document.submitted_at_label ?? ''}</p>
 
         <div className="mt-6 flex gap-3">
           <a

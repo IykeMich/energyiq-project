@@ -433,7 +433,7 @@ export const usePutV1ProductCategoriesId = <TError = ResponseErrorResponse,
     }
     /**
  * Deletes a category. Products referencing it are retained with category_id set to null by the database, so create/update product still requires selecting a valid category afterward.
- * @summary Delete product category
+ * @summary Delete product category..
  */
 export type deleteV1ProductCategoriesIdResponse200 = {
   data: ResponseEmptyResponse
@@ -508,7 +508,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteV1ProductCategoriesIdMutationError = ResponseErrorResponse
 
     /**
- * @summary Delete product category
+ * @summary Delete product category..
  */
 export const useDeleteV1ProductCategoriesId = <TError = ResponseErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductCategoriesId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}

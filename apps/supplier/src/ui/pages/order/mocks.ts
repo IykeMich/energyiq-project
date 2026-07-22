@@ -1,10 +1,5 @@
-// This page (Order Detail / Reject / Modify / Dispatch) still runs on mock data.
-// `domain.Order.items` and `.shipping_address` are untyped `object` fields in the
-// swagger (no schema at all), so line items, distributor identity, and shipping
-// details can't be faithfully rendered from the real GET /v1/order/read/{id}
-// response without knowing their actual runtime shape — wiring this page from a
-// guess would risk silently showing wrong amounts. The Orders *list* (orders-overview.tsx)
-// is wired to the real endpoint; this page is next once that shape is confirmed.
+import type { order } from '@energyiq/domain';
+import { toDisplayDate, countItems } from '@/ui/components/orders/orders-mapper';
 
 export type OrderStatus =
   | 'pending'

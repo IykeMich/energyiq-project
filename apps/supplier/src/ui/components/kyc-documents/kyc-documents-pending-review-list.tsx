@@ -3,6 +3,8 @@ import { KycDocumentsDocumentRow } from './kyc-documents-document-row';
 import type { PendingReviewItem } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
 interface KycDocumentsPendingReviewListProps {
+  title: string;
+  actionLabel: string;
   items: PendingReviewItem[];
   onViewAll: () => void;
   onReview: (itemId: string) => void;
@@ -10,6 +12,8 @@ interface KycDocumentsPendingReviewListProps {
 
 /** Left dashboard column: distributor documents awaiting review, each with a Review action. */
 export function KycDocumentsPendingReviewList({
+  title,
+  actionLabel,
   items,
   onViewAll,
   onReview,
@@ -17,13 +21,13 @@ export function KycDocumentsPendingReviewList({
   return (
     <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-white">Pending review</h2>
+        <h2 className="text-base font-semibold text-white">{title}</h2>
         <button
           type="button"
           onClick={onViewAll}
           className="tap-effect inline-flex items-center gap-1 text-sm font-medium text-[#FBC02D] hover:underline"
         >
-          View all
+          {actionLabel}
           <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>

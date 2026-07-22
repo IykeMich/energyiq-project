@@ -1,16 +1,14 @@
 import type {
-  DomainDocumentType,
+  HttpDocumentTypePayload,
   HttpDocumentTypeCreateRequest,
-  HttpDocumentTypeUpdateRequest,
 } from '@energyiq/api/generated/schemas';
 import type { DocumentTypeConfig } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 import type { KycDocumentTypeFormData } from './kyc-document-type-schema';
 
 /**
- * `documentCategory` and the exact allowed-file-type/max-size/validity-period option
- * lists exist only in this UI's form — `DomainDocumentType` has no category field, and
- * stores `file_types`/`max_size_mb`/`expiry_months` as raw values rather than the
- * form's fixed option strings. These maps translate between the two.
+ * The exact allowed-file-type/max-size/validity-period option lists are this UI's
+ * fixed presets (`allowed_file_types` itself is a real multi-value array on the API,
+ * approximated here as combo presets) — these maps translate between the two.
  */
 const FILE_TYPE_OPTION_TO_API: Record<string, string[]> = {
   PDF: ['pdf'],
@@ -44,98 +42,59 @@ function maxSizeToOption(maxSizeMb: number | undefined): string {
   return match?.[0] ?? '';
 }
 
-function expiryMonthsToOption(expiryMonths: number | undefined): string {
-  if (!expiryMonths) return 'No Expiry';
-  const match = Object.entries(VALIDITY_OPTION_TO_MONTHS).find(([, months]) => months === expiryMonths);
+function validityMonthsToOption(months: number | undefined): string {
+  if (!months) return 'No Expiry';
+  const match = Object.entries(VALIDITY_OPTION_TO_MONTHS).find(([, value]) => value === months);
   return match?.[0] ?? '';
 }
 
-// TODO(orval): `documentCategory` has no field on `DomainDocumentType` yet, so it
-// can't round-trip through the API on its own. Until the backend adds one, persist
-// the chosen category locally (keyed by document type id) so it survives a reload
-// and reopens prefilled on edit; swap this for the real field once it ships.
-const CATEGORY_STORAGE_KEY_PREFIX = 'eiq_doctype_category:';
-
-export function getStoredDocumentCategory(documentTypeId: string | undefined): string {
-  if (!documentTypeId) return '';
-  try {
-    return localStorage.getItem(`${CATEGORY_STORAGE_KEY_PREFIX}${documentTypeId}`) ?? '';
-  } catch {
-    return '';
-  }
-}
-
-export function setStoredDocumentCategory(documentTypeId: string | undefined, category: string): void {
-  if (!documentTypeId) return;
-  try {
-    if (category) {
-      localStorage.setItem(`${CATEGORY_STORAGE_KEY_PREFIX}${documentTypeId}`, category);
-    } else {
-      localStorage.removeItem(`${CATEGORY_STORAGE_KEY_PREFIX}${documentTypeId}`);
-    }
-  } catch {
-    // localStorage unavailable (e.g. private mode) — category prefill is best-effort only.
-  }
-}
-
-/** `GET /v1/doctype/list` row -> the "Document Types" list card shape. */
-export function mapDocumentTypeToConfig(documentType: DomainDocumentType): DocumentTypeConfig {
+/** `GET /v1/document-type/list` row -> the "Document Types" list card shape. */
+export function mapDocumentTypeToConfig(payload: HttpDocumentTypePayload): DocumentTypeConfig {
   const renewal =
-    documentType.expiry_months && documentType.expiry_months > 0
-      ? `Renew every ${documentType.expiry_months} months`
+    payload.expiry_required && payload.validity_period_months
+      ? `Renew every ${payload.validity_period_months} months`
       : 'No Expiry';
-  const reminder =
-    documentType.auto_remind_days && documentType.auto_remind_days > 0
-      ? `Reminder: ${documentType.auto_remind_days} days before`
-      : 'Reminder: Never';
 
   return {
-    id: documentType.id ?? '',
-    name: documentType.label ?? documentType.name ?? '',
-    required: documentType.required ?? false,
-    allowedFileTypes: fileTypesToOption(documentType.file_types),
+    id: payload.id ?? '',
+    name: payload.document_name ?? '',
+    required: payload.required ?? false,
+    allowedFileTypes: fileTypesToOption(payload.allowed_file_types),
     renewal,
-    reminder,
+    category: payload.document_category ?? '—',
   };
 }
 
 /** Prefills the "Add/Edit document type" form when opening an existing type for edit. */
-export function mapDocumentTypeToFormDefaults(documentType: DomainDocumentType): KycDocumentTypeFormData {
+export function mapDocumentTypeToFormDefaults(payload: HttpDocumentTypePayload): KycDocumentTypeFormData {
   return {
-    documentName: documentType.name ?? '',
-    documentCategory: getStoredDocumentCategory(documentType.id),
-    required: documentType.required ? 'Required' : 'Optional',
-    expiryRequired: documentType.expiry_months ? 'Yes' : 'No',
-    validityPeriod: expiryMonthsToOption(documentType.expiry_months),
-    allowedFileType: fileTypesToOption(documentType.file_types),
-    maxFileSize: maxSizeToOption(documentType.max_size_mb),
-    description: documentType.description ?? '',
+    documentName: payload.document_name ?? '',
+    documentCategoryId: payload.document_category_id ?? '',
+    required: payload.required ? 'Required' : 'Optional',
+    expiryRequired: payload.expiry_required ? 'Yes' : 'No',
+    validityPeriod: validityMonthsToOption(payload.validity_period_months),
+    allowedFileType: fileTypesToOption(payload.allowed_file_types),
+    maxFileSize: maxSizeToOption(payload.max_file_size_mb),
+    description: payload.description ?? '',
   };
 }
 
-/** Form data -> `POST /v1/doctype/create` body. `documentCategory` has no API slot — not sent (persisted locally instead, see `setStoredDocumentCategory`). */
-export function mapFormToCreateRequest(form: KycDocumentTypeFormData): HttpDocumentTypeCreateRequest {
+/**
+ * Form data -> `POST /v1/document-type/create` / `PUT /v1/document-type/update/{id}` body —
+ * both requests share an identical shape, so one mapper covers both.
+ */
+export function mapFormToDocumentTypeRequest(form: KycDocumentTypeFormData): HttpDocumentTypeCreateRequest {
   return {
-    name: form.documentName,
-    label: form.documentName,
+    document_name: form.documentName,
+    document_category_id: form.documentCategoryId,
     description: form.description || undefined,
-    file_types: FILE_TYPE_OPTION_TO_API[form.allowedFileType] as HttpDocumentTypeCreateRequest['file_types'],
-    max_size_mb: MAX_SIZE_OPTION_TO_MB[form.maxFileSize],
+    allowed_file_types: FILE_TYPE_OPTION_TO_API[
+      form.allowedFileType
+    ] as HttpDocumentTypeCreateRequest['allowed_file_types'],
+    max_file_size_mb: MAX_SIZE_OPTION_TO_MB[form.maxFileSize],
     required: form.required === 'Required',
-    expiry_months:
-      form.expiryRequired === 'Yes' ? VALIDITY_OPTION_TO_MONTHS[form.validityPeriod] : undefined,
-  };
-}
-
-/** Form data -> `PUT /v1/doctype/update/{id}` body. `name` is immutable and omitted. */
-export function mapFormToUpdateRequest(form: KycDocumentTypeFormData): HttpDocumentTypeUpdateRequest {
-  return {
-    label: form.documentName,
-    description: form.description || undefined,
-    file_types: FILE_TYPE_OPTION_TO_API[form.allowedFileType] as HttpDocumentTypeUpdateRequest['file_types'],
-    max_size_mb: MAX_SIZE_OPTION_TO_MB[form.maxFileSize],
-    required: form.required === 'Required',
-    expiry_months:
+    expiry_required: form.expiryRequired === 'Yes',
+    validity_period_months:
       form.expiryRequired === 'Yes' ? VALIDITY_OPTION_TO_MONTHS[form.validityPeriod] : undefined,
   };
 }

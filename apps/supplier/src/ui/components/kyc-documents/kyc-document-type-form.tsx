@@ -8,12 +8,13 @@ import { shared } from '@energyiq/domain';
 import { SuccessModal } from '@energyiq/ui';
 import { cn } from '@energyiq/shared';
 import {
-  useGetV1DoctypeReadId,
-  usePostV1DoctypeCreate,
-  usePutV1DoctypeUpdateId,
-  getGetV1DoctypeListQueryKey,
-  getGetV1DoctypeReadIdQueryKey,
+  useGetV1DocumentTypeReadId,
+  usePostV1DocumentTypeCreate,
+  usePutV1DocumentTypeUpdateId,
+  getGetV1DocumentTypeListQueryKey,
+  getGetV1DocumentTypeReadIdQueryKey,
 } from '@energyiq/api/generated/document-types/document-types';
+import { useGetV1DocumentCategoryList } from '@energyiq/api/generated/document-categories/document-categories';
 import {
   KycTextField,
   KycSelectField,
@@ -26,12 +27,9 @@ import {
 } from './kyc-document-type-schema';
 import {
   mapDocumentTypeToFormDefaults,
-  mapFormToCreateRequest,
-  mapFormToUpdateRequest,
-  setStoredDocumentCategory,
+  mapFormToDocumentTypeRequest,
 } from './kyc-document-type-mappers';
 import {
-  DOCUMENT_CATEGORY_OPTIONS,
   REQUIRED_OPTIONS,
   EXPIRY_REQUIRED_OPTIONS,
   VALIDITY_PERIOD_OPTIONS,
@@ -58,9 +56,14 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
   const { slug = 'demo' } = useParams<{ slug: string }>();
   const isEditing = Boolean(documentTypeId);
 
-  const { data: existingDocumentType } = useGetV1DoctypeReadId(documentTypeId ?? '', {
-    query: { enabled: isEditing, queryKey: getGetV1DoctypeReadIdQueryKey(documentTypeId ?? '') },
+  const { data: existingDocumentType } = useGetV1DocumentTypeReadId(documentTypeId ?? '', {
+    query: { enabled: isEditing, queryKey: getGetV1DocumentTypeReadIdQueryKey(documentTypeId ?? '') },
   });
+  const { data: categoryList } = useGetV1DocumentCategoryList();
+  const categoryOptions = (categoryList?.data.data ?? []).map((category) => ({
+    value: category.id ?? '',
+    label: category.document_category ?? '',
+  }));
 
   const {
     control,
@@ -79,8 +82,8 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
     }
   }, [existingDocumentType, reset]);
 
-  const createDocumentType = usePostV1DoctypeCreate();
-  const updateDocumentType = usePutV1DoctypeUpdateId();
+  const createDocumentType = usePostV1DocumentTypeCreate();
+  const updateDocumentType = usePutV1DocumentTypeUpdateId();
 
   const [successState, setSuccessState] = useState<{ documentName: string } | null>(null);
   const [failureMessage, setFailureMessage] = useState<string | null>(null);
@@ -102,14 +105,13 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
 
   const onSubmit = async (data: KycDocumentTypeFormData) => {
     try {
+      const payload = mapFormToDocumentTypeRequest(data);
       if (isEditing && documentTypeId) {
-        await updateDocumentType.mutateAsync({ id: documentTypeId, data: mapFormToUpdateRequest(data) });
-        setStoredDocumentCategory(documentTypeId, data.documentCategory ?? '');
+        await updateDocumentType.mutateAsync({ id: documentTypeId, data: payload });
       } else {
-        const created = await createDocumentType.mutateAsync({ data: mapFormToCreateRequest(data) });
-        setStoredDocumentCategory(created.data.data?.id, data.documentCategory ?? '');
+        await createDocumentType.mutateAsync({ data: payload });
       }
-      await queryClient.invalidateQueries({ queryKey: getGetV1DoctypeListQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getGetV1DocumentTypeListQueryKey() });
       setSuccessState({ documentName: data.documentName });
     } catch (error) {
       setFailureMessage(describeSubmitError(error));
@@ -147,14 +149,14 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
             label="Document Name:"
             placeholder="e.g. Business License, Tax Certificate"
             required
-            disabled={isEditing}
           />
           <KycSelectField
             control={control}
-            name="documentCategory"
+            name="documentCategoryId"
             label="Document Category:"
             placeholder="Select category"
-            options={DOCUMENT_CATEGORY_OPTIONS}
+            options={categoryOptions}
+            required
           />
           <KycSelectField
             control={control}

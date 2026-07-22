@@ -38,6 +38,7 @@ import { CustomReportBuilderPage } from '@/ui/pages/reports/custom-report-builde
 import { KycDocumentsPage } from '@/ui/pages/kyc-documents/kyc-documents-page';
 import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-types-page';
 import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
+import { KycDocumentCategoriesPage } from '@/ui/pages/kyc-documents/kyc-document-categories-page';
 import { KycReviewQueuePage } from '@/ui/pages/kyc-documents/kyc-review-queue-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 import { ForgotPasswordPage} from '@/ui/pages/auth/forgot-password-page';
@@ -119,6 +120,7 @@ export const router = createBrowserRouter([
                 path: '/:slug/kyc-documents/types/:documentTypeId/edit',
                 element: <AddKycDocumentTypePage />,
               },
+              { path: '/:slug/kyc-documents/categories', element: <KycDocumentCategoriesPage /> },
               { path: '/:slug/products', element: <ProductListPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },

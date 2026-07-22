@@ -5,6 +5,7 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
+import type { GetV1OrderListSort } from './getV1OrderListSort';
 import type { GetV1OrderListStatus } from './getV1OrderListStatus';
 
 export type GetV1OrderListParams = {
@@ -24,6 +25,10 @@ date_from?: string;
  * End date in YYYY-MM-DD
  */
 date_to?: string;
+/**
+ * Sort by created date
+ */
+sort?: GetV1OrderListSort;
 /**
  * Page size, max 100
  */
