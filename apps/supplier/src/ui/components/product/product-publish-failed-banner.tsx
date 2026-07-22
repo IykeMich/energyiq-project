@@ -1,8 +1,9 @@
 import { X, XCircle } from 'lucide-react';
-import { DISTRIBUTOR_NETWORK_SIZE } from '@/ui/pages/product/mocks';
 
 interface ProductPublishFailedBannerProps {
   productName: string;
+  /** The real failure reason from the backend (or a network-error message). Falls back to a generic line when omitted. */
+  message?: string;
   onRetry: () => void;
   onDismiss: () => void;
 }
@@ -10,6 +11,7 @@ interface ProductPublishFailedBannerProps {
 /** Red banner shown at the top of the wizard when publishing the product fails. */
 export function ProductPublishFailedBanner({
   productName,
+  message,
   onRetry,
   onDismiss,
 }: ProductPublishFailedBannerProps) {
@@ -19,8 +21,7 @@ export function ProductPublishFailedBanner({
       <div className="flex flex-col gap-0.5 flex-1">
         <p className="text-sm font-semibold">Product Publish Failed</p>
         <p className="text-xs text-danger-foreground/90">
-          Your product {productName} couldn’t be published and available to {DISTRIBUTOR_NETWORK_SIZE}{' '}
-          distributors in your network due to network issues.{' '}
+          Your product {productName} couldn’t be published: {message || 'An unexpected error occurred. Please try again.'}{' '}
           <button type="button" onClick={onRetry} className="underline font-semibold">
             Try again.
           </button>

@@ -50,6 +50,34 @@ function expiryMonthsToOption(expiryMonths: number | undefined): string {
   return match?.[0] ?? '';
 }
 
+// TODO(orval): `documentCategory` has no field on `DomainDocumentType` yet, so it
+// can't round-trip through the API on its own. Until the backend adds one, persist
+// the chosen category locally (keyed by document type id) so it survives a reload
+// and reopens prefilled on edit; swap this for the real field once it ships.
+const CATEGORY_STORAGE_KEY_PREFIX = 'eiq_doctype_category:';
+
+export function getStoredDocumentCategory(documentTypeId: string | undefined): string {
+  if (!documentTypeId) return '';
+  try {
+    return localStorage.getItem(`${CATEGORY_STORAGE_KEY_PREFIX}${documentTypeId}`) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function setStoredDocumentCategory(documentTypeId: string | undefined, category: string): void {
+  if (!documentTypeId) return;
+  try {
+    if (category) {
+      localStorage.setItem(`${CATEGORY_STORAGE_KEY_PREFIX}${documentTypeId}`, category);
+    } else {
+      localStorage.removeItem(`${CATEGORY_STORAGE_KEY_PREFIX}${documentTypeId}`);
+    }
+  } catch {
+    // localStorage unavailable (e.g. private mode) — category prefill is best-effort only.
+  }
+}
+
 /** `GET /v1/doctype/list` row -> the "Document Types" list card shape. */
 export function mapDocumentTypeToConfig(documentType: DomainDocumentType): DocumentTypeConfig {
   const renewal =
@@ -75,7 +103,7 @@ export function mapDocumentTypeToConfig(documentType: DomainDocumentType): Docum
 export function mapDocumentTypeToFormDefaults(documentType: DomainDocumentType): KycDocumentTypeFormData {
   return {
     documentName: documentType.name ?? '',
-    documentCategory: '',
+    documentCategory: getStoredDocumentCategory(documentType.id),
     required: documentType.required ? 'Required' : 'Optional',
     expiryRequired: documentType.expiry_months ? 'Yes' : 'No',
     validityPeriod: expiryMonthsToOption(documentType.expiry_months),
@@ -85,7 +113,7 @@ export function mapDocumentTypeToFormDefaults(documentType: DomainDocumentType):
   };
 }
 
-/** Form data -> `POST /v1/doctype/create` body. `documentCategory` has no API slot — not sent. */
+/** Form data -> `POST /v1/doctype/create` body. `documentCategory` has no API slot — not sent (persisted locally instead, see `setStoredDocumentCategory`). */
 export function mapFormToCreateRequest(form: KycDocumentTypeFormData): HttpDocumentTypeCreateRequest {
   return {
     name: form.documentName,

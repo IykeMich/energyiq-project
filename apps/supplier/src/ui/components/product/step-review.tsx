@@ -9,6 +9,7 @@ import {
 } from '@/ui/pages/product/mocks';
 import { useProductCategoriesQuery } from '@/hooks/use-product-categories';
 import { useProductUnitsQuery } from '@/hooks/use-product-units';
+import { useWarehousesQuery } from '@/hooks/use-warehouses';
 
 interface StepReviewProps {
   draft: NewProductDraft;
@@ -47,6 +48,7 @@ const AUTOMATION_OPTIONS: AutomationDef[] = [
 export function StepReview({ draft, onChange }: StepReviewProps) {
   const categoriesQuery = useProductCategoriesQuery();
   const unitsQuery = useProductUnitsQuery();
+  const warehousesQuery = useWarehousesQuery();
 
   const categoryName =
     categoriesQuery.data?.find((category) => category.id === draft.category)?.name ?? draft.category;
@@ -54,9 +56,18 @@ export function StepReview({ draft, onChange }: StepReviewProps) {
     unitsQuery.data?.find((unit) => unit.short_code === draft.measuringUnit)?.unit_name ??
     draft.measuringUnit;
 
-  // draft.category/measuringUnit hold real IDs (category_id, unit short_code) once
-  // selected from the live dropdowns — resolve them back to display names here since
-  // buildReviewSummary only has the raw draft to work with.
+  const firstAllocation = draft.warehouseAllocations[0];
+  const warehouse = warehousesQuery.data?.items.find((option) => option.id === firstAllocation?.warehouseId);
+  const warehouseName = warehouse?.name ?? firstAllocation?.warehouseId ?? '';
+  const availableCapacity =
+    warehouse?.capacity !== undefined && warehouse?.stock_level_percentage !== undefined
+      ? Math.round(warehouse.capacity * (1 - warehouse.stock_level_percentage / 100))
+      : undefined;
+
+  // draft.category/measuringUnit/warehouseAllocations[].warehouseId hold real IDs
+  // (category_id, unit short_code, warehouse_id) once selected from the live
+  // dropdowns — resolve them back to display names here since buildReviewSummary
+  // only has the raw draft to work with.
   const baseSummary = buildReviewSummary(draft);
   const summary = {
     ...baseSummary,
@@ -66,6 +77,13 @@ export function StepReview({ draft, onChange }: StepReviewProps) {
         ? { ...row, value: categoryName || '—' }
         : row.label === 'Measurement Unit'
           ? { ...row, value: unitLabel || '—' }
+          : row,
+    ),
+    warehouse: baseSummary.warehouse.map((row) =>
+      row.label === 'Warehouse Location'
+        ? { ...row, value: warehouseName || '—' }
+        : row.label === 'Available Capacity'
+          ? { ...row, value: availableCapacity !== undefined ? availableCapacity.toLocaleString() : '—' }
           : row,
     ),
   };

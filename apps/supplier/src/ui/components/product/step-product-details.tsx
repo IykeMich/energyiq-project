@@ -1,20 +1,24 @@
-import { useState } from 'react';
 import { cn } from '@energyiq/shared';
-import { type NewProductDraft, type WarehouseAllocationDraft } from '@/ui/pages/product/mocks';
+import {
+  type NewProductDraft,
+  type ProductDraftErrors,
+  type WarehouseAllocationDraft,
+} from '@/ui/pages/product/mocks';
 import { ProductBasicInfoTab } from './product-basic-info-tab';
 import { ProductPricingTab } from './product-pricing-tab';
 import { ProductWarehouseTab } from './product-warehouse-tab';
 
-type Tab = 'basic' | 'pricing' | 'warehouse';
+export type ProductDetailsTab = 'basic' | 'pricing' | 'warehouse';
 
 interface StepProductDetailsProps {
   draft: NewProductDraft;
   onChange: (patch: Partial<NewProductDraft>) => void;
+  errors?: ProductDraftErrors;
+  tab: ProductDetailsTab;
+  onTabChange: (tab: ProductDetailsTab) => void;
 }
 
-export function StepProductDetails({ draft, onChange }: StepProductDetailsProps) {
-  const [tab, setTab] = useState<Tab>('basic');
-
+export function StepProductDetails({ draft, onChange, errors, tab, onTabChange }: StepProductDetailsProps) {
   const updateAllocation = (id: string, patch: Partial<WarehouseAllocationDraft>) =>
     onChange({
       warehouseAllocations: draft.warehouseAllocations.map((allocation) =>
@@ -28,7 +32,7 @@ export function StepProductDetails({ draft, onChange }: StepProductDetailsProps)
         ...draft.warehouseAllocations,
         {
           id: `wa-${draft.warehouseAllocations.length + 1}-${Math.random().toString(36).slice(2, 6)}`,
-          warehouseLocation: '',
+          warehouseId: '',
           allocatedQuantity: '',
           storageLocation: '',
         },
@@ -45,26 +49,27 @@ export function StepProductDetails({ draft, onChange }: StepProductDetailsProps)
       <h2 className="text-base font-semibold text-foreground">Product Details</h2>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <TabButton active={tab === 'basic'} onClick={() => setTab('basic')}>
+        <TabButton active={tab === 'basic'} onClick={() => onTabChange('basic')}>
           Basic Information
         </TabButton>
-        <TabButton active={tab === 'pricing'} onClick={() => setTab('pricing')}>
+        <TabButton active={tab === 'pricing'} onClick={() => onTabChange('pricing')}>
           Pricing
         </TabButton>
-        <TabButton active={tab === 'warehouse'} onClick={() => setTab('warehouse')}>
+        <TabButton active={tab === 'warehouse'} onClick={() => onTabChange('warehouse')}>
           Warehouse Allocation
         </TabButton>
       </div>
 
       <div className="border-t border-border-subtle pt-6">
-        {tab === 'basic' && <ProductBasicInfoTab draft={draft} onChange={onChange} />}
-        {tab === 'pricing' && <ProductPricingTab draft={draft} onChange={onChange} />}
+        {tab === 'basic' && <ProductBasicInfoTab draft={draft} onChange={onChange} errors={errors} />}
+        {tab === 'pricing' && <ProductPricingTab draft={draft} onChange={onChange} errors={errors} />}
         {tab === 'warehouse' && (
           <ProductWarehouseTab
             draft={draft}
             onChange={updateAllocation}
             onAdd={addAllocation}
             onRemove={removeAllocation}
+            errors={errors}
           />
         )}
       </div>

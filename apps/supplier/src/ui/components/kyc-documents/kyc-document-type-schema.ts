@@ -3,8 +3,8 @@ import { z } from 'zod';
 /**
  * Validation for the "Add new document type" form. Selects are required strings;
  * `description` and `documentCategory` are optional. `documentCategory` has no
- * backing field on the document-type API (it's UI-only) so it can't be required —
- * that would force re-entry of a value that's never persisted when editing.
+ * backing field on the document-type API (it's UI-only, persisted locally — see
+ * `kyc-document-type-mappers.ts`) so it stays optional rather than required.
  * `mode: 'onTouched'` in the form means these messages surface once a field has
  * been touched/dirtied, and `isValid` gates the submit button.
  */

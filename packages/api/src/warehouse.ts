@@ -1,5 +1,5 @@
 import type { warehouse } from '@energyiq/domain';
-import { apiGet, apiPost, apiPut, apiDelete } from './client';
+import { apiGet, apiPost, apiPut, apiDelete, toSearchParams } from './client';
 
 // ════════════════════════════════════════════════════════════════
 // Warehouse API adapter — implements WarehouseApi port via HTTP.
@@ -75,15 +75,4 @@ export class WarehouseApiAdapter implements warehouse.WarehouseApi {
   async confirmStockTransfer(id: string): Promise<warehouse.StockTransfer> {
     return apiPost<warehouse.StockTransfer>(`v1/warehouses/transfers/${id}/confirm`);
   }
-}
-
-function toSearchParams(
-  params?: object,
-): Record<string, string | number | boolean> | undefined {
-  if (!params) return undefined;
-  const entries: [string, string | number | boolean][] = [];
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined) entries.push([key, value as string | number | boolean]);
-  }
-  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }

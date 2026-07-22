@@ -3,6 +3,8 @@
 // ════════════════════════════════════════════════════════════════
 
 export type ProductStatus = 'draft' | 'pending_review' | 'active' | 'paused' | 'retired';
+/** Values PATCH /v1/product/status/{id} actually accepts — narrower than the ProductStatus read-model above. */
+export type ProductStatusUpdateValue = 'draft' | 'active' | 'inactive' | 'scheduled';
 export type ProductType = 'single_product' | 'product_with_variants';
 export type PriceType = 'tiered' | 'untiered';
 export type ApprovalWorkflow = 'auto-approve' | 'scheduled';
@@ -127,7 +129,7 @@ export interface ProductStats {
 }
 
 export interface ProductStatusUpdateRequest {
-  status: ProductStatus;
+  status: ProductStatusUpdateValue;
 }
 
 export interface ProductPriceCalculation {

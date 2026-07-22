@@ -2,6 +2,7 @@ import {
   PACKAGING_OPTIONS,
   TYPE_OPTIONS,
   type NewProductDraft,
+  type ProductDraftErrors,
   type ProductVariantDraft,
 } from '@/ui/pages/product/mocks';
 import { useProductCategoriesQuery } from '@/hooks/use-product-categories';
@@ -12,9 +13,10 @@ import { ProductVariantEditor } from './product-variant-editor';
 interface ProductBasicInfoTabProps {
   draft: NewProductDraft;
   onChange: (patch: Partial<NewProductDraft>) => void;
+  errors?: ProductDraftErrors;
 }
 
-export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProps) {
+export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInfoTabProps) {
   const showVariants = draft.type === 'Product with Variant';
 
   const categoriesQuery = useProductCategoriesQuery({ status: 'active' });
@@ -55,7 +57,12 @@ export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProp
   return (
     <div className="flex flex-col gap-5">
       <Field label="Product Name:" required>
-        <TextField value={draft.name} onChange={(value) => onChange({ name: value })} placeholder="e.g. Diesel" />
+        <TextField
+          value={draft.name}
+          onChange={(value) => onChange({ name: value })}
+          placeholder="e.g. Diesel"
+          error={errors?.name}
+        />
       </Field>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Product Category:" required>
@@ -64,6 +71,7 @@ export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProp
             onChange={(value) => onChange({ category: value })}
             placeholder="Select category"
             options={categoryOptions}
+            error={errors?.category}
           />
         </Field>
         <Field label="Product Type:">
@@ -80,6 +88,7 @@ export function ProductBasicInfoTab({ draft, onChange }: ProductBasicInfoTabProp
             onChange={(value) => onChange({ measuringUnit: value })}
             placeholder="Select unit"
             options={unitOptions}
+            error={errors?.measuringUnit}
           />
         </Field>
         <Field label="Packaging Type:">

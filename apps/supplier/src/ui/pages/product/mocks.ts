@@ -1,3 +1,5 @@
+import type { product as productApi } from '@energyiq/domain';
+
 export type ProductStatus = 'active' | 'inactive' | 'draft';
 export type ProductCategory = 'Fuel' | 'Lubricant' | 'Spare Parts' | 'Additive';
 export type ProductUnit = 'L' | 'pcs' | 'Kg';
@@ -54,13 +56,9 @@ export const PRICING_TIER_OPTIONS = ['Bronze', 'Silver', 'Gold'] as const;
 // are still offered in the UI but fall back to 'None' when submitted (see
 // add-product-page.tsx's toUpsertRequest).
 export const TAX_TYPE_OPTIONS = ['VAT', 'GST', 'SalesTax', 'Withholding Tax', 'Custom Duty'] as const;
-export const WAREHOUSE_OPTIONS = [
-  { id: 'wh-lagos-main', name: 'Lagos Main Depot', availableStockL: 240_000 },
-  { id: 'wh-lekki', name: 'Lekki Tank Farm', availableStockL: 180_000 },
-  { id: 'wh-awka', name: 'Awka Central Depot', availableStockL: 120_000 },
-  { id: 'wh-abuja', name: 'Abuja Storage Facility', availableStockL: 95_000 },
-  { id: 'wh-ph', name: 'Port Harcourt Depot', availableStockL: 150_000 },
-] as const;
+// Warehouse options for the "Warehouse Allocation" wizard tab now come from
+// the live GET /v1/warehouses endpoint (see hooks/use-warehouses.ts,
+// product-warehouse-tab.tsx) — there is no UI-only fallback list for it.
 export const STORAGE_LOCATION_OPTIONS = ['Tank-A1', 'Tank-A2', 'Tank-B1', 'Tank-B2', 'Bay-1', 'Bay-2'] as const;
 
 export interface WarehouseAssignTarget {
@@ -88,7 +86,7 @@ export type AutomationOption = 'publish-now' | 'schedule' | 'save-draft' | 'subm
 
 export interface WarehouseAllocationDraft {
   id: string;
-  warehouseLocation: string;
+  warehouseId: string;
   allocatedQuantity: string;
   storageLocation: string;
 }
@@ -149,6 +147,47 @@ export function computeGrossMargin(costPrice: string, sellingPrice: string): num
   return Math.round(((selling - cost) / selling) * 100);
 }
 
+export interface ProductDraftErrors {
+  name?: string;
+  category?: string;
+  measuringUnit?: string;
+  costPrice?: string;
+  sellingPrice?: string;
+  warehouseId?: string;
+}
+
+/**
+ * Validates the fields the backend create endpoint actually requires
+ * (name, category_id, unit, base_price) before the wizard submits, so a
+ * missing value surfaces as an inline field error instead of a 400 from
+ * the API. Cost Price is validated too since the UI already marks it
+ * required (step-1 pricing tab) even though the backend treats it as optional.
+ * Warehouse Location is validated since the warehouse tab marks it required.
+ */
+export function validateProductDraft(draft: NewProductDraft): ProductDraftErrors {
+  const errors: ProductDraftErrors = {};
+  if (!draft.name.trim()) errors.name = 'Product name is required.';
+  if (!draft.category) errors.category = 'Product category is required.';
+  if (!draft.measuringUnit) errors.measuringUnit = 'Measuring unit is required.';
+  if (!draft.costPrice.trim()) errors.costPrice = 'Cost price is required.';
+  if (!draft.sellingPrice.trim()) {
+    errors.sellingPrice = 'Selling price is required.';
+  } else if (!(Number(draft.sellingPrice) > 0)) {
+    errors.sellingPrice = 'Selling price must be greater than 0.';
+  }
+  if (!draft.warehouseAllocations.some((allocation) => allocation.warehouseId)) {
+    errors.warehouseId = 'Warehouse location is required.';
+  }
+  return errors;
+}
+
+/** Which Product Details sub-tab each validated field belongs to, so "Next" can gate one tab at a time. */
+export const PRODUCT_DETAILS_TAB_FIELDS = {
+  basic: ['name', 'category', 'measuringUnit'],
+  pricing: ['costPrice', 'sellingPrice'],
+  warehouse: ['warehouseId'],
+} as const satisfies Record<string, (keyof ProductDraftErrors)[]>;
+
 // ───────── Review & Activation (wizard step 3) ─────────
 
 export const CURRENCY_SYMBOL: Record<string, string> = { NGN: '₦', USD: '$' };
@@ -202,14 +241,13 @@ export interface ReviewSummary {
  * submission (previewing what create/update will send), so it's necessarily a
  * local projection of the draft rather than a server query — see
  * add-product-page.tsx's toUpsertRequest for the payload actually sent.
- * step-review.tsx overrides the category/unit fields with live-resolved names.
+ * step-review.tsx overrides the category/unit/warehouse fields with live-resolved names.
  */
 export function buildReviewSummary(draft: NewProductDraft): ReviewSummary {
   const name = draft.name || 'Untitled product';
   const currencySymbol = CURRENCY_SYMBOL[draft.currency] ?? '';
   const unitWord = draft.measuringUnit.split(' (')[0] || 'unit';
   const firstAllocation = draft.warehouseAllocations[0];
-  const warehouse = WAREHOUSE_OPTIONS.find((option) => option.name === firstAllocation?.warehouseLocation);
 
   const dash = (value: string) => value || '—';
 
@@ -258,8 +296,8 @@ export function buildReviewSummary(draft: NewProductDraft): ReviewSummary {
       },
     ],
     warehouse: [
-      { label: 'Warehouse Location', value: dash(firstAllocation?.warehouseLocation) },
-      { label: 'Available Stock', value: warehouse ? `${warehouse.availableStockL.toLocaleString()} Liters` : '—' },
+      { label: 'Warehouse Location', value: dash(firstAllocation?.warehouseId) },
+      { label: 'Available Capacity', value: '—' },
       { label: 'Allocated Quantity', value: dash(firstAllocation?.allocatedQuantity) },
       { label: 'Storage Location', value: dash(firstAllocation?.storageLocation) },
     ],
@@ -370,10 +408,86 @@ export function emptyDraft(): NewProductDraft {
     taxType: '',
     taxRate: '',
     warehouseAllocations: [
-      { id: 'wa-1', warehouseLocation: '', allocatedQuantity: '', storageLocation: '' },
+      { id: 'wa-1', warehouseId: '', allocatedQuantity: '', storageLocation: '' },
     ],
     visibility: 'all',
     approvalWorkflow: 'auto',
     automationOption: 'publish-now',
+  };
+}
+
+/** Same "random suffix" id scheme used when a user manually adds a variant/tier/allocation row. */
+function draftRowId(prefix: string, index: number): string {
+  return `${prefix}-${index + 1}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+const APPROVAL_WORKFLOW_FROM_API: Record<string, ApprovalWorkflowOption> = {
+  'scheduled': 'scheduled',
+};
+
+const VISIBILITY_FROM_API: Record<string, VisibilityOption> = {
+  tier_based: 'tier',
+  selected_distributors: 'selected',
+};
+
+/** Default automation choice for step 3, inferred from the product's current status. */
+function automationOptionFromStatus(status: string | undefined): AutomationOption {
+  if (status === 'draft') return 'save-draft';
+  if (status === 'pending_review') return 'submit-review';
+  return 'publish-now';
+}
+
+/**
+ * Maps a fetched product (GET /products/:id response) onto the wizard's draft shape,
+ * so editing an existing product starts pre-filled instead of blank.
+ *
+ * Known gap, intentionally not fabricated: the product response only exposes
+ * `warehouse_ids` (no per-warehouse quantity/storage location), since
+ * `warehouse_allocations` is a write-only field on the upsert request. Each
+ * known warehouse is restored with an empty quantity/storage location for the
+ * user to re-enter.
+ */
+export function productToDraft(product: productApi.Product): NewProductDraft {
+  const warehouseIds = product.warehouse_ids?.length ? product.warehouse_ids : product.warehouse_id ? [product.warehouse_id] : [];
+
+  return {
+    name: product.name ?? '',
+    category: product.category_id ?? '',
+    type: product.product_type === 'product_with_variants' ? 'Product with Variant' : 'Single Product',
+    measuringUnit: product.unit ?? '',
+    packagingType: product.packaging_type ?? '',
+    description: product.description ?? '',
+    variants: (product.product_variants ?? []).map((variant, index) => ({
+      id: draftRowId('var', index),
+      name: variant.display_name,
+      displayName: variant.display_name,
+      costPrice: String(variant.cost_price),
+      sellingPrice: String(variant.selling_price),
+    })),
+    priceType: product.price_type === 'tiered' ? 'Tiered' : 'Fixed',
+    currency: product.currency ?? 'NGN',
+    costPrice: product.cost_price != null ? String(product.cost_price) : '',
+    sellingPrice: product.base_price != null ? String(product.base_price) : '',
+    pricingTiers: (product.tier_pricing ?? []).map((tier, index) => ({
+      id: draftRowId('tier', index),
+      tier: tier.tier,
+      minQuantity: tier.min_quantity != null ? String(tier.min_quantity) : '',
+      maxQuantity: tier.max_quantity != null ? String(tier.max_quantity) : '',
+      unitPrice: String(tier.unit_price),
+    })),
+    taxEnabled: Boolean(product.tax_configuration),
+    taxType: product.tax_configuration && product.tax_configuration.tax_type !== 'None' ? product.tax_configuration.tax_type : '',
+    taxRate: product.tax_configuration ? String(product.tax_configuration.tax_rate) : '',
+    warehouseAllocations: warehouseIds.length
+      ? warehouseIds.map((warehouseId, index) => ({
+          id: draftRowId('wa', index),
+          warehouseId,
+          allocatedQuantity: '',
+          storageLocation: '',
+        }))
+      : [{ id: 'wa-1', warehouseId: '', allocatedQuantity: '', storageLocation: '' }],
+    visibility: VISIBILITY_FROM_API[product.distributor_visibility ?? ''] ?? 'all',
+    approvalWorkflow: APPROVAL_WORKFLOW_FROM_API[product.approval_workflow ?? ''] ?? 'auto',
+    automationOption: automationOptionFromStatus(product.status),
   };
 }

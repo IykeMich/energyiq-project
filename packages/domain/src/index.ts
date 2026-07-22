@@ -4,3 +4,4 @@ export * as order from './order';
 export * as product from './product';
 export * as warehouse from './warehouse';
 export * as shared from './shared';
+export * as warehouse from './warehouse';

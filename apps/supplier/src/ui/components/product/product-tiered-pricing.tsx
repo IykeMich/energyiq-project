@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { PRICING_TIER_OPTIONS, type PricingTierDraft } from '@/ui/pages/product/mocks';
 import { SelectField, TextField } from './wizard-fields';
@@ -29,12 +30,15 @@ export function ProductTieredPricing({ tiers, onAdd, onRemove, onChange }: Produ
           No tiers yet. Use “Add Tier” to define volume-based pricing.
         </p>
       ) : (
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-x-4 gap-y-3 items-end">
-          <span className="text-sm text-foreground">Tier:</span>
-          <span className="text-sm text-foreground">Min. Quantity:</span>
-          <span className="text-sm text-foreground">Max. Quantity:</span>
-          <span className="text-sm text-foreground">Unit Price:</span>
-          <span aria-hidden />
+        // Single column below `lg` — four fields side by side has no room to shrink
+        // (grid items default to min-width:auto), so it stays stacked until there's
+        // real width for it, both in the full-page wizard and the narrower edit sheet.
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-x-4 gap-y-3 lg:items-end">
+          <span className="hidden text-sm text-foreground lg:block">Tier:</span>
+          <span className="hidden text-sm text-foreground lg:block">Min. Quantity:</span>
+          <span className="hidden text-sm text-foreground lg:block">Max. Quantity:</span>
+          <span className="hidden text-sm text-foreground lg:block">Unit Price:</span>
+          <span aria-hidden className="hidden lg:block" />
 
           {tiers.map((tier) => (
             <Row
@@ -50,6 +54,16 @@ export function ProductTieredPricing({ tiers, onAdd, onRemove, onChange }: Produ
   );
 }
 
+/** Mobile-only label above the field (the header row above is hidden below `lg`), plus a min-w-0 floor so the field can shrink inside its grid track. */
+function LabeledField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className="text-xs text-muted-foreground lg:hidden">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 interface RowProps {
   tier: PricingTierDraft;
   onRemove: () => void;
@@ -59,38 +73,48 @@ interface RowProps {
 function Row({ tier, onRemove, onChange }: RowProps) {
   return (
     <>
-      <SelectField
-        value={tier.tier}
-        onChange={(value) => onChange({ tier: value })}
-        placeholder="Select tier"
-        options={PRICING_TIER_OPTIONS}
-      />
-      <TextField
-        type="number"
-        value={tier.minQuantity}
-        onChange={(value) => onChange({ minQuantity: value })}
-        placeholder="0"
-      />
-      <TextField
-        type="number"
-        value={tier.maxQuantity}
-        onChange={(value) => onChange({ maxQuantity: value })}
-        placeholder="0"
-      />
-      <TextField
-        type="number"
-        value={tier.unitPrice}
-        onChange={(value) => onChange({ unitPrice: value })}
-        placeholder="0.00"
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Remove pricing tier"
-        className="tap-effect w-[52px] h-[52px] rounded-full bg-brand/20 text-brand flex items-center justify-center transition-colors hover:bg-brand/30"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <LabeledField label="Tier">
+        <SelectField
+          value={tier.tier}
+          onChange={(value) => onChange({ tier: value })}
+          placeholder="Select tier"
+          options={PRICING_TIER_OPTIONS}
+        />
+      </LabeledField>
+      <LabeledField label="Min. Quantity">
+        <TextField
+          type="number"
+          value={tier.minQuantity}
+          onChange={(value) => onChange({ minQuantity: value })}
+          placeholder="0"
+        />
+      </LabeledField>
+      <LabeledField label="Max. Quantity">
+        <TextField
+          type="number"
+          value={tier.maxQuantity}
+          onChange={(value) => onChange({ maxQuantity: value })}
+          placeholder="0"
+        />
+      </LabeledField>
+      <LabeledField label="Unit Price">
+        <TextField
+          type="number"
+          value={tier.unitPrice}
+          onChange={(value) => onChange({ unitPrice: value })}
+          placeholder="0.00"
+        />
+      </LabeledField>
+      <div className="flex justify-end lg:block">
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove pricing tier"
+          className="tap-effect w-[52px] h-[52px] rounded-full bg-brand/20 text-brand flex items-center justify-center transition-colors hover:bg-brand/30"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </>
   );
 }

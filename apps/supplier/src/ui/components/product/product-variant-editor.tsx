@@ -27,24 +27,28 @@ export function ProductVariantEditor({ variants, onAdd, onRemove, onChange }: Pr
         </button>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr_1.3fr_auto] gap-x-6 gap-y-4 items-start">
+      {/* Single column below `lg` — the nested cost/selling price grid has no
+          room to shrink otherwise (grid items default to min-width:auto), so
+          it stays stacked until there's real width, both in the full-page
+          wizard and the narrower edit sheet. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1.3fr_auto] gap-x-6 gap-y-4 lg:items-start">
         {/* Header row */}
-        <span className="text-sm text-foreground">Variant Name:</span>
-        <span className="text-sm text-foreground border-l border-border-subtle pl-6">
+        <span className="hidden text-sm text-foreground lg:block">Variant Name:</span>
+        <span className="hidden text-sm text-foreground lg:block lg:border-l lg:border-border-subtle lg:pl-6">
           Variant Display Name:
         </span>
-        <div className="border-l border-border-subtle pl-6">
+        <div className="hidden lg:block lg:border-l lg:border-border-subtle lg:pl-6">
           <p className="text-sm text-foreground mb-3">Variant Price:</p>
           <div className="grid grid-cols-2 gap-3">
             <span className="text-xs text-muted-foreground">Cost Price</span>
             <span className="text-xs text-muted-foreground">Selling Price</span>
           </div>
         </div>
-        <span aria-hidden />
+        <span aria-hidden className="hidden lg:block" />
 
         {/* Empty state */}
         {variants.length === 0 && (
-          <p className="col-span-4 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground lg:col-span-4">
             No variants yet. Use “Add Variant” to create one.
           </p>
         )}
@@ -72,40 +76,52 @@ interface RowProps {
 function Row({ variant, onRemove, onChange }: RowProps) {
   return (
     <>
-      <TextField
-        value={variant.name}
-        onChange={(value) => onChange({ name: value })}
-        placeholder="e.g. Lubricant X1"
-      />
-      <div className="border-l border-border-subtle pl-6">
+      <div className="min-w-0 flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground lg:hidden">Variant Name</span>
+        <TextField
+          value={variant.name}
+          onChange={(value) => onChange({ name: value })}
+          placeholder="e.g. Lubricant X1"
+        />
+      </div>
+      <div className="min-w-0 flex flex-col gap-1 lg:border-l lg:border-border-subtle lg:pl-6">
+        <span className="text-xs text-muted-foreground lg:hidden">Variant Display Name</span>
         <TextField
           value={variant.displayName}
           onChange={(value) => onChange({ displayName: value })}
           placeholder="e.g. LUB-X1"
         />
       </div>
-      <div className="border-l border-border-subtle pl-6 grid grid-cols-2 gap-3">
-        <TextField
-          type="number"
-          value={variant.costPrice}
-          onChange={(value) => onChange({ costPrice: value })}
-          placeholder="0.00"
-        />
-        <TextField
-          type="number"
-          value={variant.sellingPrice}
-          onChange={(value) => onChange({ sellingPrice: value })}
-          placeholder="0.00"
-        />
+      <div className="min-w-0 grid grid-cols-2 gap-3 lg:border-l lg:border-border-subtle lg:pl-6">
+        <div className="min-w-0 flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground lg:hidden">Cost Price</span>
+          <TextField
+            type="number"
+            value={variant.costPrice}
+            onChange={(value) => onChange({ costPrice: value })}
+            placeholder="0.00"
+          />
+        </div>
+        <div className="min-w-0 flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground lg:hidden">Selling Price</span>
+          <TextField
+            type="number"
+            value={variant.sellingPrice}
+            onChange={(value) => onChange({ sellingPrice: value })}
+            placeholder="0.00"
+          />
+        </div>
       </div>
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Remove variant"
-        className="tap-effect w-7 h-7 mt-3 rounded-full bg-brand/20 text-brand flex items-center justify-center transition-colors hover:bg-brand/30"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      <div className="flex justify-end lg:block">
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove variant"
+          className="tap-effect w-7 h-7 lg:mt-3 rounded-full bg-brand/20 text-brand flex items-center justify-center transition-colors hover:bg-brand/30"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </>
   );
 }

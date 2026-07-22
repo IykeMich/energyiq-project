@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, XCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from '@energyiq/ui';
+import { shared } from '@energyiq/domain';
+import { SuccessModal } from '@energyiq/ui';
 import { cn } from '@energyiq/shared';
 import {
   useGetV1DoctypeReadId,
@@ -27,6 +28,7 @@ import {
   mapDocumentTypeToFormDefaults,
   mapFormToCreateRequest,
   mapFormToUpdateRequest,
+  setStoredDocumentCategory,
 } from './kyc-document-type-mappers';
 import {
   DOCUMENT_CATEGORY_OPTIONS,
@@ -37,6 +39,8 @@ import {
   MAX_FILE_SIZE_OPTIONS,
 } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
+const { DomainError, ResponseCodes } = shared;
+
 interface KycDocumentTypeFormProps {
   /** When set, the form edits this existing document type instead of creating a new one. */
   documentTypeId?: string;
@@ -45,8 +49,8 @@ interface KycDocumentTypeFormProps {
 /**
  * "Add / Edit document type" form. Uses react-hook-form + zod with `mode: 'onTouched'`
  * so per-field errors surface once a field is touched/dirtied, and the Save button
- * stays disabled until the whole form is valid. A successful submit fires a smooth
- * sonner toast and returns to the Document Types list.
+ * stays disabled until the whole form is valid. Submit result (success or failure,
+ * e.g. a 401/403 from the API) surfaces via a `SuccessModal` rather than being silent.
  */
 export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps) {
   const navigate = useNavigate();
@@ -78,24 +82,42 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
   const createDocumentType = usePostV1DoctypeCreate();
   const updateDocumentType = usePutV1DoctypeUpdateId();
 
+  const [successState, setSuccessState] = useState<{ documentName: string } | null>(null);
+  const [failureMessage, setFailureMessage] = useState<string | null>(null);
+
   const typesListPath = `/${slug}/kyc-documents/types`;
 
-  const onSubmit = async (data: KycDocumentTypeFormData) => {
-    if (isEditing && documentTypeId) {
-      await updateDocumentType.mutateAsync({ id: documentTypeId, data: mapFormToUpdateRequest(data) });
-    } else {
-      await createDocumentType.mutateAsync({ data: mapFormToCreateRequest(data) });
+  const describeSubmitError = (error: unknown): string => {
+    if (error instanceof DomainError) {
+      if (error.code === ResponseCodes.UNAUTHORIZED) {
+        return 'Your session has expired. Please sign in again and retry.';
+      }
+      if (error.code === ResponseCodes.FORBIDDEN) {
+        return 'You do not have permission to perform this action.';
+      }
+      return error.message;
     }
-    await queryClient.invalidateQueries({ queryKey: getGetV1DoctypeListQueryKey() });
-    toast.success(isEditing ? 'Document type updated' : 'Document type created', {
-      description: isEditing
-        ? `'${data.documentName}' has been updated.`
-        : `'${data.documentName}' has been added to the required documents.`,
-    });
-    navigate(typesListPath);
+    return 'Something went wrong while saving. Please try again.';
+  };
+
+  const onSubmit = async (data: KycDocumentTypeFormData) => {
+    try {
+      if (isEditing && documentTypeId) {
+        await updateDocumentType.mutateAsync({ id: documentTypeId, data: mapFormToUpdateRequest(data) });
+        setStoredDocumentCategory(documentTypeId, data.documentCategory ?? '');
+      } else {
+        const created = await createDocumentType.mutateAsync({ data: mapFormToCreateRequest(data) });
+        setStoredDocumentCategory(created.data.data?.id, data.documentCategory ?? '');
+      }
+      await queryClient.invalidateQueries({ queryKey: getGetV1DoctypeListQueryKey() });
+      setSuccessState({ documentName: data.documentName });
+    } catch (error) {
+      setFailureMessage(describeSubmitError(error));
+    }
   };
 
   return (
+    <>
     <section className="flex flex-col gap-6">
       <header className="flex items-center gap-3.5">
         <button
@@ -205,5 +227,30 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
         </div>
       </form>
     </section>
+
+    <SuccessModal
+      open={successState !== null}
+      onOpenChange={(open) => !open && setSuccessState(null)}
+      title={isEditing ? 'Document Type Updated' : 'Document Type Created'}
+      subtitle={
+        isEditing
+          ? `'${successState?.documentName}' has been updated.`
+          : `'${successState?.documentName}' has been added to the required documents.`
+      }
+      primaryAction={{ label: 'Done', onClick: () => navigate(typesListPath) }}
+      buttonLayout="stack"
+    />
+
+    <SuccessModal
+      open={failureMessage !== null}
+      onOpenChange={(open) => !open && setFailureMessage(null)}
+      title={isEditing ? 'Could Not Update Document Type' : 'Could Not Create Document Type'}
+      subtitle={failureMessage}
+      tone="danger"
+      icon={XCircle}
+      primaryAction={{ label: 'Try Again', onClick: () => setFailureMessage(null) }}
+      buttonLayout="stack"
+    />
+    </>
   );
 }

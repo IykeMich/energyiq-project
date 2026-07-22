@@ -104,7 +104,7 @@ export function CheckboxField({ checked, onChange, label }: CheckboxFieldProps) 
       role="checkbox"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="tap-effect flex items-center gap-2.5 text-sm text-foreground"
+      className="flex items-center gap-2.5 text-sm text-foreground"
     >
       <span
         className={cn(
@@ -112,7 +112,7 @@ export function CheckboxField({ checked, onChange, label }: CheckboxFieldProps) 
           checked ? 'bg-brand border-brand text-brand-foreground' : 'border-border-strong bg-surface-card',
         )}
       >
-        {checked && <Check className="w-3 h-3" strokeWidth={3} />}
+        {checked && <Check className="w-3 h-3 tap-effect" strokeWidth={3} />}
       </span>
       {label}
     </button>
@@ -162,7 +162,7 @@ export function ToggleSwitch({
 }
 
 export function SelectField({ value, onChange, placeholder, options, error }: SelectFieldProps) {
-  const normalized = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+  const normalized = options.map((option) => (typeof option === 'string' ? { value: option, label: option } : option));
   return (
     <div className="flex flex-col gap-1">
       <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
@@ -172,7 +172,11 @@ export function SelectField({ value, onChange, placeholder, options, error }: Se
             error && 'border-destructive focus:ring-destructive',
           )}
         >
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={placeholder}>
+            {(selectedValue: string) =>
+              normalized.find((option) => option.value === selectedValue)?.label ?? selectedValue
+            }
+          </SelectValue>
         </SelectTrigger>
         <SelectContent
           align="start"

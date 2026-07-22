@@ -70,6 +70,8 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  const hasOptions = React.Children.count(children) > 0
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -87,7 +89,16 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          {hasOptions ? (
+            <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          ) : (
+            <div
+              data-slot="select-no-data"
+              className="px-3 py-6 text-center text-sm text-muted-foreground"
+            >
+              No Data Available
+            </div>
+          )}
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
