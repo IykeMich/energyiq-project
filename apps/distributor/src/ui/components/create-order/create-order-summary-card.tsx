@@ -1,8 +1,6 @@
 import { OrderDetailRow } from '../order-detail/order-detail-row';
 import { CreateOrderBindingNotice } from './create-order-binding-notice';
 import { formatNaira } from './create-order-mocks';
-import { useCreateOrderMutation } from '@/hooks/use-orders';
-// import type { CreateOrderLineItem } from './create-order-products-card';
 
 export interface CreateOrderSummaryLine {
   label: string;
@@ -20,61 +18,25 @@ export interface CreateOrderSummaryData {
 }
 
 interface CreateOrderSummaryCardProps {
-    summary: CreateOrderSummaryData;
-
-  // lineItems: CreateOrderLineItem[];
-  // distributorId: string;
-  notes?: string;
-  shippingAddress?: Record<string, unknown>;
-
+  summary: CreateOrderSummaryData;
   isEmpty: boolean;
   onSaveDraft: () => void;
-
+  onSubmit: () => void;
+  isSubmitting: boolean;
   submitLabel?: string;
   bindingNoticeInline?: boolean;
-  onSubmit: () => void;
-  // isSubmitting: boolean;
 }
 
 /** Right column: live order totals, primary actions, and trading balance. */
 export function CreateOrderSummaryCard({
   summary,
-  // lineItems,
-  // distributorId,
-  // notes,
-  // shippingAddress,
   isEmpty,
   onSaveDraft,
-  // onSubmit,
-  // isSubmitting,
+  onSubmit,
+  isSubmitting,
   submitLabel = 'Create New Order',
   bindingNoticeInline = true,
 }: CreateOrderSummaryCardProps) {
-
-const createOrder = useCreateOrderMutation();
-
-const handleSubmit = async () => {
-  try {
-    // await createOrder.mutateAsync({
-    //   distributor_id: distributorId,
-
-    //   items: lineItems.map(item => ({
-    //     product_id: item.productId,
-    //     quantity: item.quantity,
-    //   })),
-
-    //   notes,
-
-    //   shipping_address: shippingAddress,
-    // });
-
-    console.log('Order created successfully');
-  } catch (error) {
-    console.error('Create order failed', error);
-  }
-};
-
-
   return (
     <div className="flex flex-col gap-6 rounded-[18px] bg-[#6161611A] p-8 lg:sticky lg:top-6">
       <h2 className="text-lg font-semibold text-foreground">Order Summary</h2>
@@ -114,14 +76,14 @@ const handleSubmit = async () => {
       </div>
 
       <div className="flex flex-col gap-3">
-       <button
-  type="button"
-  onClick={handleSubmit}
-  disabled={isEmpty || createOrder.isPending}
-  className="tap-effect h-[52px] rounded-full bg-[#FBC02D] text-base font-semibold text-[#121212] disabled:opacity-50"
->
-  {createOrder.isPending ? 'Submitting…' : submitLabel}
-</button>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={isEmpty || isSubmitting}
+          className="tap-effect h-[52px] rounded-full bg-[#FBC02D] text-base font-semibold text-[#121212] disabled:opacity-50"
+        >
+          {isSubmitting ? 'Submitting…' : submitLabel}
+        </button>
         <button
           type="button"
           onClick={onSaveDraft}

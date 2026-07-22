@@ -10,9 +10,19 @@ import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
 import { OrdersStatusBadge } from './orders-status-badge';
 import { ORDER_STATUS_COLOR, PAYMENT_STATUS_COLOR } from './orders-mocks';
-import type { OrderRow } from './orders-mocks';
+import type { OrderRow, OrderStatus } from './orders-mocks';
 
-function OrderRowActions({ onViewDetails }: { onViewDetails: () => void }) {
+function OrderRowActions({
+  status,
+  onViewDetails,
+  onEdit,
+}: {
+  status: OrderStatus;
+  onViewDetails: () => void;
+  onEdit: () => void;
+}) {
+  const canEdit = status === 'Pending' || status === 'Approved';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -26,6 +36,7 @@ function OrderRowActions({ onViewDetails }: { onViewDetails: () => void }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="`min-w-[170px]">
         <DropdownMenuItem onClick={onViewDetails}>View Details</DropdownMenuItem>
+        {canEdit && <DropdownMenuItem onClick={onEdit}>Edit Order</DropdownMenuItem>}
         <DropdownMenuItem>Track Order</DropdownMenuItem>
         <DropdownMenuItem>Download Invoice</DropdownMenuItem>
       </DropdownMenuContent>
@@ -33,9 +44,12 @@ function OrderRowActions({ onViewDetails }: { onViewDetails: () => void }) {
   );
 }
 
-function buildColumns(onViewDetails: (order: OrderRow) => void): Column<OrderRow>[] {
+function buildColumns(
+  onViewDetails: (order: OrderRow) => void,
+  onEdit: (order: OrderRow) => void,
+): Column<OrderRow>[] {
   return [
-    { header: 'ID', accessor: 'id', sortable: true },
+    { header: 'ID', accessor: 'orderNumber', sortable: true },
     { header: 'Date', accessor: 'date', sortable: true },
     { header: 'Supplier', accessor: 'supplier', sortable: true },
     { header: 'Items', accessor: 'items', align: 'center', sortable: true },
@@ -63,7 +77,13 @@ function buildColumns(onViewDetails: (order: OrderRow) => void): Column<OrderRow
       header: 'Action',
       accessor: 'id',
       align: 'center',
-      render: (_value, row) => <OrderRowActions onViewDetails={() => onViewDetails(row)} />,
+      render: (_value, row) => (
+        <OrderRowActions
+          status={row.status}
+          onViewDetails={() => onViewDetails(row)}
+          onEdit={() => onEdit(row)}
+        />
+      ),
     },
   ];
 }
@@ -72,10 +92,11 @@ interface OrdersTableProps {
   orders: OrderRow[];
   isLoading?: boolean;
   onViewDetails: (order: OrderRow) => void;
+  onEdit: (order: OrderRow) => void;
 }
 
-export function OrdersTable({ orders, isLoading, onViewDetails }: OrdersTableProps) {
-  const columns = useMemo(() => buildColumns(onViewDetails), [onViewDetails]);
+export function OrdersTable({ orders, isLoading, onViewDetails, onEdit }: OrdersTableProps) {
+  const columns = useMemo(() => buildColumns(onViewDetails, onEdit), [onViewDetails, onEdit]);
 
   return (
     <DefaultTable

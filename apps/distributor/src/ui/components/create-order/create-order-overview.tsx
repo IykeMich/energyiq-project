@@ -86,7 +86,32 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   // Seed the edit form from the order being edited once it loads.
   useEffect(() => {
     if (!existingOrder) return;
+
     setLineItems(toLineItems(existingOrder.items));
+
+    if (existingOrder.supplier_id) {
+      setSupplierId(existingOrder.supplier_id);
+    }
+
+    const date = existingOrder.submitted_at || existingOrder.created_at;
+    if (date) {
+      setDeliveryDate(date.slice(0, 10));
+    }
+
+    const parsed = parseOrderNotes(existingOrder.notes);
+    if (parsed.deliveryMethodId) {
+      setDeliveryMethodId(parsed.deliveryMethodId);
+    }
+    if (parsed.contact) {
+      setContact((previous) => ({ ...previous, ...parsed.contact }));
+    }
+
+    if (existingOrder.shipping_address && typeof existingOrder.shipping_address === 'object') {
+      const address = existingOrder.shipping_address as Record<string, unknown>;
+      if (address.address) {
+        setContact((previous) => ({ ...previous, address: String(address.address) }));
+      }
+    }
   }, [existingOrder]);
 
   const createMutation = useCreateOrderMutation();
@@ -111,9 +136,15 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
     {
       productId: product.id,
       name: product.name,
+      shortLabel: product.shortLabel,
+      code: product.code,
       unit: product.unit,
+      unitAbbrev: product.unitAbbrev,
       unitPrice: product.unitPrice,
-      quantity: 1,
+      moq: product.moq,
+      goldDiscount: product.goldDiscount,
+      available: product.available,
+      quantity: product.moq,
     },
   ]);
 };
@@ -143,7 +174,7 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
     discount += lineTotal * GOLD_DISCOUNT_RATE;
 
     return {
-      label: `${item.name} × ${item.quantity}${item.unit}`,
+      label: `${item.shortLabel} × ${item.quantity}${item.unitAbbrev}`,
       amount: lineTotal,
     };
   });
@@ -316,8 +347,8 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
               isEmpty={isEmpty}
               onSaveDraft={handleSaveDraft}
               onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
               submitLabel={isEditMode ? 'Save Changes' : 'Create New Order'}
-              // isSubmitting={isSubmitting}
               bindingNoticeInline={!isEditMode}
             />
             {isEditMode && <CreateOrderBindingNotice variant="card" />}
@@ -355,15 +386,28 @@ function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
 
         if (!productId || Number.isNaN(quantity)) return null;
 
-        const product = PRODUCT_CATALOG.find(
-          (product) => product.id === productId,
-        );
+        const catalogProduct = PRODUCT_CATALOG.find((product) => product.id === productId);
+
+        const name = (record.name as string) || catalogProduct?.name || 'Unknown Product';
+        const shortLabel = (record.shortLabel as string) || catalogProduct?.shortLabel || name;
+        const code = (record.sku as string) || catalogProduct?.code || '';
+        const unit = (record.unit as string) || catalogProduct?.unit || '';
+        const unitAbbrev = (record.unitAbbrev as string) || catalogProduct?.unitAbbrev || unit;
+        const unitPrice = Number(record.unit_price ?? record.unitPrice ?? catalogProduct?.unitPrice ?? 0);
+        const moq = Number(record.moq ?? catalogProduct?.moq ?? 1);
+        const goldDiscount = Boolean(record.gold_discount ?? catalogProduct?.goldDiscount ?? false);
 
         return {
           productId,
-          name: product?.name ?? 'Unknown Product',
-          unit: product?.unit ?? '',
-          unitPrice: product?.unitPrice ?? 0,
+          name,
+          shortLabel,
+          code,
+          unit,
+          unitAbbrev,
+          unitPrice,
+          moq,
+          goldDiscount,
+          available: true,
           quantity,
         };
       })
@@ -371,16 +415,49 @@ function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
   }
 
   return Object.entries(items).map(([productId, quantity]) => {
-    const product = PRODUCT_CATALOG.find(
-      (product) => product.id === productId,
-    );
+    const catalogProduct = PRODUCT_CATALOG.find((product) => product.id === productId);
 
     return {
       productId,
-      name: product?.name ?? 'Unknown Product',
-      unit: product?.unit ?? '',
-      unitPrice: product?.unitPrice ?? 0,
+      name: catalogProduct?.name ?? 'Unknown Product',
+      shortLabel: catalogProduct?.shortLabel ?? catalogProduct?.name ?? 'Unknown Product',
+      code: catalogProduct?.code ?? '',
+      unit: catalogProduct?.unit ?? '',
+      unitAbbrev: catalogProduct?.unitAbbrev ?? catalogProduct?.unit ?? '',
+      unitPrice: catalogProduct?.unitPrice ?? 0,
+      moq: catalogProduct?.moq ?? 1,
+      goldDiscount: catalogProduct?.goldDiscount ?? false,
+      available: catalogProduct?.available ?? true,
       quantity: Number(quantity) || 0,
     };
   });
+}
+
+interface ParsedOrderNotes {
+  deliveryMethodId?: string;
+  contact?: Partial<DeliveryContact>;
+}
+
+/**
+ * Reconstructs delivery method and contact from the notes string written by
+ * the create flow: "Delivery method: {id}. Contact: {person}, {email}, {address}".
+ */
+function parseOrderNotes(notes?: string): ParsedOrderNotes {
+  if (!notes) return {};
+
+  const deliveryMatch = notes.match(/Delivery method:\s*([^.]+)/);
+  const contactMatch = notes.match(/Contact:\s*(.+)/);
+
+  const contact: Partial<DeliveryContact> = {};
+  if (contactMatch) {
+    const parts = contactMatch[1].split(',').map((part) => part.trim());
+    if (parts[0]) contact.contactPerson = parts[0];
+    if (parts[1]) contact.email = parts[1];
+    if (parts[2]) contact.address = parts[2];
+  }
+
+  return {
+    deliveryMethodId: deliveryMatch ? deliveryMatch[1].trim() : undefined,
+    contact: Object.keys(contact).length > 0 ? contact : undefined,
+  };
 }

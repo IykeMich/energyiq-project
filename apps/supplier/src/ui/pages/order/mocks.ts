@@ -103,6 +103,7 @@ export function buildStatusCounts(orders: Order[]): OrderStatusCount[] {
 
 export interface OrderLineItem {
   id: string;
+  productId: string;
   name: string;        // "Diesel (AGO)"
   quantityLabel: string; // "10,000 Litres"
   quantity: number;
@@ -158,6 +159,7 @@ export interface OrderDetail {
 const SAMPLE_LINE_ITEMS: OrderLineItem[] = [
   {
     id: 'li-diesel',
+    productId: 'prod-ago',
     name: 'Diesel (AGO)',
     quantityLabel: '10,000 Litres',
     quantity: 10_000,
@@ -167,6 +169,7 @@ const SAMPLE_LINE_ITEMS: OrderLineItem[] = [
   },
   {
     id: 'li-fuel',
+    productId: 'prod-pms',
     name: 'Fuel (PMS)',
     quantityLabel: '1,500 Litres',
     quantity: 1_500,
@@ -176,6 +179,7 @@ const SAMPLE_LINE_ITEMS: OrderLineItem[] = [
   },
   {
     id: 'li-lubricant',
+    productId: 'prod-lub',
     name: 'Lubricant Oil (20L Kegs)',
     quantityLabel: '10 Units',
     quantity: 10,
@@ -347,6 +351,262 @@ export function getOrderDispatch(id: string): OrderDispatch {
       requestedOn: 'Mar 20, 2025',
       orderPlaced: 'Today, 08:22AM',
       address: '15 Ikorodu Road, Lagos State.',
+    },
+  };
+}
+
+// ═════════════════════════════════════════════════════════════════
+// Backend order -> view-model mappers (replaces the mock helpers above).
+// ═════════════════════════════════════════════════════════════════
+
+interface RawOrderItem {
+  product_id?: string;
+  id?: string;
+  quantity?: number;
+  name?: string;
+  product_name?: string;
+  unit?: string;
+  unit_price?: number;
+  price?: number;
+  total?: number;
+  line_total?: number;
+  amount?: number;
+}
+
+function parseOrderItems(items?: order.Order['items']): RawOrderItem[] {
+  if (!items) return [];
+  if (Array.isArray(items)) return items as RawOrderItem[];
+  return Object.entries(items).map(([key, value]) => {
+    if (value && typeof value === 'object') {
+      return { ...(value as RawOrderItem), product_id: key };
+    }
+    return { product_id: key };
+  });
+}
+
+function productNameFor(productId: string): string {
+  const match = ADDABLE_PRODUCTS.find((product) => product.id === productId);
+  return match?.name ?? 'Product';
+}
+
+function unitFor(productId: string): string {
+  const match = ADDABLE_PRODUCTS.find((product) => product.id === productId);
+  return match?.unit ?? 'Unit';
+}
+
+function unitPriceFor(productId: string): number {
+  const match = ADDABLE_PRODUCTS.find((product) => product.id === productId);
+  return match?.unitPriceNGN ?? 0;
+}
+
+function toOrderLineItems(items?: order.Order['items']): OrderLineItem[] {
+  const raw = parseOrderItems(items);
+  if (raw.length === 0) {
+    return [
+      {
+        id: 'li-default',
+        productId: 'unknown',
+        name: 'Product',
+        quantityLabel: '1 Unit',
+        quantity: 1,
+        unit: 'Unit',
+        unitPriceNGN: 0,
+        totalNGN: 0,
+      },
+    ];
+  }
+  return raw.map((item, index) => {
+    const productId = item.product_id || item.id || `item-${index}`;
+    const quantity = Number(item.quantity ?? 0);
+    const unit = item.unit || unitFor(productId);
+    const unitPrice = Number(item.unit_price ?? item.price ?? unitPriceFor(productId));
+    const total = Number(item.total ?? item.line_total ?? item.amount ?? quantity * unitPrice);
+    const name = item.name || item.product_name || productNameFor(productId);
+    return {
+      id: `li-${productId}-${index}`,
+      productId,
+      name,
+      quantity,
+      quantityLabel: `${quantity.toLocaleString()} ${unit}`,
+      unit,
+      unitPriceNGN: unitPrice,
+      totalNGN: total,
+    };
+  });
+}
+
+function toDispatchedQuantities(items?: order.Order['items']): DispatchedQuantity[] {
+  const raw = parseOrderItems(items);
+  if (raw.length === 0) {
+    return [{ id: 'dq-default', label: 'Product – 1 Unit' }];
+  }
+  return raw.map((item, index) => {
+    const productId = item.product_id || item.id || `item-${index}`;
+    const quantity = Number(item.quantity ?? 0);
+    const unit = item.unit || unitFor(productId);
+    const name = item.name || item.product_name || productNameFor(productId);
+    return {
+      id: `dq-${productId}-${index}`,
+      label: `${name} – ${quantity.toLocaleString()} ${unit}`,
+    };
+  });
+}
+
+function toDetailOrderStatus(status?: string): OrderStatus {
+  switch (status?.toLowerCase()) {
+    case 'approved':
+      return 'approved';
+    case 'rejected':
+      return 'rejected';
+    case 'cancelled':
+      return 'cancelled';
+    case 'disputed':
+      return 'disputed';
+    case 'dispatched':
+    case 'received':
+    case 'completed':
+      return 'approved';
+    default:
+      return 'pending';
+  }
+}
+
+export function toOrderDetailStage(status?: string): OrderDetailStage {
+  switch (status?.toLowerCase()) {
+    case 'rejected':
+      return 'rejected';
+    case 'cancelled':
+      return 'rejected';
+    case 'dispatched':
+    case 'received':
+    case 'completed':
+      return 'awaiting_delivery';
+    default:
+      return 'awaiting_approval';
+  }
+}
+
+function toDeliveryStatus(status?: string): DeliveryStatus {
+  switch (status?.toLowerCase()) {
+    case 'received':
+    case 'completed':
+      return 'delivered';
+    case 'dispatched':
+      return 'in_transit';
+    default:
+      return 'pending';
+  }
+}
+
+function buildTimeline(submittedDate: string, status?: string): OrderTimelineEvent[] {
+  const submittedTimestamp = `${submittedDate}; 10:23 AM`;
+  const normalized = status?.toLowerCase() ?? '';
+  if (normalized === 'rejected') {
+    return [
+      { status: 'completed', label: 'Order submitted by distributor', timestamp: submittedTimestamp },
+      { status: 'rejected', label: 'Order rejected', timestamp: 'Today' },
+    ];
+  }
+  if (['approved', 'dispatched', 'received', 'completed'].includes(normalized)) {
+    return [
+      { status: 'completed', label: 'Order submitted by distributor', timestamp: submittedTimestamp },
+      { status: 'completed', label: 'Supplier approval', timestamp: 'Today' },
+    ];
+  }
+  return [
+    { status: 'completed', label: 'Order submitted by distributor', timestamp: submittedTimestamp },
+    { status: 'pending', label: 'Supplier approval', timestamp: 'Pending' },
+  ];
+}
+
+export function toOrderDetail(source: order.Order): OrderDetail {
+  const orderDate = toDisplayDate(source.created_at || source.submitted_at);
+  const shippingAddress = (source.shipping_address ?? {}) as Record<string, string | undefined>;
+  const email = shippingAddress.email || 'distributor@example.com';
+  const phone = shippingAddress.phone || 'N/A';
+  const lineItems = toOrderLineItems(source.items);
+  const total = source.total ?? 0;
+  const subtotal = source.subtotal ?? total;
+  const discount = source.discount ?? 0;
+  const shipping = 0;
+  const tax = 0;
+  const computedTotal = subtotal - discount + shipping + tax;
+
+  const summary: Order = {
+    id: source.id || source.order_number || '',
+    date: orderDate,
+    distributor: 'Distributor',
+    items: countItems(source.items),
+    amountNGN: total,
+    status: toDetailOrderStatus(source.status),
+    payment: 'paid',
+  };
+
+  return {
+    summary,
+    lineItems,
+    timeline: buildTimeline(orderDate, source.status),
+    distributor: {
+      name: 'Distributor',
+      email,
+      phone,
+      orderNote: source.notes || 'N/A',
+    },
+    shipping: { email, phone },
+    payment: {
+      subtotal,
+      discount,
+      shipping,
+      tax,
+      total: computedTotal || total,
+      method: 'Card',
+    },
+    delivery: {
+      status: toDeliveryStatus(source.status),
+      estimatedDate: source.dispatched_at ? toDisplayDate(source.dispatched_at) : 'N/A',
+    },
+    tierLabel: 'Silver',
+    requestedDeliveryDate: toDisplayDate(source.submitted_at || source.created_at),
+  };
+}
+
+export function toOrderDispatch(source: order.Order): OrderDispatch {
+  const shippingAddress = (source.shipping_address ?? {}) as Record<string, string | undefined>;
+  const total = source.total ?? 0;
+  const items = countItems(source.items);
+  const orderDate = toDisplayDate(source.submitted_at || source.created_at);
+  const address = shippingAddress.address || 'N/A';
+  const city = shippingAddress.city || 'N/A';
+  const phone = shippingAddress.phone || 'N/A';
+
+  return {
+    summary: {
+      orderTotalNGN: total,
+      totalItems: items,
+      paymentLabel: 'Confirmed',
+      inventoryLabel: 'Allocated',
+    },
+    delivery: {
+      recipient: 'Distributor',
+      address,
+      city,
+      phone,
+    },
+    assignment: {
+      driverName: '',
+      vehiclePlate: '',
+      trackingNumber: '',
+      estimatedDelivery: '',
+    },
+    dispatchedQuantities: toDispatchedQuantities(source.items),
+    success: {
+      recipient: 'Distributor',
+      contactName: `${source.id || source.order_number || ''}: Distributor`,
+      orderTotalNGN: total,
+      phone,
+      requestedOn: orderDate,
+      orderPlaced: 'Today',
+      address: `${address}, ${city}`.replace(/, $/, '').replace(/^, /, '') || 'N/A',
     },
   };
 }

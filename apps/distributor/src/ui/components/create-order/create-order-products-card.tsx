@@ -3,15 +3,21 @@ import { Boxes, Plus } from 'lucide-react';
 import { CreateOrderCard } from './create-order-card';
 import { CreateOrderProductRow } from './create-order-product-row';
 import { CreateOrderAddProductModal } from './create-order-add-product-modal';
-import { PRODUCT_CATALOG, type CreateOrderProductOption } from './create-order-mocks';
+import { type CreateOrderProductOption } from './create-order-mocks';
 
 export interface CreateOrderLineItem {
   productId: string;
   name: string;
+  shortLabel: string;
+  code: string;
   unit: string;
+  unitAbbrev: string;
   unitPrice: number;
-  quantity: number
-}CreateOrderAddProductModal
+  moq: number;
+  goldDiscount: boolean;
+  available: boolean;
+  quantity: number;
+}
 
 interface CreateOrderProductsCardProps {
   lineItems: CreateOrderLineItem[];
@@ -22,10 +28,6 @@ interface CreateOrderProductsCardProps {
 
 const COLUMN_LABELS = ['Product', 'Unit Price', 'Quantity', 'Sub-Total'];
 
-function findProduct(productId: string): CreateOrderProductOption | undefined {
-  return PRODUCT_CATALOG.find((product) => product.id === productId);
-}
-
 /** "Products" section: column headers, the added line items, and the Add Product flow. */
 export function CreateOrderProductsCard({
   lineItems,
@@ -34,11 +36,6 @@ export function CreateOrderProductsCard({
   onAdd,
 }: CreateOrderProductsCardProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
-
-  // const addedIds = new Set(lineItems.map((item) => item.productId));
-  // const addableProducts = PRODUCT_CATALOG.filter(
-  //   (product) => product.available && !addedIds.has(product.id),
-  // );
 
   return (
     <CreateOrderCard
@@ -57,19 +54,14 @@ export function CreateOrderProductsCard({
             ))}
           </div>
 
-          {lineItems.map((item) => {
-            const product = findProduct(item.productId);
-            if (!product) return null;
-            return (
-              <CreateOrderProductRow
-                key={item.productId}
-                product={product}
-                quantity={item.quantity}
-                onQuantityChange={(quantity) => onQuantityChange(item.productId, quantity)}
-                onRemove={() => onRemove(item.productId)}
-              />
-            );
-          })}
+          {lineItems.map((item) => (
+            <CreateOrderProductRow
+              key={item.productId}
+              item={item}
+              onQuantityChange={(quantity) => onQuantityChange(item.productId, quantity)}
+              onRemove={() => onRemove(item.productId)}
+            />
+          ))}
         </div>
       ) : (
         <p className="rounded-[14px] bg-[#FFFFFF0D] p-6 text-center text-sm text-[#FFFFFFCC]">
@@ -87,10 +79,10 @@ export function CreateOrderProductsCard({
       </button>
 
       <CreateOrderAddProductModal
-  open={isAddOpen}
-  onOpenChange={setIsAddOpen}
-  onAdd={onAdd}
-/>
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        onAdd={onAdd}
+      />
     </CreateOrderCard>
   );
 }

@@ -6,7 +6,8 @@ import type { OrderRow, OrderStatus } from './orders-mocks';
  */
 export function toOrderRow(source: order.Order): OrderRow {
   return {
-    id: source.order_number ?? source.id ?? '',
+    id: source.id ?? source.order_number ?? '',
+    orderNumber: source.order_number ?? source.id ?? '',
     date: formatDate(source.created_at),
     supplier: 'Supplier', // Backend does not expose supplier name on the list item yet.
     items: countItems(source.items),
