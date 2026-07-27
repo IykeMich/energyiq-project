@@ -9,12 +9,13 @@ const NGN = new Intl.NumberFormat('en-NG');
 
 interface ComplaintDetailSidebarProps {
   detail: ComplaintDetail;
+  onReview: () => void;
   onResolve: () => void;
   onReject: () => void;
 }
 
 /** Right column of the details view: distributor, summary and order cards plus the actions. */
-export function ComplaintDetailSidebar({ detail, onResolve, onReject }: ComplaintDetailSidebarProps) {
+export function ComplaintDetailSidebar({ detail, onReview, onResolve, onReject }: ComplaintDetailSidebarProps) {
   const { distributor, summary, order } = detail;
 
   return (
@@ -72,6 +73,13 @@ export function ComplaintDetailSidebar({ detail, onResolve, onReject }: Complain
         ]}
       />
 
+      <button
+        type="button"
+        onClick={onReview}
+        className="tap-effect h-12 rounded-2xl border border-[#616161B2] bg-[#6161611A] text-sm font-semibold text-[#FAFAFA]"
+      >
+        Start Review
+      </button>
       <button
         type="button"
         onClick={onResolve}

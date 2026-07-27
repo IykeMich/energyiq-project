@@ -52,6 +52,11 @@ export interface AuditFilter {
   options: string[];
 }
 
+export interface AuditFilterOption {
+  value: string;
+  label: string;
+}
+
 // Presentational filter dropdowns above the table; the "All …" labels are the default
 // (no-filter) state. TODO(orval): source these option lists from their reference endpoints.
 export const AUDIT_FILTERS: AuditFilter[] = [

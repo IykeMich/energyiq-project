@@ -8,6 +8,7 @@ import {
   useOrderQuery,
   useUpdateOrderMutation,
 } from '@/hooks/use-orders';
+import { useProductsQuery } from '@/hooks/use-products';
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { OrdersSearchBar } from '../orders/orders-search-bar';
 import { CreateOrderInformationCard } from './create-order-information-card';
@@ -71,7 +72,27 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
     data: existingOrder,
     isLoading: isLoadingOrder,
   } = useOrderQuery(orderId ?? '', { enabled: isEditMode && Boolean(orderId) });
+  const { data: productsData } = useProductsQuery();
   const orderReference = existingOrder?.order_number ?? orderId ?? ORDER_REFERENCE;
+
+  const productCatalog = useMemo<CreateOrderProductOption[]>(
+    () => [
+      ...PRODUCT_CATALOG,
+      ...(productsData?.items ?? []).map((product) => ({
+        id: product.id ?? '',
+        name: product.name ?? '',
+        shortLabel: product.name ?? '',
+        code: product.sku ?? '',
+        unit: product.unit ?? '',
+        unitAbbrev: product.unit ?? '',
+        unitPrice: Number(product.base_price ?? 0),
+        moq: Number(product.moq ?? 1),
+        goldDiscount: Boolean(product.gold_discount),
+        available: true,
+      })),
+    ],
+    [productsData],
+  );
 
   // TODO(orval): wire this search to the global order search once the API lands.
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,7 +108,7 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   useEffect(() => {
     if (!existingOrder) return;
 
-    setLineItems(toLineItems(existingOrder.items));
+    setLineItems(toLineItems(existingOrder.items, productCatalog));
 
     if (existingOrder.supplier_id) {
       setSupplierId(existingOrder.supplier_id);
@@ -373,7 +394,10 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
   );
 }
 
-function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
+function toLineItems(
+  items?: order.Order['items'],
+  catalog: CreateOrderProductOption[] = PRODUCT_CATALOG,
+): CreateOrderLineItem[] {
   if (!items) return [];
 
   if (Array.isArray(items)) {
@@ -386,7 +410,7 @@ function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
 
         if (!productId || Number.isNaN(quantity)) return null;
 
-        const catalogProduct = PRODUCT_CATALOG.find((product) => product.id === productId);
+        const catalogProduct = catalog.find((product) => product.id === productId);
 
         const name = (record.name as string) || catalogProduct?.name || 'Unknown Product';
         const shortLabel = (record.shortLabel as string) || catalogProduct?.shortLabel || name;
@@ -415,7 +439,7 @@ function toLineItems(items?: order.Order['items']): CreateOrderLineItem[] {
   }
 
   return Object.entries(items).map(([productId, quantity]) => {
-    const catalogProduct = PRODUCT_CATALOG.find((product) => product.id === productId);
+    const catalogProduct = catalog.find((product) => product.id === productId);
 
     return {
       productId,

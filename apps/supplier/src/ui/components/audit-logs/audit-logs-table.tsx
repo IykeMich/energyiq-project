@@ -40,9 +40,10 @@ function buildColumns(): Column<AuditLogRow>[] {
 
 interface AuditLogsTableProps {
   logs: AuditLogRow[];
+  isLoading?: boolean;
 }
 
-export function AuditLogsTable({ logs }: AuditLogsTableProps) {
+export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
   const columns = useMemo(() => buildColumns(), []);
 
   return (
@@ -50,6 +51,7 @@ export function AuditLogsTable({ logs }: AuditLogsTableProps) {
       columns={columns}
       data={logs}
       itemsPerPage={11}
+      isLoading={isLoading}
       getRowId={(row) => row.id}
       noDataMessage="No log entries match your filters"
     />

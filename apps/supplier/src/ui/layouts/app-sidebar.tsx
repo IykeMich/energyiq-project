@@ -79,7 +79,6 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
     },
   ];
 
-  // TODO: Tier Management has no page yet — link will 404 until that page lands.
   const navNetworkItems: NavItem[] = [
     { title: 'Distributors', url: `/${slug}/distributors`, icon: Users },
     { title: 'Tier Management', url: `/${slug}/tier-management`, icon: Award },

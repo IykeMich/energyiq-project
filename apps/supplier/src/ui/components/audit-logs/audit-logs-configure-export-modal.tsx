@@ -9,16 +9,22 @@ import {
   EXPORT_EVENT_TOGGLES,
   EXPORT_FILE_FORMATS,
 } from './audit-logs-mocks';
-import type { AuditExportConfig } from './audit-logs-mocks';
+import type { AuditEventToggle, AuditExportConfig, AuditSelectOption } from './audit-logs-mocks';
 
 interface AuditLogsConfigureExportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onGenerate: (config: AuditExportConfig) => void;
+  dateRangeOptions?: AuditSelectOption[];
+  eventToggleOptions?: AuditEventToggle[];
+  fileFormatOptions?: AuditSelectOption[];
+  columnOptions?: AuditSelectOption[];
 }
 
 /** All event toggles are on by default, matching the design. */
-const ALL_EVENT_IDS = EXPORT_EVENT_TOGGLES.map((toggle) => toggle.id);
+function useAllEventIds(toggles?: AuditEventToggle[]) {
+  return (toggles ?? EXPORT_EVENT_TOGGLES).map((toggle) => toggle.id);
+}
 
 /**
  * "Configure Export" form modal for the audit log. Uses `Modal` as a chrome-less shell so
@@ -29,11 +35,15 @@ export function AuditLogsConfigureExportModal({
   open,
   onOpenChange,
   onGenerate,
+  dateRangeOptions = EXPORT_DATE_RANGES,
+  eventToggleOptions = EXPORT_EVENT_TOGGLES,
+  fileFormatOptions = EXPORT_FILE_FORMATS,
+  columnOptions = EXPORT_COLUMN_OPTIONS,
 }: AuditLogsConfigureExportModalProps) {
-  const [dateRange, setDateRange] = useState(EXPORT_DATE_RANGES[0].value);
-  const [fileFormat, setFileFormat] = useState(EXPORT_FILE_FORMATS[0].value);
-  const [columns, setColumns] = useState(EXPORT_COLUMN_OPTIONS[0].value);
-  const [events, setEvents] = useState<Set<string>>(() => new Set(ALL_EVENT_IDS));
+  const [dateRange, setDateRange] = useState(dateRangeOptions[0]?.value ?? '');
+  const [fileFormat, setFileFormat] = useState(fileFormatOptions[0]?.value ?? '');
+  const [columns, setColumns] = useState(columnOptions[0]?.value ?? '');
+  const [events, setEvents] = useState<Set<string>>(() => new Set(useAllEventIds(eventToggleOptions)));
 
   const toggleEvent = (eventId: string) => {
     setEvents((previous) => {
@@ -85,13 +95,13 @@ export function AuditLogsConfigureExportModal({
           label="Date Range:"
           value={dateRange}
           onValueChange={setDateRange}
-          options={EXPORT_DATE_RANGES}
+          options={dateRangeOptions}
         />
 
         <div className="flex flex-col gap-3">
           <span className="text-sm font-medium text-[#FAFAFA]">Events</span>
           <div className="flex flex-col gap-3">
-            {EXPORT_EVENT_TOGGLES.map((toggle) => (
+            {eventToggleOptions.map((toggle) => (
               <label key={toggle.id} className="flex items-center gap-3 text-sm text-[#FAFAFA]">
                 <AuditLogsCheckbox
                   checked={events.has(toggle.id)}
@@ -108,14 +118,14 @@ export function AuditLogsConfigureExportModal({
           label="File Format:"
           value={fileFormat}
           onValueChange={setFileFormat}
-          options={EXPORT_FILE_FORMATS}
+          options={fileFormatOptions}
         />
 
         <AuditLogsFormSelect
           label="Include columns:"
           value={columns}
           onValueChange={setColumns}
-          options={EXPORT_COLUMN_OPTIONS}
+          options={columnOptions}
         />
 
         <div className="flex items-center justify-center gap-3">

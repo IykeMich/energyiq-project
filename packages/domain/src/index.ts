@@ -4,4 +4,7 @@ export * as distributor from './distributor';
 export * as order from './order';
 export * as product from './product';
 export * as warehouse from './warehouse';
+export * as complaint from './complaint';
+export * as audit from './audit';
+export * as tier from './tier';
 export * as shared from './shared';

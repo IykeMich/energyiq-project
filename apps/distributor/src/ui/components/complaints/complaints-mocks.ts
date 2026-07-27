@@ -5,6 +5,8 @@ export type ComplaintStatus = 'Submitted' | 'In Review' | 'Resolved' | 'Closed';
 
 export interface ComplaintRow {
   id: string;
+  /** Raw complaint UUID used for API calls. */
+  rawId: string;
   /** Headline of the complaint, e.g. "Incomplete Product-200L". */
   type: string;
   /** Product + order reference shown under the type, e.g. "AGO (Diesel)- ORD-004". */
@@ -17,18 +19,18 @@ export interface ComplaintRow {
 }
 
 export const COMPLAINTS_MOCK: ComplaintRow[] = [
-  { id: 'COMP-001', type: 'Incomplete Product-200L', reference: 'AGO (Diesel)- ORD-004', dateRaised: '20 Nov 2025, 10:32 AM', status: 'In Review', sla: '34h left' },
-  { id: 'COMP-002', type: 'Fuel Quality Degradation', reference: 'PMS (Premium)- ORD-005', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Submitted', sla: '62h left' },
-  { id: 'COMP-003', type: 'Wrong Product delivered', reference: 'DPK (Kerosene)- ORD-005', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-004', type: 'Short Delivery', reference: 'AGO (Diesel)- ORD-006', dateRaised: '20 Nov 2025, 10:32 AM', status: 'In Review', sla: '18h left' },
-  { id: 'COMP-005', type: 'Delayed Delivery', reference: 'PMS (Premium)- ORD-007', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-006', type: 'Wrong Product delivered', reference: 'DPK (Kerosene)- ORD-005', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-007', type: 'Damaged Seal', reference: 'AGO (Diesel)- ORD-008', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Closed', sla: '-' },
-  { id: 'COMP-008', type: 'Billing Discrepancy', reference: 'PMS (Premium)- ORD-009', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-009', type: 'Wrong Product delivered', reference: 'DPK (Kerosene)- ORD-010', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-010', type: 'Incomplete Product-150L', reference: 'AGO (Diesel)- ORD-011', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-011', type: 'Fuel Quality Degradation', reference: 'PMS (Premium)- ORD-012', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
-  { id: 'COMP-012', type: 'Late Dispatch', reference: 'DPK (Kerosene)- ORD-013', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-001', rawId: '00000000-0000-0000-0000-000000000001', type: 'Incomplete Product-200L', reference: 'AGO (Diesel)- ORD-004', dateRaised: '20 Nov 2025, 10:32 AM', status: 'In Review', sla: '34h left' },
+  { id: 'COMP-002', rawId: '00000000-0000-0000-0000-000000000002', type: 'Fuel Quality Degradation', reference: 'PMS (Premium)- ORD-005', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Submitted', sla: '62h left' },
+  { id: 'COMP-003', rawId: '00000000-0000-0000-0000-000000000003', type: 'Wrong Product delivered', reference: 'DPK (Kerosene)- ORD-005', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-004', rawId: '00000000-0000-0000-0000-000000000004', type: 'Short Delivery', reference: 'AGO (Diesel)- ORD-006', dateRaised: '20 Nov 2025, 10:32 AM', status: 'In Review', sla: '18h left' },
+  { id: 'COMP-005', rawId: '00000000-0000-0000-0000-000000000005', type: 'Delayed Delivery', reference: 'PMS (Premium)- ORD-007', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-006', rawId: '00000000-0000-0000-0000-000000000006', type: 'Wrong Product delivered', reference: 'DPK (Kerosene)- ORD-005', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-007', rawId: '00000000-0000-0000-0000-000000000007', type: 'Damaged Seal', reference: 'AGO (Diesel)- ORD-008', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Closed', sla: '-' },
+  { id: 'COMP-008', rawId: '00000000-0000-0000-0000-000000000008', type: 'Billing Discrepancy', reference: 'PMS (Premium)- ORD-009', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-009', rawId: '00000000-0000-0000-0000-000000000009', type: 'Wrong Product delivered', reference: 'DPK (Kerosene)- ORD-010', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-010', rawId: '00000000-0000-0000-0000-000000000010', type: 'Incomplete Product-150L', reference: 'AGO (Diesel)- ORD-011', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-011', rawId: '00000000-0000-0000-0000-000000000011', type: 'Fuel Quality Degradation', reference: 'PMS (Premium)- ORD-012', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
+  { id: 'COMP-012', rawId: '00000000-0000-0000-0000-000000000012', type: 'Late Dispatch', reference: 'DPK (Kerosene)- ORD-013', dateRaised: '20 Nov 2025, 10:32 AM', status: 'Resolved', sla: '-' },
 ];
 
 /** Badge text color per status; the badge background reuses the same hue at low opacity. */
@@ -90,6 +92,8 @@ export interface ComplaintTimelineEntry {
 
 export interface ComplaintDetail {
   id: string;
+  /** Raw complaint UUID used for API calls. */
+  rawId: string;
   status: ComplaintStatus;
   title: string;
   orderRef: string;
@@ -101,11 +105,14 @@ export interface ComplaintDetail {
   description: string;
   evidence: ComplaintEvidenceFile[];
   timeline: ComplaintTimelineEntry[];
+  canClose: boolean;
+  canEscalate: boolean;
 }
 
 // TODO(orval): replace with the single-complaint detail query (by id).
 export const COMPLAINT_DETAIL_MOCK: ComplaintDetail = {
   id: 'COMP-004',
+  rawId: '00000000-0000-0000-0000-000000000004',
   status: 'In Review',
   title: 'Incomplete delivery — 200L short',
   orderRef: 'ORD-003',
@@ -140,6 +147,8 @@ export const COMPLAINT_DETAIL_MOCK: ComplaintDetail = {
       state: 'current',
     },
   ],
+  canClose: false,
+  canEscalate: true,
 };
 
 // ---------------------------------------------------------------------------
@@ -177,7 +186,7 @@ export const PREFERRED_RESOLUTION_OPTIONS: ComplaintOption[] = [
 /** Local wizard draft; mirrors what the create-complaint mutation will eventually accept. */
 export interface RaiseComplaintDraft {
   issueType: string;
-  relatedOrder: string;
+  relatedOrder: string | undefined;
   complaintTitle: string;
   description: string;
   quantityAffected: string;
@@ -194,7 +203,7 @@ export const NEW_COMPLAINT_REFERENCE = 'COMP-003';
 /** A fresh draft, pre-filled to mirror the design's example content. */
 export const EMPTY_RAISE_COMPLAINT_DRAFT: RaiseComplaintDraft = {
   issueType: 'incomplete-delivery',
-  relatedOrder: 'ORD-003',
+  relatedOrder: undefined,
   complaintTitle: 'Incomplete delivery — 200L short',
   description:
     'We received a delivery on February 23rd for ORD-003 (AGO Diesel, 1000L). However upon measurement at the tank farm, only 800L was confirmed — a shortfall of 200L. The truck driver could not provide any explanation and left before the discrepancy was formally documented.',

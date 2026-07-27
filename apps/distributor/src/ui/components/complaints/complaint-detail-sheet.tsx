@@ -1,4 +1,8 @@
 import { Sheet, SheetContent, SheetTitle } from '@energyiq/ui';
+import {
+  useCloseDistributorComplaintMutation,
+  useEscalateDistributorComplaintMutation,
+} from '@/hooks/use-complaints';
 import { ComplaintsStatusBadge } from './complaints-status-badge';
 import { ComplaintCloseButton } from './complaint-close-button';
 import { ComplaintDetailRow } from './complaint-detail-row';
@@ -13,6 +17,21 @@ interface ComplaintDetailSheetProps {
 
 /** Right slide-in panel showing a single complaint's full detail. */
 export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetailSheetProps) {
+  const closeMutation = useCloseDistributorComplaintMutation();
+  const escalateMutation = useEscalateDistributorComplaintMutation();
+
+  const handleClose = () => {
+    if (!complaint) return;
+    closeMutation.mutate(complaint.rawId);
+  };
+
+  const handleEscalate = () => {
+    if (!complaint) return;
+    escalateMutation.mutate(complaint.rawId);
+  };
+
+  const isPending = closeMutation.isPending || escalateMutation.isPending;
+
   return (
     <Sheet open={complaint !== null} onOpenChange={onOpenChange}>
       {/* Tall frame holding a fixed header and a scrolling body whose content
@@ -90,6 +109,30 @@ export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetai
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-[#121212]"
               />
+            </div>
+
+            {/* Action footer */}
+            <div className="flex shrink-0 items-center gap-4 border-t border-[#FFFFFF1A] px-8 py-6">
+              {complaint.canEscalate && (
+                <button
+                  type="button"
+                  onClick={handleEscalate}
+                  disabled={isPending}
+                  className="tap-effect flex-1 rounded-full border border-[#FB8C1C] px-6 py-3.5 text-sm font-semibold text-[#FB8C1C] disabled:opacity-50"
+                >
+                  {escalateMutation.isPending ? 'Escalating…' : 'Escalate Complaint'}
+                </button>
+              )}
+              {complaint.canClose && (
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={isPending}
+                  className="tap-effect flex-1 rounded-full bg-[#FBC02D] px-6 py-3.5 text-sm font-semibold text-[#121212] disabled:opacity-50"
+                >
+                  {closeMutation.isPending ? 'Closing…' : 'Close Complaint'}
+                </button>
+              )}
             </div>
           </>
         )}

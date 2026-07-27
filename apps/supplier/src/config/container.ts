@@ -1,19 +1,25 @@
 import {
   auth,
+  complaint,
   distributor,
   employee,
   order,
   product,
   warehouse,
+  audit,
+  tier,
 } from '@energyiq/domain';
 
 import {
   AuthApiAdapter,
+  ComplaintApiAdapter,
   DistributorApiAdapter,
   EmployeeApiAdapter,
   OrderApiAdapter,
   ProductApiAdapter,
   WarehouseApiAdapter,
+  AuditApiAdapter,
+  TierApiAdapter,
   configureClient,
   configureEnv,
   configureFetcher,
@@ -36,19 +42,25 @@ configureEnv(env.apiBaseUrl);
 const tokenStorage = new LocalTokenStorage();
 const userStorage = new LocalUserStorage();
 const authApi = new AuthApiAdapter();
+const auditApi = new AuditApiAdapter();
+const complaintApi = new ComplaintApiAdapter();
 const employeeApi = new EmployeeApiAdapter();
 const orderApi = new OrderApiAdapter();
 const productApi = new ProductApiAdapter();
 const warehouseApi = new WarehouseApiAdapter();
 const distributorApi = new DistributorApiAdapter();
+const tierApi = new TierApiAdapter();
 
 // Domain use cases
 export const authUseCases = new auth.AuthUseCases(authApi, tokenStorage, userStorage);
+export const auditUseCases = new audit.AuditUseCases(auditApi);
+export const complaintUseCases = new complaint.ComplaintUseCases(complaintApi);
 export const distributorUseCases = new distributor.DistributorUseCases(distributorApi);
 export const employeeUseCases = new employee.EmployeeUseCases(employeeApi);
 export const orderUseCases = new order.OrderUseCases(orderApi);
 export const productUseCases = new product.ProductUseCases(productApi);
 export const warehouseUseCases = new warehouse.WarehouseUseCases(warehouseApi);
+export const tierUseCases = new tier.TierUseCases(tierApi);
 
 // Wire token getter + refresh into both HTTP clients (manual + Orval).
 configureClient(

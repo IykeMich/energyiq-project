@@ -8,7 +8,7 @@ interface RaiseComplaintDetailsStepProps {
   onChange: (patch: Partial<RaiseComplaintDraft>) => void;
 }
 
-/** Step 2 — description, quantities, amounts and the preferred resolution. */
+/** Step 2 — description, quantities, amounts, expected resolution and preferred resolution. */
 export function RaiseComplaintDetailsStep({ draft, onChange }: RaiseComplaintDetailsStepProps) {
   return (
     <div className="flex flex-col gap-6">

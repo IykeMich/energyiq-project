@@ -1,11 +1,12 @@
-import { auth, order , product} from '@energyiq/domain';
+import { auth, complaint, order, product } from '@energyiq/domain';
 import {
   AuthApiAdapter,
+  ComplaintApiAdapter,
   OrderApiAdapter,
+  ProductApiAdapter,
   configureClient,
   configureEnv,
   configureFetcher,
-  ProductApiAdapter,
 } from '@energyiq/api';
 import { configureStore } from '@energyiq/store';
 import { LocalTokenStorage } from '@/adapter/storage/token';
@@ -25,11 +26,13 @@ configureEnv(env.apiBaseUrl);
 const tokenStorage = new LocalTokenStorage();
 const userStorage = new LocalUserStorage();
 const authApi = new AuthApiAdapter();
+const complaintApi = new ComplaintApiAdapter();
 const orderApi = new OrderApiAdapter();
 const productApi = new ProductApiAdapter();
 
 // Domain use cases
 export const authUseCases = new auth.AuthUseCases(authApi, tokenStorage, userStorage);
+export const complaintUseCases = new complaint.ComplaintUseCases(complaintApi);
 export const orderUseCases = new order.OrderUseCases(orderApi);
 export const productUseCases = new product.ProductUseCases(productApi);
 

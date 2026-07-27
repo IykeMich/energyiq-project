@@ -58,6 +58,8 @@ export interface ComplaintDocument {
 
 export interface ComplaintDetail {
   id: string;
+  /** Stable complaint identifier passed to review/resolve mutations. */
+  complaintId: string;
   title: string;
   statusLabel: string;
   slaBanner: string;
@@ -93,6 +95,7 @@ export const REJECTION_AUDIT = {
 
 const COMPLAINT_DETAIL: ComplaintDetail = {
   id: 'COMP-001',
+  complaintId: 'distributor_complaint_001',
   title: 'Short delivery on Order ORD-1001',
   statusLabel: 'Under Review',
   slaBanner: 'SLA Deadline: Mar 22, 2025- 12,000L missing',

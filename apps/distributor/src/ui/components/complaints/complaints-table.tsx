@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
-import { XCircle } from 'lucide-react';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
 import { ComplaintsStatusBadge } from './complaints-status-badge';
 import type { ComplaintRow } from './complaints-mocks';
 
-function buildColumns(onCancel: (complaint: ComplaintRow) => void): Column<ComplaintRow>[] {
+function buildColumns(): Column<ComplaintRow>[] {
   return [
     { header: 'ID', accessor: 'id', sortable: true },
     {
@@ -32,42 +31,24 @@ function buildColumns(onCancel: (complaint: ComplaintRow) => void): Column<Compl
         <span className="text-sm text-[#FAFAFA]">{value as string}</span>
       ),
     },
-    {
-      header: 'Action',
-      accessor: 'id',
-      align: 'center',
-      render: (_value, row) => (
-        <button
-          type="button"
-          onClick={(event) => {
-            // Keep the cancel action from also opening the detail sheet.
-            event.stopPropagation();
-            onCancel(row);
-          }}
-          aria-label={`Cancel complaint ${row.id}`}
-          className="tap-effect inline-flex items-center justify-center text-[#FBC02D]"
-        >
-          <XCircle className="h-5 w-5" aria-hidden="true" />
-        </button>
-      ),
-    },
   ];
 }
 
 interface ComplaintsTableProps {
   complaints: ComplaintRow[];
-  onCancel: (complaint: ComplaintRow) => void;
+  isLoading?: boolean;
   onRowClick: (complaint: ComplaintRow) => void;
 }
 
-export function ComplaintsTable({ complaints, onCancel, onRowClick }: ComplaintsTableProps) {
-  const columns = useMemo(() => buildColumns(onCancel), [onCancel]);
+export function ComplaintsTable({ complaints, isLoading, onRowClick }: ComplaintsTableProps) {
+  const columns = useMemo(() => buildColumns(), []);
 
   return (
     <DefaultTable
       columns={columns}
       data={complaints}
       itemsPerPage={8}
+      isLoading={isLoading}
       getRowId={(row) => row.id}
       onRowClick={onRowClick}
       noDataMessage="No complaints match your filters"

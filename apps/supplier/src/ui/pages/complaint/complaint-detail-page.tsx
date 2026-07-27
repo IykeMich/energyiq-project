@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, SuccessModal, type SuccessModalDetail } from '@energyiq/ui';
 import { getComplaintDetail, REJECTION_AUDIT, type ComplaintDetail } from './mocks';
@@ -7,6 +7,10 @@ import { ComplaintThreadPanel } from '@/ui/components/complaint/complaint-thread
 import { ComplaintDetailSidebar } from '@/ui/components/complaint/complaint-detail-sidebar';
 import { ResolveComplaintModal } from '@/ui/components/complaint/resolve-complaint-modal';
 import { RejectComplaintModal } from '@/ui/components/complaint/reject-complaint-modal';
+import {
+  useResolveComplaintMutation,
+  useReviewComplaintMutation,
+} from '@/hooks/use-complaints';
 
 type OpenModal = null | 'resolve' | 'reject';
 
@@ -22,7 +26,6 @@ function formatNaira(amount: string): string {
 }
 
 /** Builds the Audit Summary rows shown on the Resolution Confirmed modal. */
-// TODO(orval): the resolve mutation returns the issued credit and replacement schedule.
 function buildAuditSummary(
   detail: ComplaintDetail,
   data: { amount: string },
@@ -40,9 +43,12 @@ export function ComplaintDetailPage() {
   const [modal, setModal] = useState<OpenModal>(null);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [resolveAudit, setResolveAudit] = useState<SuccessModalDetail[] | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
   const detail = useMemo(() => getComplaintDetail(id), [id]);
+  const resolveMutation = useResolveComplaintMutation();
+  const reviewMutation = useReviewComplaintMutation();
 
   if (!detail) {
     return (
@@ -65,12 +71,36 @@ export function ComplaintDetailPage() {
   const goToComplaints = () => navigate(`/${slug}/complaints`);
   const goToDashboard = () => navigate(`/${slug}/dashboard`);
 
-  const handleResolveSubmitted = async (data: { amount: string }) => {
+  const handleResolveSubmitted = async (data: {
+    resolutionType: string;
+    amount: string;
+    message: string;
+  }) => {
     setModal(null);
     setLoadingMessage('Resolving Complaint....');
-    await settleAfterDelay();
-    setLoadingMessage(null);
-    setResolveAudit(buildAuditSummary(detail, data));
+    try {
+      await resolveMutation.mutateAsync({
+        id: detail.complaintId,
+        req: {
+          resolution_type: data.resolutionType,
+          resolution_notes: `${data.message}${data.amount ? ` (Amount: #${Number(data.amount).toLocaleString('en-NG')})` : ''}`,
+          resolution_amount: data.amount ? Number(data.amount) : undefined,
+        },
+      });
+      setResolveAudit(buildAuditSummary(detail, { amount: data.amount }));
+    } finally {
+      setLoadingMessage(null);
+    }
+  };
+
+  const handleReviewStarted = async () => {
+    setLoadingMessage('Starting Review....');
+    try {
+      await reviewMutation.mutateAsync({ id: detail.complaintId });
+      setReviewOpen(true);
+    } finally {
+      setLoadingMessage(null);
+    }
   };
 
   const handleRejectConfirmed = async () => {
@@ -123,6 +153,7 @@ export function ComplaintDetailPage() {
 
         <ComplaintDetailSidebar
           detail={detail}
+          onReview={handleReviewStarted}
           onResolve={() => setModal('resolve')}
           onReject={() => setModal('reject')}
         />
@@ -171,6 +202,38 @@ export function ComplaintDetailPage() {
           onClick: () => {
             setResolveAudit(null);
             goToComplaints();
+          },
+        }}
+        buttonLayout="stack"
+      />
+
+      <SuccessModal
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        tone="brand"
+        icon={CheckCircle2}
+        title="Review Started"
+        subtitle={
+          <>
+            You have started reviewing{' '}
+            <span className="font-semibold text-brand">
+              {detail.id}- {detail.title}
+            </span>
+            .
+          </>
+        }
+        primaryAction={{
+          label: 'Back to Complaints',
+          onClick: () => {
+            setReviewOpen(false);
+            goToComplaints();
+          },
+        }}
+        secondaryAction={{
+          label: 'Go to Home',
+          onClick: () => {
+            setReviewOpen(false);
+            goToDashboard();
           },
         }}
         buttonLayout="stack"

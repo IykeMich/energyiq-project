@@ -39,6 +39,7 @@ import { KycDocumentsPage } from '@/ui/pages/kyc-documents/kyc-documents-page';
 import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-types-page';
 import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
 import { KycReviewQueuePage } from '@/ui/pages/kyc-documents/kyc-review-queue-page';
+import { TierManagementPage } from '@/ui/pages/tier-management/tier-management-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 import { ForgotPasswordPage} from '@/ui/pages/auth/forgot-password-page';
 import { CheckEmailPage } from '@/ui/pages/auth/email-page';
@@ -124,6 +125,7 @@ export const router = createBrowserRouter([
               { path: '/:slug/employees', element: <EmployeeListPage /> },
               { path: '/:slug/distributors/approval', element: <DistributorApprovalPage /> },
               { path: '/:slug/distributors/invite', element: <DistributorInvitePage /> },
+              { path: '/:slug/tier-management', element: <TierManagementPage /> },
             ],
           },
         ],

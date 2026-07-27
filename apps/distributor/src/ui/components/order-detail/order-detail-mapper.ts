@@ -21,7 +21,7 @@ export function toOrderDetailData(source: order.Order): OrderDetailData {
     orderId: source.order_number ?? source.id ?? '',
     status: statusBadge,
     info: {
-      orderId: source.order_number ?? source.id ?? '',
+      orderId: source.id ?? source.order_number ?? '',
       purchaseDate: formatDateTime(source.created_at),
       paymentStatus: { label: 'Pending', color: WARNING },
       amount: formatCurrency(source.total ?? 0),
