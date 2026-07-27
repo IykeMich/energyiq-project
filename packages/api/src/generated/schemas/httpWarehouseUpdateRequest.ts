@@ -9,16 +9,14 @@ import type { HttpWarehouseProductAssignmentRequest } from './httpWarehouseProdu
 import type { HttpWarehouseUpdateRequestStatus } from './httpWarehouseUpdateRequestStatus';
 
 export interface HttpWarehouseUpdateRequest {
-  /** @minimum 0 */
-  capacity?: number;
   /** @maxLength 255 */
   location: string;
   manager_id?: string;
+  products?: HttpWarehouseProductAssignmentRequest[];
+  status: HttpWarehouseUpdateRequestStatus;
   /**
      * @minLength 2
      * @maxLength 255
      */
-  name: string;
-  products?: HttpWarehouseProductAssignmentRequest[];
-  status: HttpWarehouseUpdateRequestStatus;
+  warehouse_name: string;
 }

@@ -1,74 +1,62 @@
 import { useMemo } from 'react';
-import { XCircle } from 'lucide-react';
+import type { AppDistributorComplaintListItem, GetV1DistributorComplaintListStatus } from '@energyiq/api/generated/schemas';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
 import { ComplaintsStatusBadge } from './complaints-status-badge';
-import type { ComplaintRow } from './complaints-mocks';
 
-function buildColumns(onCancel: (complaint: ComplaintRow) => void): Column<ComplaintRow>[] {
+function buildColumns(): Column<AppDistributorComplaintListItem>[] {
   return [
-    { header: 'ID', accessor: 'id', sortable: true },
+    { header: 'ID', accessor: 'distributor_complaint_code', sortable: true },
     {
       header: 'Complaint Type',
-      accessor: 'type',
+      accessor: 'distributor_complaint_type_title',
       sortable: true,
       render: (_value, row) => (
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-[#FAFAFA]">{row.type}</span>
-          <span className="text-xs text-[#FFFFFFCC]">{row.reference}</span>
+          <span className="text-sm font-medium text-[#FAFAFA]">{row.distributor_complaint_type_title}</span>
+          <span className="text-xs text-[#FFFFFFCC]">{row.distributor_complaint_type_subtitle}</span>
         </div>
       ),
     },
-    { header: 'Date Raised', accessor: 'dateRaised', sortable: true },
+    { header: 'Date Raised', accessor: 'distributor_complaint_date_raised_label', sortable: true },
     {
       header: 'Status',
-      accessor: 'status',
-      render: (_value, row) => <ComplaintsStatusBadge status={row.status} />,
+      accessor: 'distributor_complaint_status',
+      render: (_value, row) => (
+        <ComplaintsStatusBadge
+          statusCode={(row.distributor_complaint_status_code ?? 'open') as GetV1DistributorComplaintListStatus}
+          label={row.distributor_complaint_status}
+        />
+      ),
     },
     {
       header: 'SLA',
-      accessor: 'sla',
-      render: (value) => (
-        <span className="text-sm text-[#FAFAFA]">{value as string}</span>
-      ),
+      accessor: 'distributor_complaint_sla_label',
+      render: (value) => <span className="text-sm text-[#FAFAFA]">{value as string}</span>,
     },
     {
       header: 'Action',
-      accessor: 'id',
+      accessor: 'distributor_complaint_action_label',
       align: 'center',
-      render: (_value, row) => (
-        <button
-          type="button"
-          onClick={(event) => {
-            // Keep the cancel action from also opening the detail sheet.
-            event.stopPropagation();
-            onCancel(row);
-          }}
-          aria-label={`Cancel complaint ${row.id}`}
-          className="tap-effect inline-flex items-center justify-center text-[#FBC02D]"
-        >
-          <XCircle className="h-5 w-5" aria-hidden="true" />
-        </button>
-      ),
+      render: (value) => <span className="text-sm text-[#FBC02D]">{value as string}</span>,
     },
   ];
 }
 
 interface ComplaintsTableProps {
-  complaints: ComplaintRow[];
-  onCancel: (complaint: ComplaintRow) => void;
-  onRowClick: (complaint: ComplaintRow) => void;
+  complaints: AppDistributorComplaintListItem[];
+  onRowClick: (complaint: AppDistributorComplaintListItem) => void;
 }
 
-export function ComplaintsTable({ complaints, onCancel, onRowClick }: ComplaintsTableProps) {
-  const columns = useMemo(() => buildColumns(onCancel), [onCancel]);
+export function ComplaintsTable({ complaints, onRowClick }: ComplaintsTableProps) {
+  const columns = useMemo(() => buildColumns(), []);
 
   return (
     <DefaultTable
       columns={columns}
       data={complaints}
       itemsPerPage={8}
-      getRowId={(row) => row.id}
+      getRowId={(row) => row.distributor_complaint_id ?? row.distributor_complaint_code ?? ''}
       onRowClick={onRowClick}
       noDataMessage="No complaints match your filters"
     />

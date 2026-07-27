@@ -5,10 +5,10 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { DomainStockTransfer } from './domainStockTransfer';
+import type { AppStockTransferView } from './appStockTransferView';
 
 export interface HttpStockTransferResponse {
-  data?: DomainStockTransfer;
+  data?: AppStockTransferView;
   responseCode?: string;
   responseMessage?: string;
 }

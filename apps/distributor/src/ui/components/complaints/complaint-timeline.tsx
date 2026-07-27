@@ -1,8 +1,8 @@
+import type { AppDistributorComplaintTimelineItem } from '@energyiq/api/generated/schemas';
 import { ComplaintTimelineItem } from './complaint-timeline-item';
-import type { ComplaintTimelineEntry } from './complaints-mocks';
 
 interface ComplaintTimelineProps {
-  entries: ComplaintTimelineEntry[];
+  entries: AppDistributorComplaintTimelineItem[];
 }
 
 /** "Activity Timeline" list in the complaint detail sheet. */
@@ -11,7 +11,7 @@ export function ComplaintTimeline({ entries }: ComplaintTimelineProps) {
     <div className="flex flex-col">
       {entries.map((entry, index) => (
         <ComplaintTimelineItem
-          key={`${entry.title}-${entry.timestamp}`}
+          key={`${entry.event_code}-${entry.activity_time}`}
           entry={entry}
           isLast={index === entries.length - 1}
         />

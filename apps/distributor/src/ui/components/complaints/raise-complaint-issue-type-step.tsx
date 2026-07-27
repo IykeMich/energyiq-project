@@ -1,3 +1,4 @@
+import type { HttpRaiseRequestComplaintCategory } from '@energyiq/api/generated/schemas';
 import { ComplaintSelectCard } from './complaint-select-card';
 import { ComplaintTextField } from './complaint-text-field';
 import {
@@ -26,7 +27,7 @@ export function RaiseComplaintIssueTypeStep({ draft, onChange }: RaiseComplaintI
               key={option.value}
               option={option}
               selected={draft.issueType === option.value}
-              onSelect={(value) => onChange({ issueType: value })}
+              onSelect={(value) => onChange({ issueType: value as HttpRaiseRequestComplaintCategory })}
             />
           ))}
         </div>

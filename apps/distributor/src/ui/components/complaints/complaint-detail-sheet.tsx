@@ -1,29 +1,72 @@
-import { Sheet, SheetContent, SheetTitle } from '@energyiq/ui';
+import { Sheet, SheetContent, SheetTitle, toast } from '@energyiq/ui';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useGetV1DistributorComplaintReadId,
+  usePostV1DistributorComplaintCloseId,
+  usePostV1DistributorComplaintEscalateId,
+  getGetV1DistributorComplaintReadIdQueryKey,
+  getGetV1DistributorComplaintOverviewQueryKey,
+} from '@energyiq/api/generated/distributor-complaints/distributor-complaints';
+import type { GetV1DistributorComplaintListStatus } from '@energyiq/api/generated/schemas';
 import { ComplaintsStatusBadge } from './complaints-status-badge';
 import { ComplaintCloseButton } from './complaint-close-button';
 import { ComplaintDetailRow } from './complaint-detail-row';
 import { ComplaintEvidenceFile } from './complaint-evidence-file';
 import { ComplaintTimeline } from './complaint-timeline';
-import type { ComplaintDetail } from './complaints-mocks';
 
 interface ComplaintDetailSheetProps {
-  complaint: ComplaintDetail | null;
+  complaintId: string | null;
   onOpenChange: (open: boolean) => void;
 }
 
 /** Right slide-in panel showing a single complaint's full detail. */
-export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetailSheetProps) {
+export function ComplaintDetailSheet({ complaintId, onOpenChange }: ComplaintDetailSheetProps) {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useGetV1DistributorComplaintReadId(complaintId ?? '');
+  const complaint = data?.data.data;
+
+  const closeComplaint = usePostV1DistributorComplaintCloseId();
+  const escalateComplaint = usePostV1DistributorComplaintEscalateId();
+
+  const invalidateComplaintQueries = async () => {
+    if (!complaintId) return;
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getGetV1DistributorComplaintReadIdQueryKey(complaintId) }),
+      queryClient.invalidateQueries({ queryKey: getGetV1DistributorComplaintOverviewQueryKey() }),
+    ]);
+  };
+
+  const handleClose = async () => {
+    if (!complaintId) return;
+    await closeComplaint.mutateAsync({ id: complaintId });
+    await invalidateComplaintQueries();
+    toast.success('Complaint closed', { description: `${complaint?.distributor_complaint_code} has been closed.` });
+  };
+
+  const handleEscalate = async () => {
+    if (!complaintId) return;
+    await escalateComplaint.mutateAsync({ id: complaintId, data: {} });
+    await invalidateComplaintQueries();
+    toast.success('Complaint escalated', {
+      description: `${complaint?.distributor_complaint_code} has been escalated to the supplier.`,
+    });
+  };
+
   return (
-    <Sheet open={complaint !== null} onOpenChange={onOpenChange}>
+    <Sheet open={complaintId !== null} onOpenChange={onOpenChange}>
       {/* Tall frame holding a fixed header and a scrolling body whose content
           cuts crisply behind solid top/bottom bands (never touching the edges). */}
       <SheetContent
         side="right"
         showClose={false}
         overlayClassName="bg-[#121212]/40"
-        className="inset-y-3 mr-4 h-auto w-full gap-0 overflow-hidden rounded-[28px] border-l-0 bg-[#121212] p-0 sm:max-w-[560px]"
+        className="inset-y-3 mr-4 flex h-auto w-full flex-col gap-0 overflow-hidden rounded-[28px] border-l-0 bg-[#121212] p-0 sm:max-w-[560px]"
       >
-        {complaint && (
+        {isLoading && (
+          <p className="p-8 text-sm text-[#FFFFFFCC]">Loading complaint…</p>
+        )}
+
+        {!isLoading && complaint && (
           <>
             {/* Fixed header */}
             <div className="shrink-0 px-8 pt-8 pb-4">
@@ -31,13 +74,16 @@ export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetai
                 <div className="flex items-center gap-3">
                   <span className="h-6 w-1 rounded-full bg-[#FBC02D]" aria-hidden="true" />
                   <SheetTitle className="text-2xl font-bold text-[#FAFAFA]">
-                    {complaint.id}
+                    {complaint.distributor_complaint_code}
                   </SheetTitle>
-                  <ComplaintsStatusBadge status={complaint.status} />
+                  <ComplaintsStatusBadge
+                    statusCode={(complaint.distributor_complaint_status_code ?? 'open') as GetV1DistributorComplaintListStatus}
+                    label={complaint.distributor_complaint_status}
+                  />
                 </div>
                 <ComplaintCloseButton onClick={() => onOpenChange(false)} />
               </div>
-              <h2 className="mt-4 text-xl font-bold text-[#FAFAFA]">{complaint.title}</h2>
+              <h2 className="mt-4 text-xl font-bold text-[#FAFAFA]">{complaint.distributor_complaint_title}</h2>
             </div>
 
             {/* Scrolling body — solid bands cover the top/bottom so content cuts
@@ -47,12 +93,12 @@ export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetai
                 <section className="flex flex-col gap-4">
                   <p className="text-sm text-[#FFFFFFCC]">Complaint Details:</p>
                   <div className="flex flex-col gap-4 px-3">
-                    <ComplaintDetailRow label="Order Ref:" value={complaint.orderRef} />
-                    <ComplaintDetailRow label="Product:" value={complaint.product} />
-                    <ComplaintDetailRow label="Date Raised:" value={complaint.dateRaised} />
-                    <ComplaintDetailRow label="Quantity Affected:" value={complaint.quantityAffected} />
-                    <ComplaintDetailRow label="Estimated Amount:" value={complaint.estimatedAmount} />
-                    <ComplaintDetailRow label="Supplier:" value={complaint.supplier} />
+                    <ComplaintDetailRow label="Order Ref:" value={complaint.distributor_complaint_order_ref ?? '-'} />
+                    <ComplaintDetailRow label="Product:" value={complaint.distributor_complaint_product ?? '-'} />
+                    <ComplaintDetailRow label="Date Raised:" value={complaint.distributor_complaint_date_raised_label ?? '-'} />
+                    <ComplaintDetailRow label="Quantity Affected:" value={complaint.distributor_complaint_quantity_affected ?? '-'} />
+                    <ComplaintDetailRow label="Estimated Amount:" value={complaint.distributor_complaint_estimated_amount_label ?? '-'} />
+                    <ComplaintDetailRow label="Supplier:" value={complaint.distributor_complaint_supplier ?? '-'} />
                   </div>
                 </section>
 
@@ -61,24 +107,27 @@ export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetai
                 <section className="flex flex-col gap-3">
                   <p className="text-sm text-[#FFFFFFCC]">Description:</p>
                   <p className="rounded-2xl bg-[#FBC02D1A] px-5 py-4 text-sm leading-relaxed text-[#FBC02D]">
-                    {complaint.description}
+                    {complaint.distributor_complaint_description}
                   </p>
                 </section>
 
                 <hr className="my-6 border-[#FFFFFF1A]" />
 
                 <section className="flex flex-col gap-3">
-                  <p className="text-sm text-[#FFFFFFCC]">Evidence ({complaint.evidence.length} Files):</p>
+                  <p className="text-sm text-[#FFFFFFCC]">
+                    {complaint.distributor_complaint_evidence_title ??
+                      `Evidence (${complaint.distributor_complaint_evidence_count ?? 0} Files):`}
+                  </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {complaint.evidence.map((file) => (
-                      <ComplaintEvidenceFile key={file.name} file={file} />
+                    {(complaint.distributor_complaint_evidence ?? []).map((file) => (
+                      <ComplaintEvidenceFile key={file.file_name} file={file} />
                     ))}
                   </div>
                 </section>
 
                 <section className="mt-8 flex flex-col gap-4">
                   <p className="text-sm text-[#FFFFFFCC]">Activity Timeline:</p>
-                  <ComplaintTimeline entries={complaint.timeline} />
+                  <ComplaintTimeline entries={complaint.distributor_complaint_activity_timeline ?? []} />
                 </section>
               </div>
 
@@ -91,6 +140,33 @@ export function ComplaintDetailSheet({ complaint, onOpenChange }: ComplaintDetai
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-[#121212]"
               />
             </div>
+
+            {(complaint.distributor_complaint_can_escalate || complaint.distributor_complaint_can_close) && (
+              <div className="shrink-0 border-t border-[#FFFFFF1A] px-8 py-6">
+                <div className="flex gap-3">
+                  {complaint.distributor_complaint_can_escalate && (
+                    <button
+                      type="button"
+                      onClick={handleEscalate}
+                      disabled={escalateComplaint.isPending}
+                      className="tap-effect h-[44px] flex-1 rounded-full border border-[#FFFFFF33] bg-transparent text-sm font-medium text-[#FAFAFA] hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {complaint.distributor_complaint_escalate_action_label ?? 'Escalate'}
+                    </button>
+                  )}
+                  {complaint.distributor_complaint_can_close && (
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      disabled={closeComplaint.isPending}
+                      className="tap-effect h-[44px] flex-1 rounded-full bg-[#FBC02D] text-sm font-semibold text-[#121212] hover:bg-[#FBC02D]/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {complaint.distributor_complaint_close_action_label ?? 'Close Complaint'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </SheetContent>

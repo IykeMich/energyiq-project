@@ -8,15 +8,13 @@
 import type { HttpWarehouseCreateRequestStatus } from './httpWarehouseCreateRequestStatus';
 
 export interface HttpWarehouseCreateRequest {
-  /** @minimum 0 */
-  capacity?: number;
   /** @maxLength 255 */
   location: string;
   manager_id?: string;
+  status: HttpWarehouseCreateRequestStatus;
   /**
      * @minLength 2
      * @maxLength 255
      */
-  name: string;
-  status: HttpWarehouseCreateRequestStatus;
+  warehouse_name: string;
 }
