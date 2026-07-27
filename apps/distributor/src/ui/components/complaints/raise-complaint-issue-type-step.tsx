@@ -1,22 +1,23 @@
 import type { HttpRaiseRequestComplaintCategory } from '@energyiq/api/generated/schemas';
 import { ComplaintSelectCard } from './complaint-select-card';
+import { ComplaintOrderSelect } from './complaint-order-select';
 import { ComplaintTextField } from './complaint-text-field';
-import {
-  ISSUE_TYPE_OPTIONS,
-  RELATED_ORDER_OPTIONS,
-  type RaiseComplaintDraft,
-} from './complaints-mocks';
+import { ISSUE_TYPE_OPTIONS, type ComplaintOption, type RaiseComplaintDraft } from './complaints-mocks';
 
 interface RaiseComplaintIssueTypeStepProps {
   draft: RaiseComplaintDraft;
   onChange: (patch: Partial<RaiseComplaintDraft>) => void;
+  orderOptions: ComplaintOption[];
+  isLoadingOrders?: boolean;
 }
 
 /** Step 1 — pick a complaint type, the related order, and a title. */
-export function RaiseComplaintIssueTypeStep({ draft, onChange }: RaiseComplaintIssueTypeStepProps) {
-  const relatedOrderLabel =
-    RELATED_ORDER_OPTIONS.find((option) => option.value === draft.relatedOrder)?.label ?? '';
-
+export function RaiseComplaintIssueTypeStep({
+  draft,
+  onChange,
+  orderOptions,
+  isLoadingOrders,
+}: RaiseComplaintIssueTypeStepProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4">
@@ -33,8 +34,15 @@ export function RaiseComplaintIssueTypeStep({ draft, onChange }: RaiseComplaintI
         </div>
       </div>
 
-      {/* TODO(orval): replace with a Select bound to the distributor's orders query. */}
-      <ComplaintTextField label="Related Order:" value={relatedOrderLabel} readOnly />
+      <label className="flex flex-col gap-2">
+        <span className="text-sm text-[#FFFFFFCC]">Related Order:</span>
+        <ComplaintOrderSelect
+          options={orderOptions}
+          value={draft.relatedOrder}
+          onChange={(value) => onChange({ relatedOrder: value })}
+          isLoading={isLoadingOrders}
+        />
+      </label>
       <ComplaintTextField
         label="Complaint Title:"
         value={draft.complaintTitle}

@@ -1,20 +1,17 @@
 import { ComplaintSummaryItem } from './complaint-summary-item';
-import {
-  ISSUE_TYPE_OPTIONS,
-  RELATED_ORDER_OPTIONS,
-  type RaiseComplaintDraft,
-} from './complaints-mocks';
+import { ISSUE_TYPE_OPTIONS, type ComplaintOption, type RaiseComplaintDraft } from './complaints-mocks';
 
 interface RaiseComplaintReviewStepProps {
   draft: RaiseComplaintDraft;
+  orderOptions: ComplaintOption[];
 }
 
 /** Step 4 — read-only summary of the draft plus the submission notice. */
-export function RaiseComplaintReviewStep({ draft }: RaiseComplaintReviewStepProps) {
+export function RaiseComplaintReviewStep({ draft, orderOptions }: RaiseComplaintReviewStepProps) {
   const issueTypeLabel =
     ISSUE_TYPE_OPTIONS.find((option) => option.value === draft.issueType)?.label ?? '';
   const relatedOrderLabel =
-    RELATED_ORDER_OPTIONS.find((option) => option.value === draft.relatedOrder)?.label ?? '';
+    orderOptions.find((option) => option.value === draft.relatedOrder)?.label ?? '';
   const fileNames = draft.files.map((file) => file.name).join(', ');
 
   return (

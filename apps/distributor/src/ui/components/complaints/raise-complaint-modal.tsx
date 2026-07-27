@@ -5,12 +5,16 @@ import {
   usePostV1DistributorComplaintCreate,
   getGetV1DistributorComplaintOverviewQueryKey,
 } from '@energyiq/api/generated/distributor-complaints/distributor-complaints';
+import {
+  useGetV1DistributorOrderList,
+  getGetV1DistributorOrderListQueryKey,
+} from '@energyiq/api/generated/distributor-orders/distributor-orders';
 import { RaiseComplaintHeader } from './raise-complaint-header';
 import { RaiseComplaintIssueTypeStep } from './raise-complaint-issue-type-step';
 import { RaiseComplaintDetailsStep } from './raise-complaint-details-step';
 import { RaiseComplaintEvidenceStep } from './raise-complaint-evidence-step';
 import { RaiseComplaintReviewStep } from './raise-complaint-review-step';
-import { EMPTY_RAISE_COMPLAINT_DRAFT, type RaiseComplaintDraft } from './complaints-mocks';
+import { EMPTY_RAISE_COMPLAINT_DRAFT, type ComplaintOption, type RaiseComplaintDraft } from './complaints-mocks';
 
 interface RaiseComplaintModalProps {
   open: boolean;
@@ -30,6 +34,15 @@ function parseEstimatedAmount(value: string): number {
 export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalProps) {
   const queryClient = useQueryClient();
   const createComplaint = usePostV1DistributorComplaintCreate();
+  const { data: ordersData, isLoading: isLoadingOrders } = useGetV1DistributorOrderList(
+    { limit: 100 },
+    { query: { enabled: open, queryKey: getGetV1DistributorOrderListQueryKey({ limit: 100 }) } },
+  );
+  const orderOptions: ComplaintOption[] = (ordersData?.data.data?.items ?? []).map((order) => ({
+    value: order.distributor_order_id ?? '',
+    label: order.distributor_order_number ?? order.distributor_order_id ?? '',
+    description: order.distributor_order_supplier_name,
+  }));
 
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<RaiseComplaintDraft>(EMPTY_RAISE_COMPLAINT_DRAFT);
@@ -96,10 +109,17 @@ export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalP
 
         <div className="relative mt-6 flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto py-5 pr-1">
-            {step === 1 && <RaiseComplaintIssueTypeStep draft={draft} onChange={updateDraft} />}
+            {step === 1 && (
+              <RaiseComplaintIssueTypeStep
+                draft={draft}
+                onChange={updateDraft}
+                orderOptions={orderOptions}
+                isLoadingOrders={isLoadingOrders}
+              />
+            )}
             {step === 2 && <RaiseComplaintDetailsStep draft={draft} onChange={updateDraft} />}
             {step === 3 && <RaiseComplaintEvidenceStep draft={draft} onChange={updateDraft} />}
-            {step === 4 && <RaiseComplaintReviewStep draft={draft} />}
+            {step === 4 && <RaiseComplaintReviewStep draft={draft} orderOptions={orderOptions} />}
           </div>
           <div
             aria-hidden="true"
@@ -122,7 +142,7 @@ export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalP
           <button
             type="button"
             onClick={handleContinue}
-            disabled={createComplaint.isPending}
+            disabled={createComplaint.isPending || (step === LAST_STEP && !draft.relatedOrder)}
             className="tap-effect flex-1 rounded-full bg-[#FBC02D] px-6 py-3.5 text-sm font-semibold text-[#121212] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {step === LAST_STEP ? (createComplaint.isPending ? 'Submitting…' : 'Submit Complaint') : 'Continue'}

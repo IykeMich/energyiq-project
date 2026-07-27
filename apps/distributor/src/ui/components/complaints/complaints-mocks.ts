@@ -40,15 +40,6 @@ export const ISSUE_TYPE_OPTIONS: ComplaintOption[] = [
   { value: HttpRaiseRequestComplaintCategory.documentation, label: 'Documentation Issue' },
 ];
 
-// TODO(orval): replace with a Select bound to the distributor's orders query
-// once Orders is wired (see docs/api-integration-status.md — Orders has generated
-// hooks but no UI consumer yet).
-export const RELATED_ORDER_OPTIONS: ComplaintOption[] = [
-  { value: 'ORD-003', label: 'ORD-003-AGO Diesel' },
-  { value: 'ORD-004', label: 'ORD-004-AGO Diesel' },
-  { value: 'ORD-005', label: 'ORD-005-PMS Premium' },
-];
-
 /**
  * Step 2 — "Preferred Resolution" selectable cards. `HttpRaiseRequest` has no
  * matching field, so this stays local-only and is not sent by the create mutation.
@@ -87,9 +78,9 @@ export interface RaiseComplaintDraft {
 /** A fresh, empty draft. */
 export const EMPTY_RAISE_COMPLAINT_DRAFT: RaiseComplaintDraft = {
   issueType: HttpRaiseRequestComplaintCategory.quantity,
-  // TODO(orval): defaults to the first mock order until the related-order
-  // picker above is wired to a real orders query.
-  relatedOrder: RELATED_ORDER_OPTIONS[0].value,
+  // No default — populated once the distributor picks a real order from
+  // ComplaintOrderSelect (see raise-complaint-modal.tsx).
+  relatedOrder: '',
   complaintTitle: '',
   description: '',
   quantityAffected: '',
