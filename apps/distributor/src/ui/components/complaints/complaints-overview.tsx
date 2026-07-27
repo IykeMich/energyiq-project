@@ -47,7 +47,7 @@ export function ComplaintsOverview() {
         )}
         <OrdersActionButton
           label={dashboard?.distributor_complaint_primary_action_label ?? 'Add Complaint'}
-          icon={Plus}
+          // icon={Plus}
           onClick={handleAddComplaint}
         />
       </div>
