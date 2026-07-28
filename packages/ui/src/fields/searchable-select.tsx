@@ -192,7 +192,9 @@ export function SearchableSelect<T extends FieldValues>({
                     onValueChange={handleSearch}
                   />
                   <CommandList>
-                    <CommandEmpty>{isLoading ? 'Loading...' : emptyMessage}</CommandEmpty>
+                    <CommandEmpty>
+                      {isLoading ? 'Loading...' : options.length === 0 ? 'No Data Available' : emptyMessage}
+                    </CommandEmpty>
                     <CommandGroup>
                       <div ref={scrollRef} className="max-h-60 overflow-y-auto">
                         {options.map((option) => (

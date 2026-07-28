@@ -1,5 +1,5 @@
 import type { product } from '@energyiq/domain';
-import { apiGet, apiPost, apiPut, apiDelete } from './client';
+import { apiGet, apiPost, apiPut, apiDelete, toSearchParams } from './client';
 
 // ════════════════════════════════════════════════════════════════
 // Product API adapter — implements ProductApi port via HTTP.
@@ -104,13 +104,4 @@ export class ProductApiAdapter implements product.ProductApi {
   async listUnits(params?: product.ProductUnitListParams): Promise<product.ProductUnit[]> {
     return apiGet<product.ProductUnit[]>('v1/product/units', { searchParams: toSearchParams(params) });
   }
-}
-
-function toSearchParams(params?: object): Record<string, string | number | boolean> | undefined {
-  if (!params) return undefined;
-  const entries: [string, string | number | boolean][] = [];
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined) entries.push([key, value as string | number | boolean]);
-  }
-  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }

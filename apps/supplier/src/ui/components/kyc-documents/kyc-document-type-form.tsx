@@ -1,9 +1,20 @@
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, XCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from '@energyiq/ui';
+import { useQueryClient } from '@tanstack/react-query';
+import { shared } from '@energyiq/domain';
+import { SuccessModal } from '@energyiq/ui';
 import { cn } from '@energyiq/shared';
+import {
+  useGetV1DocumentTypeReadId,
+  usePostV1DocumentTypeCreate,
+  usePutV1DocumentTypeUpdateId,
+  getGetV1DocumentTypeListQueryKey,
+  getGetV1DocumentTypeReadIdQueryKey,
+} from '@energyiq/api/generated/document-types/document-types';
+import { useGetV1DocumentCategoryList } from '@energyiq/api/generated/document-categories/document-categories';
 import {
   KycTextField,
   KycSelectField,
@@ -15,28 +26,49 @@ import {
   type KycDocumentTypeFormData,
 } from './kyc-document-type-schema';
 import {
-  DOCUMENT_CATEGORY_OPTIONS,
+  mapDocumentTypeToFormDefaults,
+  mapFormToDocumentTypeRequest,
+} from './kyc-document-type-mappers';
+import {
   REQUIRED_OPTIONS,
   EXPIRY_REQUIRED_OPTIONS,
   VALIDITY_PERIOD_OPTIONS,
   ALLOWED_FILE_TYPE_OPTIONS,
   MAX_FILE_SIZE_OPTIONS,
-  mockCreateDocumentType,
 } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
+const { DomainError, ResponseCodes } = shared;
+
+interface KycDocumentTypeFormProps {
+  /** When set, the form edits this existing document type instead of creating a new one. */
+  documentTypeId?: string;
+}
+
 /**
- * "Add new document type" form. Uses react-hook-form + zod with `mode: 'onTouched'`
+ * "Add / Edit document type" form. Uses react-hook-form + zod with `mode: 'onTouched'`
  * so per-field errors surface once a field is touched/dirtied, and the Save button
- * stays disabled until the whole form is valid. A successful submit fires a smooth
- * sonner toast and returns to the Document Types list.
+ * stays disabled until the whole form is valid. Submit result (success or failure,
+ * e.g. a 401/403 from the API) surfaces via a `SuccessModal` rather than being silent.
  */
-export function KycDocumentTypeForm() {
+export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { slug = 'demo' } = useParams<{ slug: string }>();
+  const isEditing = Boolean(documentTypeId);
+
+  const { data: existingDocumentType } = useGetV1DocumentTypeReadId(documentTypeId ?? '', {
+    query: { enabled: isEditing, queryKey: getGetV1DocumentTypeReadIdQueryKey(documentTypeId ?? '') },
+  });
+  const { data: categoryList } = useGetV1DocumentCategoryList();
+  const categoryOptions = (categoryList?.data.data ?? []).map((category) => ({
+    value: category.id ?? '',
+    label: category.document_category ?? '',
+  }));
 
   const {
     control,
     handleSubmit,
+    reset,
     formState: { isValid, isSubmitting },
   } = useForm<KycDocumentTypeFormData>({
     resolver: zodResolver(kycDocumentTypeSchema),
@@ -44,18 +76,50 @@ export function KycDocumentTypeForm() {
     defaultValues: KYC_DOCUMENT_TYPE_DEFAULTS,
   });
 
+  useEffect(() => {
+    if (existingDocumentType?.data) {
+      reset(mapDocumentTypeToFormDefaults(existingDocumentType.data.data ?? {}));
+    }
+  }, [existingDocumentType, reset]);
+
+  const createDocumentType = usePostV1DocumentTypeCreate();
+  const updateDocumentType = usePutV1DocumentTypeUpdateId();
+
+  const [successState, setSuccessState] = useState<{ documentName: string } | null>(null);
+  const [failureMessage, setFailureMessage] = useState<string | null>(null);
+
   const typesListPath = `/${slug}/kyc-documents/types`;
 
+  const describeSubmitError = (error: unknown): string => {
+    if (error instanceof DomainError) {
+      if (error.code === ResponseCodes.UNAUTHORIZED) {
+        return 'Your session has expired. Please sign in again and retry.';
+      }
+      if (error.code === ResponseCodes.FORBIDDEN) {
+        return 'You do not have permission to perform this action.';
+      }
+      return error.message;
+    }
+    return 'Something went wrong while saving. Please try again.';
+  };
+
   const onSubmit = async (data: KycDocumentTypeFormData) => {
-    // TODO(orval): replace with the generated create-document-type mutation.
-    await mockCreateDocumentType();
-    toast.success('Document type created', {
-      description: `'${data.documentName}' has been added to the required documents.`,
-    });
-    navigate(typesListPath);
+    try {
+      const payload = mapFormToDocumentTypeRequest(data);
+      if (isEditing && documentTypeId) {
+        await updateDocumentType.mutateAsync({ id: documentTypeId, data: payload });
+      } else {
+        await createDocumentType.mutateAsync({ data: payload });
+      }
+      await queryClient.invalidateQueries({ queryKey: getGetV1DocumentTypeListQueryKey() });
+      setSuccessState({ documentName: data.documentName });
+    } catch (error) {
+      setFailureMessage(describeSubmitError(error));
+    }
   };
 
   return (
+    <>
     <section className="flex flex-col gap-6">
       <header className="flex items-center gap-3.5">
         <button
@@ -66,7 +130,9 @@ export function KycDocumentTypeForm() {
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         </button>
-        <h1 className="text-2xl font-semibold text-white">Add new document type</h1>
+        <h1 className="text-2xl font-semibold text-white">
+          {isEditing ? 'Edit document type' : 'Add new document type'}
+        </h1>
       </header>
 
       <form
@@ -86,10 +152,10 @@ export function KycDocumentTypeForm() {
           />
           <KycSelectField
             control={control}
-            name="documentCategory"
+            name="documentCategoryId"
             label="Document Category:"
             placeholder="Select category"
-            options={DOCUMENT_CATEGORY_OPTIONS}
+            options={categoryOptions}
             required
           />
           <KycSelectField
@@ -163,5 +229,30 @@ export function KycDocumentTypeForm() {
         </div>
       </form>
     </section>
+
+    <SuccessModal
+      open={successState !== null}
+      onOpenChange={(open) => !open && setSuccessState(null)}
+      title={isEditing ? 'Document Type Updated' : 'Document Type Created'}
+      subtitle={
+        isEditing
+          ? `'${successState?.documentName}' has been updated.`
+          : `'${successState?.documentName}' has been added to the required documents.`
+      }
+      primaryAction={{ label: 'Done', onClick: () => navigate(typesListPath) }}
+      buttonLayout="stack"
+    />
+
+    <SuccessModal
+      open={failureMessage !== null}
+      onOpenChange={(open) => !open && setFailureMessage(null)}
+      title={isEditing ? 'Could Not Update Document Type' : 'Could Not Create Document Type'}
+      subtitle={failureMessage}
+      tone="danger"
+      icon={XCircle}
+      primaryAction={{ label: 'Try Again', onClick: () => setFailureMessage(null) }}
+      buttonLayout="stack"
+    />
+    </>
   );
 }

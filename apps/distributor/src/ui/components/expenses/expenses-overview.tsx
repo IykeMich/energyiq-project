@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { PageHeaderContent } from '@/ui/layouts/page-header';
 import { ExpensesSearchBar } from './expenses-search-bar';
@@ -10,6 +10,13 @@ import {
   Zap,
   Receipt,
 } from 'lucide-react';
+
+interface ExpenseEntry {
+  title: string;
+  sub: string;
+  amount: string;
+  date: string;
+}
 
 export function ExpensesOverview() {
 
@@ -61,7 +68,7 @@ export function ExpensesOverview() {
   const [searchQuery, setSearchQuery] = useState('');
   const [logExpenseOpen, setLogExpenseOpen] = useState(false);
 
-  const recentEntries = [
+  const recentEntries: ExpenseEntry[] = [
     {
       title: 'Staff salaries',
       sub: 'Staff costs · Recurring monthly',
@@ -111,6 +118,17 @@ export function ExpensesOverview() {
       date: 'May 1',
     },
   ];
+
+  const filteredEntries = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return recentEntries.filter(
+      (entry) =>
+        query === '' ||
+        entry.title.toLowerCase().includes(query) ||
+        entry.sub.toLowerCase().includes(query),
+    );
+  }, [searchQuery]);
 
   return (
     <>
@@ -204,7 +222,7 @@ export function ExpensesOverview() {
             </div>
 
            <div className="flex-1 overflow-y-auto">
-  {recentEntries.map((item, index) => (
+  {filteredEntries.map((item, index) => (
     <div
       key={index}
       className="flex items-center justify-between border-b border-[#1D1D1D] px-4 py-3 transition hover:bg-[#141414]"

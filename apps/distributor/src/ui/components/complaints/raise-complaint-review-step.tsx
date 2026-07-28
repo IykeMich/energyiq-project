@@ -1,18 +1,9 @@
 import { ComplaintSummaryItem } from './complaint-summary-item';
-import {
-  ISSUE_TYPE_OPTIONS,
-  PREFERRED_RESOLUTION_OPTIONS,
-  type RaiseComplaintDraft,
-} from './complaints-mocks';
-
-interface OrderOption {
-  value: string;
-  label: string;
-}
+import { ISSUE_TYPE_OPTIONS, type ComplaintOption, type RaiseComplaintDraft } from './complaints-mocks';
 
 interface RaiseComplaintReviewStepProps {
   draft: RaiseComplaintDraft;
-  orderOptions: OrderOption[];
+  orderOptions: ComplaintOption[];
 }
 
 /** Step 4 — read-only summary of the draft plus the submission notice. */
@@ -20,12 +11,7 @@ export function RaiseComplaintReviewStep({ draft, orderOptions }: RaiseComplaint
   const issueTypeLabel =
     ISSUE_TYPE_OPTIONS.find((option) => option.value === draft.issueType)?.label ?? '';
   const relatedOrderLabel =
-    orderOptions.find((option) => option.value === draft.relatedOrder)?.label ??
-    draft.relatedOrder ??
-    '—';
-  const preferredResolutionLabel =
-    PREFERRED_RESOLUTION_OPTIONS.find((option) => option.value === draft.preferredResolution)
-      ?.label ?? draft.preferredResolution;
+    orderOptions.find((option) => option.value === draft.relatedOrder)?.label ?? '';
   const fileNames = draft.files.map((file) => file.name).join(', ');
 
   return (
@@ -35,12 +21,9 @@ export function RaiseComplaintReviewStep({ draft, orderOptions }: RaiseComplaint
         <div className="grid grid-cols-2 gap-x-6 gap-y-5">
           <ComplaintSummaryItem label="Type:" value={issueTypeLabel} />
           <ComplaintSummaryItem label="Order:" value={relatedOrderLabel} />
-          <ComplaintSummaryItem label="Title:" value={draft.complaintTitle} />
           <ComplaintSummaryItem label="Quantity affected:" value={draft.quantityAffected} />
           <ComplaintSummaryItem label="Estimate impact:" value={draft.estimate} />
-          <ComplaintSummaryItem label="Expected Resolution:" value={draft.expectedResolution} />
-          <ComplaintSummaryItem label="Claim Amount:" value={draft.claimAmount} />
-          <ComplaintSummaryItem label="Preferred Resolution:" value={preferredResolutionLabel} />
+          <ComplaintSummaryItem label="Title:" value={draft.complaintTitle} />
           <div className="col-span-2">
             <ComplaintSummaryItem
               label="Evidence:"

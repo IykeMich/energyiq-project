@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useGetV1DocumentOverview } from '@energyiq/api/generated/documents/documents';
+import type { GetV1DocumentOverviewStatus } from '@energyiq/api/generated/schemas';
 import { KycDocumentsKpiStrip } from './kyc-documents-kpi-strip';
 import { KycDocumentsTypesPanel } from './kyc-documents-types-panel';
 import { KycDocumentsPendingReviewList } from './kyc-documents-pending-review-list';
@@ -7,10 +9,14 @@ import { KycDocumentsExpiringSoonList } from './kyc-documents-expiring-soon-list
 import { KycDocumentsFilterBar } from './kyc-documents-filter-bar';
 import { KycDocumentsListTable } from './kyc-documents-list-table';
 import {
-  DOCUMENT_LIST_ROWS,
-  type DocumentListRow,
-  type KycDocumentFilterSelection,
-} from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+  mapDashboardSummaryToKpis,
+  mapDocumentTypePreviewToSummary,
+  mapReviewQueueItemToPendingReview,
+  mapExpiringSoonItemToUi,
+  mapDashboardRowToDocumentListRow,
+  mapDashboardFilterOptions,
+} from './kyc-documents-mappers';
+import type { DocumentListRow, KycDocumentFilterSelection } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
 /** Drives every section's state in one place (loaded vs. loading vs. empty). */
 export type KycDocumentsStatus = 'ready' | 'loading' | 'empty';
@@ -21,9 +27,11 @@ interface KycDocumentsOverviewProps {
 }
 
 /**
- * Supplier KYC "Document Management" dashboard. Sections read from the KYC mocks
- * for now; swap each block for its generated query once the compliance endpoints
- * land. A single `status` prop threads the loaded / loading / empty states down.
+ * Supplier KYC "Document Management" dashboard. Every section — KPIs, Document Types
+ * panel, Pending Review, Expiring Soon, the Document Lists table, and its filters —
+ * reads from the single `GET /v1/document/overview` "dashboard" endpoint, which
+ * returns display strings already formatted to match the Figma design. A single
+ * `status` prop threads the loaded / loading / empty states down for previewing.
  */
 export function KycDocumentsOverview({ status = 'ready' }: KycDocumentsOverviewProps) {
   const navigate = useNavigate();
@@ -38,50 +46,89 @@ export function KycDocumentsOverview({ status = 'ready' }: KycDocumentsOverviewP
     setFilters((previous) => ({ ...previous, [filterId]: option }));
   };
 
-  const hasActiveFilter = Object.values(filters).some(Boolean);
+  const { data: overviewResponse, isLoading: isFetching } = useGetV1DocumentOverview({
+    status: (filters.status as GetV1DocumentOverviewStatus | undefined) ?? undefined,
+    distributor_id: filters.distributor ?? undefined,
+    document_type: filters.document_type ?? undefined,
+  });
+  const dashboard = overviewResponse?.data.data;
 
-  // TODO(orval): replace this client-side filtering with the documents list query's params.
-  const filteredRows = useMemo(() => {
+  const kpis = useMemo(() => mapDashboardSummaryToKpis(dashboard?.summary), [dashboard]);
+  const typeSummaries = useMemo(
+    () => (dashboard?.document_types ?? []).slice(0, 3).map(mapDocumentTypePreviewToSummary),
+    [dashboard],
+  );
+  const pendingReviewItems = useMemo(
+    () => (dashboard?.review_queue?.items ?? []).map(mapReviewQueueItemToPendingReview),
+    [dashboard],
+  );
+  const expiringSoonItems = useMemo(
+    () => (dashboard?.expiring_soon?.items ?? []).map(mapExpiringSoonItemToUi),
+    [dashboard],
+  );
+  const filterDefs = useMemo(
+    () => [
+      mapDashboardFilterOptions('distributor', 'All Distributors', dashboard?.filters?.distributors),
+      mapDashboardFilterOptions('document_type', 'All Document Types', dashboard?.filters?.document_types),
+      mapDashboardFilterOptions('status', 'All Status', dashboard?.filters?.statuses),
+    ],
+    [dashboard],
+  );
+
+  const tableRows = useMemo(() => {
     if (isEmpty) return [];
-    return DOCUMENT_LIST_ROWS.filter((row) =>
-      Object.entries(filters).every(
-        ([filterId, option]) => !option || String(row[filterId as keyof DocumentListRow]) === option,
-      ),
-    );
-  }, [isEmpty, filters]);
+    return (dashboard?.table?.items ?? []).map(mapDashboardRowToDocumentListRow);
+  }, [isEmpty, dashboard]);
+
+  const hasActiveFilter = Object.values(filters).some(Boolean);
 
   const goToTypes = () => navigate(`/${slug}/kyc-documents/types`);
   const goToReview = () => navigate(`/${slug}/kyc-documents/review`);
+  const goToEditType = (typeId: string) => navigate(`/${slug}/kyc-documents/types/${typeId}/edit`);
 
   const handleRowAction = (_row: DocumentListRow) => {
-    // TODO(orval): open the distributor's document detail/review view.
+    goToReview();
   };
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-white">Document Management</h1>
+      <h1 className="text-2xl font-semibold text-white">
+        {dashboard?.page_title ?? 'Document Management'}
+      </h1>
 
-      <KycDocumentsKpiStrip placeholder={!isReady} />
+      <KycDocumentsKpiStrip kpis={kpis} placeholder={!isReady || isFetching} />
 
       {isReady && (
         <>
           <KycDocumentsTypesPanel
+            title={dashboard?.document_types_title ?? 'Document Types'}
+            actionLabel={dashboard?.document_types_action_label ?? 'See all'}
+            summaries={typeSummaries}
             onSeeAll={goToTypes}
-            onEditType={() => goToTypes()}
+            onEditType={goToEditType}
           />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <KycDocumentsPendingReviewList onViewAll={goToReview} onReview={() => goToReview()} />
-            <KycDocumentsExpiringSoonList />
+            <KycDocumentsPendingReviewList
+              title={dashboard?.review_queue?.title ?? 'Pending review'}
+              actionLabel={dashboard?.review_queue?.action_label ?? 'View all'}
+              items={pendingReviewItems}
+              onViewAll={goToReview}
+              onReview={() => goToReview()}
+            />
+            <KycDocumentsExpiringSoonList
+              title={dashboard?.expiring_soon?.title ?? 'Expiring Soon'}
+              items={expiringSoonItems}
+            />
           </div>
 
-          <KycDocumentsFilterBar selection={filters} onChange={setFilter} />
+          <KycDocumentsFilterBar filters={filterDefs} selection={filters} onChange={setFilter} />
         </>
       )}
 
       <KycDocumentsListTable
-        rows={filteredRows}
-        isLoading={isLoading}
+        rows={tableRows}
+        isLoading={isLoading || isFetching}
         noDataMessage={
           hasActiveFilter ? 'No documents match your filters' : 'No distributor documents yet'
         }

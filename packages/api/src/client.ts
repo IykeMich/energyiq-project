@@ -112,3 +112,13 @@ async function extractErrorBody(error: { response: Response }): Promise<shared.D
     return null;
   }
 }
+
+/** Strips undefined values from a params object so ky doesn't serialize them as "undefined". */
+export function toSearchParams(params?: object): Record<string, string | number | boolean> | undefined {
+  if (!params) return undefined;
+  const entries: [string, string | number | boolean][] = [];
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) entries.push([key, value as string | number | boolean]);
+  }
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}

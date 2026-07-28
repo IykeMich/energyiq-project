@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, CreditCard, SlidersHorizontal, Users } from 'lucide-react';
+import { Calendar, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu,
@@ -15,8 +15,6 @@ export type OrderFilterSelection = Record<string, string | null>;
 /** Leading icon shown inside each filter chip, keyed by the filter id. */
 const FILTER_ICON: Record<string, LucideIcon> = {
   date: Calendar,
-  distributor: Users,
-  'payment-status': CreditCard,
 };
 
 interface OrdersFilterChipProps extends OrderFilter {

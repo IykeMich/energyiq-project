@@ -1,18 +1,31 @@
-import { X } from 'lucide-react';
-import { SheetTitle } from '@energyiq/ui';
+import { ChevronDown, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  SheetTitle,
+} from '@energyiq/ui';
 import type { product as productDomain } from '@energyiq/domain';
 import { ProductStatusBadge } from './product-status-badge';
+
+const STATUS_OPTIONS: { value: productDomain.ProductStatusUpdateValue; label: string }[] = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'scheduled', label: 'Scheduled' },
+];
 
 interface ProductDetailsHeaderProps {
   product: productDomain.Product;
   onClose: () => void;
   onEdit: () => void;
-  onPause: () => void;
-  pausing?: boolean;
+  onStatusChange: (status: productDomain.ProductStatusUpdateValue) => void;
+  statusChanging?: boolean;
 }
 
-/** Fixed sheet header: title bar with close, then product identity and Edit / Pause actions. */
-export function ProductDetailsHeader({ product, onClose, onEdit, onPause, pausing }: ProductDetailsHeaderProps) {
+/** Fixed sheet header: title bar with close, then product identity and Edit / Change Status actions. */
+export function ProductDetailsHeader({ product, onClose, onEdit, onStatusChange, statusChanging }: ProductDetailsHeaderProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
@@ -49,14 +62,29 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onPause, pausin
           >
             Edit
           </button>
-          <button
-            type="button"
-            onClick={onPause}
-            disabled={pausing}
-            className="tap-effect h-8 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D] transition-colors hover:bg-[#FBC02D]/10 disabled:opacity-50"
-          >
-            {pausing ? 'Pausing...' : 'Pause Product'}
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                disabled={statusChanging}
+                className="tap-effect inline-flex h-8 items-center gap-1 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D] transition-colors hover:bg-[#FBC02D]/10 disabled:opacity-50"
+              >
+                {statusChanging ? 'Updating...' : 'Change Status'}
+                <ChevronDown className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {STATUS_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  disabled={product.status === option.value}
+                  onSelect={() => onStatusChange(option.value)}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

@@ -122,7 +122,7 @@ export const usePostV1OrderApproveId = <TError = unknown,
       return useMutation(getPostV1OrderApproveIdMutationOptions(options));
     }
     /**
- * Cancels draft/submitted/approved orders when the state machine allows it. Use before dispatch; dispatched orders must use dispute/return flows.
+ * Cancels draft, submitted, or approved orders when the state machine allows it. Distributor callers can cancel only their own orders. Use before dispatch; dispatched orders must use dispute or return flows.
  * @summary Cancel order
  */
 export type postV1OrderCancelIdResponse200 = {
@@ -204,7 +204,7 @@ export const usePostV1OrderCancelId = <TError = unknown,
       return useMutation(getPostV1OrderCancelIdMutationOptions(options));
     }
     /**
- * Creates a submitted distributor order after validating active products and available supplier stock. Prerequisites: caller must be a distributor or supply distributor_id; every item contains only product_id and quantity. Pricing is always loaded from the supplier product catalog and distributor tier, then snapshotted with unit_price and line_total in the saved order. Outcomes: 201 with server-computed totals, 400 for malformed/inactive products, 409 for insufficient stock, 401/403 for auth or tenant failure.
+ * Creates a submitted distributor order after validating the distributor, active products, and available supplier stock. Supplier staff must provide distributor_id and can obtain it from GET /v1/distributor/list. Distributor-authenticated users should omit distributor_id because the API securely derives it from their JWT; if they provide a different distributor's ID, the request is rejected. The distributor must belong to the authenticated supplier and have active status, so pending, suspended, terminated, and cross-supplier distributors cannot be used. Every item contains only product_id and quantity. Pricing is always loaded from the supplier product catalog and distributor tier, then snapshotted with unit_price and line_total in the saved order. Outcomes: 201 with server-computed totals, 400 for malformed/inactive data, 404 for an ineligible distributor, 409 for insufficient stock, and 401/403 for authentication or authorization failures.
  * @summary Create an order
  */
 export type postV1OrderCreateResponse201 = {
@@ -383,7 +383,7 @@ export const usePostV1OrderDispatchId = <TError = unknown,
       return useMutation(getPostV1OrderDispatchIdMutationOptions(options));
     }
     /**
- * Lists orders for the current supplier with optional status, distributor, and purchase-date filters. Supports pagination for the orders table screen and returns total, limit and offset for UI pagination. Date filters use YYYY-MM-DD; date_to is inclusive from the user's perspective and internally converted to an exclusive upper bound.
+ * Lists orders with optional status, distributor, and purchase-date filters. Supplier callers can list orders across their supplier tenant and optionally filter by distributor_id. Distributor callers are always restricted to their JWT distributor identity; distributor_id may be omitted or must match that identity. Supports pagination and returns total, limit and offset. Date filters use YYYY-MM-DD; date_to is inclusive from the user's perspective and internally converted to an exclusive upper bound.
  * @summary List orders
  */
 export type getV1OrderListResponse200 = {
@@ -479,7 +479,7 @@ export function useGetV1OrderList<TData = Awaited<ReturnType<typeof getV1OrderLi
 
 
 /**
- * Returns status counts for the orders screen tabs, such as submitted, approved, dispatched, cancelled, and total. Accepts the same distributor and date filters as list, but ignores status so each tab can render its own count. Prerequisite: caller must have order:list permission. Edge cases: malformed UUID/date filters return 400.
+ * Returns status counts for the orders screen tabs, such as submitted, approved, dispatched, cancelled, and total. Supplier callers see their supplier tenant; distributor callers are always restricted to their JWT distributor identity. Accepts the same distributor and date filters as list, but ignores status so each tab can render its own count. Caller must have order:list permission.
  * @summary Get order status stats
  */
 export type getV1OrderListStatsResponse200 = {
@@ -575,7 +575,7 @@ export function useGetV1OrderListStats<TData = Awaited<ReturnType<typeof getV1Or
 
 
 /**
- * Returns a single order with pricing, item JSON, delivery timestamps and current workflow status. Edge cases: unknown IDs return 404; caller must hold order:read permission and tenant access.
+ * Returns a single order with pricing, item JSON, delivery timestamps and current workflow status. Supplier callers can read orders in their supplier tenant; distributor callers can read only orders owned by their authenticated distributor identity. Unknown, cross-tenant, and cross-distributor IDs return 404. Caller must hold order:read permission.
  * @summary Get order details
  */
 export type getV1OrderReadIdResponse200 = {
@@ -664,7 +664,7 @@ export function useGetV1OrderReadId<TData = Awaited<ReturnType<typeof getV1Order
 
 
 /**
- * Confirms distributor receipt for a dispatched order. Outcome: received_at and timeline are recorded; invalid states return 409.
+ * Confirms receipt for a dispatched order. Distributor callers can receive only their own orders; supplier callers remain tenant-scoped. Outcome: received_at and timeline are recorded; invalid states return 409.
  * @summary Mark order received
  */
 export type postV1OrderReceiveIdResponse200 = {
@@ -830,7 +830,7 @@ export const usePostV1OrderRejectId = <TError = unknown,
       return useMutation(getPostV1OrderRejectIdMutationOptions(options));
     }
     /**
- * Replaces order items and recalculates totals while the order is still submitted or approved. Prerequisite: caller must explain the modification reason so the distributor can be notified.
+ * Replaces order items and recalculates totals. Distributor callers may update only their own submitted orders; they cannot modify another distributor's order or change an order after approval. Authorized supplier callers may update submitted or approved orders. Caller must hold order:update and provide a modification reason for the audit history.
  * @summary Modify order
  */
 export type putV1OrderUpdateIdResponse200 = {

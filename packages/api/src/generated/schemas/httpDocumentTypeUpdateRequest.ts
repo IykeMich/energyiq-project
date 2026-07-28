@@ -5,34 +5,28 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { HttpDocumentTypeUpdateRequestFileTypesItem } from './httpDocumentTypeUpdateRequestFileTypesItem';
-import type { HttpDocumentTypeUpdateRequestTierRequiredItem } from './httpDocumentTypeUpdateRequestTierRequiredItem';
+import type { HttpDocumentTypeUpdateRequestAllowedFileTypesItem } from './httpDocumentTypeUpdateRequestAllowedFileTypesItem';
 
 export interface HttpDocumentTypeUpdateRequest {
-  /**
-     * @minimum 0
-     * @maximum 365
-     */
-  auto_remind_days?: number;
-  description?: string;
-  /**
-     * @minimum 1
-     * @maximum 120
-     */
-  expiry_months?: number;
   /** @minItems 1 */
-  file_types: HttpDocumentTypeUpdateRequestFileTypesItem[];
-  is_active?: boolean;
+  allowed_file_types: HttpDocumentTypeUpdateRequestAllowedFileTypesItem[];
+  description?: string;
+  document_category_id: string;
   /**
      * @minLength 2
      * @maxLength 255
      */
-  label: string;
+  document_name: string;
+  expiry_required?: boolean;
   /**
      * @minimum 1
      * @maximum 100
      */
-  max_size_mb: number;
+  max_file_size_mb: number;
   required?: boolean;
-  tier_required?: HttpDocumentTypeUpdateRequestTierRequiredItem[];
+  /**
+     * @minimum 1
+     * @maximum 120
+     */
+  validity_period_months?: number;
 }

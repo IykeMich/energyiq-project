@@ -1,10 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { warehouse } from '@energyiq/domain';
-import {
-  WAREHOUSE_LOCATION_OPTIONS,
-  WAREHOUSE_NAME_OPTIONS,
-} from '@/ui/pages/inventory/mocks';
-import { Field, SelectField, TextField, ToggleSwitch } from '@/ui/components/product/wizard-fields';
+import { Field, FormActionButton, SelectField, TextField, ToggleSwitch } from '@/ui/components/product/wizard-fields';
+import { useEmployeesQuery } from '@/hooks/use-employees';
 
 interface CreateWarehouseFormProps {
   onCancel: () => void;
@@ -15,7 +12,18 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [capacity, setCapacity] = useState('');
+  const [managerId, setManagerId] = useState('');
   const [active, setActive] = useState(false);
+
+  const { data: managers } = useEmployeesQuery({ role: 'manager' });
+  const managerOptions = useMemo(
+    () =>
+      (managers?.items ?? []).map((manager) => ({
+        value: manager.id ?? '',
+        label: manager.name ?? manager.email ?? 'Unnamed',
+      })),
+    [managers],
+  );
 
   const canSave = Boolean(name && location && capacity);
 
@@ -24,6 +32,7 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
       name,
       location,
       capacity: Number.parseFloat(capacity) || 0,
+      manager_id: managerId || undefined,
       status: active ? 'active' : 'inactive',
     });
   };
@@ -33,16 +42,24 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
       <h2 className="text-base font-semibold text-foreground">Warehouse Details</h2>
 
       <Field label="Warehouse Name:">
-        <SelectField value={name} onChange={setName} options={WAREHOUSE_NAME_OPTIONS} placeholder="Select warehouse name" />
+        <TextField value={name} onChange={setName} placeholder="Enter warehouse name" />
       </Field>
 
       <Field label="Location:">
-        <SelectField value={location} onChange={setLocation} options={WAREHOUSE_LOCATION_OPTIONS} placeholder="Select location" />
+        <TextField value={location} onChange={setLocation} placeholder="Enter warehouse location" />
       </Field>
 
-      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Field label="Capacity (L):">
           <TextField type="number" value={capacity} onChange={setCapacity} placeholder="e.g. 60000" />
+        </Field>
+        <Field label="Select Manager:">
+          <SelectField
+            value={managerId}
+            onChange={setManagerId}
+            options={managerOptions}
+            placeholder="Select manager"
+          />
         </Field>
         <Field label="Status:">
           <ToggleSwitch checked={active} onChange={setActive} />
@@ -50,21 +67,12 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-[53px] rounded-[28px] bg-foreground/10 text-foreground font-semibold px-8"
-        >
+        <FormActionButton variant="cancel" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="button"
-          disabled={!canSave}
-          onClick={handleSave}
-          className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        </FormActionButton>
+        <FormActionButton variant="forward" disabled={!canSave} onClick={handleSave}>
           Save
-        </button>
+        </FormActionButton>
       </div>
     </div>
   );

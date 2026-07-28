@@ -54,7 +54,7 @@ export function useDeleteProductMutation() {
 export function useUpdateProductStatusMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: product.ProductStatus }) =>
+    mutationFn: ({ id, status }: { id: string; status: product.ProductStatusUpdateValue }) =>
       productUseCases.updateProductStatus(id, { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY }),
   });

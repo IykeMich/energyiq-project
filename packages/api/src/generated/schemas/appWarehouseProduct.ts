@@ -7,14 +7,10 @@
  */
 
 export interface AppWarehouseProduct {
-  inventory_last_updated_at?: string;
-  max_stock?: number;
-  name?: string;
+  last_updated_at?: string;
+  price_per_unit?: number;
   product_id?: string;
-  quantity?: number;
-  reorder_point?: number;
-  sku?: string;
-  stock_level_percentage?: number;
-  storage_location?: string;
+  product_name?: string;
+  stock_quantity?: number;
   unit?: string;
 }

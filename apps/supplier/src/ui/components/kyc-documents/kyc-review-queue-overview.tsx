@@ -1,33 +1,57 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { shared } from '@energyiq/domain';
 import { ConfirmDialog, LoadingOverlay, toast, notifyNoAccess } from '@energyiq/ui';
+import {
+  useGetV1DocumentList,
+  usePostV1DocumentApproveId,
+  usePostV1DocumentRejectId,
+  getGetV1DocumentListQueryKey,
+  getGetV1DocumentComplianceQueryKey,
+} from '@energyiq/api/generated/documents/documents';
 import { KycReviewQueueCard } from './kyc-review-queue-card';
 import { KycDocumentPreviewModal } from './kyc-document-preview-modal';
 import { KycRejectDocumentModal } from './kyc-reject-document-modal';
-import {
-  REVIEW_QUEUE_ITEMS,
-  mockReviewAction,
-  type ReviewQueueItem,
-} from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import { mapDocumentsToReviewQueueItems } from './kyc-documents-mappers';
+import type { ReviewQueueItem } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+
+const { DomainError, ResponseCodes } = shared;
 
 /**
  * Compliance Centre "Review Queue": distributor documents awaiting review. Each card
  * opens a Preview Document pane and runs through an approve/reject confirmation flow
- * (confirm → "Confirming…" overlay → toast). Approving a restricted item surfaces the
- * "No Access" permission error. Swap REVIEW_QUEUE_ITEMS for the queue query once it lands.
+ * (confirm → "Confirming…" overlay → toast). A 403 from the approve/reject mutation
+ * surfaces the "No Access" permission error instead of the generic toast.
  */
 export function KycReviewQueueOverview() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { slug = 'demo' } = useParams<{ slug: string }>();
-  const [items, setItems] = useState<ReviewQueueItem[]>(REVIEW_QUEUE_ITEMS);
+
+  const { data, isLoading } = useGetV1DocumentList({ status: 'pending' });
+  const items = useMemo(() => mapDocumentsToReviewQueueItems(data?.data?.data ?? []), [data]);
+
   const [previewItem, setPreviewItem] = useState<ReviewQueueItem | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ReviewQueueItem | null>(null);
   const [approveTarget, setApproveTarget] = useState<ReviewQueueItem | null>(null);
   const [processingMessage, setProcessingMessage] = useState<string | null>(null);
 
-  const removeFromQueue = (id: string) => {
-    setItems((previous) => previous.filter((item) => item.id !== id));
+  const approveDocument = usePostV1DocumentApproveId();
+  const rejectDocument = usePostV1DocumentRejectId();
+
+  const refreshQueue = async () => {
+    await queryClient.invalidateQueries({ queryKey: getGetV1DocumentListQueryKey({ status: 'pending' }) });
+    await queryClient.invalidateQueries({ queryKey: getGetV1DocumentComplianceQueryKey() });
+  };
+
+  const notifyIfForbidden = (error: unknown): boolean => {
+    if (error instanceof DomainError && error.code === ResponseCodes.FORBIDDEN) {
+      notifyNoAccess('You do not have the permission to review this document.');
+      return true;
+    }
+    return false;
   };
 
   // Opening a confirm/reject modal closes the preview pane so they never stack.
@@ -41,18 +65,27 @@ export function KycReviewQueueOverview() {
     setApproveTarget(item);
   };
 
-  const handleConfirmReject = async ({ reason }: { reason: string; comments: string }) => {
+  const handleConfirmReject = async ({ reason, comments }: { reason: string; comments: string }) => {
     const item = rejectTarget;
     if (!item) return;
     setRejectTarget(null);
     setProcessingMessage('Confirming rejection...');
-    // TODO(orval): replace with the reject-document mutation (sending reason + comments).
-    await mockReviewAction();
-    setProcessingMessage(null);
-    removeFromQueue(item.id);
-    toast.error('Document rejected', {
-      description: `${item.distributor}'s ${item.fileName} was rejected (${reason}).`,
-    });
+    try {
+      await rejectDocument.mutateAsync({
+        id: item.id,
+        data: { reason: comments ? `${reason}: ${comments}` : reason },
+      });
+      await refreshQueue();
+      toast.error('Document rejected', {
+        description: `${item.distributor}'s ${item.fileName} was rejected (${reason}).`,
+      });
+    } catch (error) {
+      if (!notifyIfForbidden(error)) {
+        toast.error('Could not reject document', { description: 'Please try again.' });
+      }
+    } finally {
+      setProcessingMessage(null);
+    }
   };
 
   const handleConfirmApprove = async () => {
@@ -60,17 +93,19 @@ export function KycReviewQueueOverview() {
     if (!item) return;
     setApproveTarget(null);
     setProcessingMessage('Confirming approval...');
-    // TODO(orval): replace with the approve-document mutation (server enforces permission).
-    await mockReviewAction();
-    setProcessingMessage(null);
-    if (item.restricted) {
-      notifyNoAccess('You do not have the permission to approve this document.');
-      return;
+    try {
+      await approveDocument.mutateAsync({ id: item.id });
+      await refreshQueue();
+      toast.success('Document approved', {
+        description: `${item.distributor}'s ${item.fileName} has been approved.`,
+      });
+    } catch (error) {
+      if (!notifyIfForbidden(error)) {
+        toast.error('Could not approve document', { description: 'Please try again.' });
+      }
+    } finally {
+      setProcessingMessage(null);
     }
-    removeFromQueue(item.id);
-    toast.success('Document approved', {
-      description: `${item.distributor}'s ${item.fileName} has been approved.`,
-    });
   };
 
   return (
@@ -91,7 +126,9 @@ export function KycReviewQueueOverview() {
       </header>
 
       <div className="rounded-[18px] border border-[#27272A] p-4 sm:p-6">
-        {items.length === 0 ? (
+        {isLoading ? (
+          <p className="py-16 text-center text-sm text-gray-400">Loading review queue…</p>
+        ) : items.length === 0 ? (
           <p className="py-16 text-center text-sm text-gray-400">
             The review queue is empty — every document has been reviewed.
           </p>

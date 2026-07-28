@@ -1,33 +1,42 @@
 import { KycDocumentTypeSummaryCard } from './kyc-document-type-summary-card';
-import { DOCUMENT_TYPE_SUMMARIES } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentTypeSummary } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
 
 interface KycDocumentsTypesPanelProps {
+  title: string;
+  actionLabel: string;
+  summaries: DocumentTypeSummary[];
   /** Navigate to the full Document Types configuration page. */
   onSeeAll: () => void;
-  /** Open a document type for editing (stubbed until the endpoint lands). */
-  onEditType: (typeName: string) => void;
+  /** Open a document type for editing. */
+  onEditType: (typeId: string) => void;
 }
 
-/** Gold-bordered "Document Types" panel with a "See all" link and 3 type tiles. */
-export function KycDocumentsTypesPanel({ onSeeAll, onEditType }: KycDocumentsTypesPanelProps) {
+/** Gold-bordered "Document Types" panel with a "See all" link and up to 3 type tiles. */
+export function KycDocumentsTypesPanel({
+  title,
+  actionLabel,
+  summaries,
+  onSeeAll,
+  onEditType,
+}: KycDocumentsTypesPanelProps) {
   return (
     <div className="rounded-[18px] border border-[#FBC02D80] p-6">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-white">Document Types</h2>
+        <h2 className="text-base font-semibold text-white">{title}</h2>
         <button
           type="button"
           onClick={onSeeAll}
           className="tap-effect text-sm font-medium text-[#FBC02D] hover:underline"
         >
-          See all
+          {actionLabel}
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {DOCUMENT_TYPE_SUMMARIES.map((summary) => (
+        {summaries.map((summary) => (
           <KycDocumentTypeSummaryCard
-            key={summary.name}
+            key={summary.id}
             summary={summary}
-            onEdit={() => onEditType(summary.name)}
+            onEdit={() => onEditType(summary.id)}
           />
         ))}
       </div>

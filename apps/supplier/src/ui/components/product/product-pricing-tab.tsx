@@ -6,6 +6,7 @@ import {
   computeGrossMargin,
   type NewProductDraft,
   type PricingTierDraft,
+  type ProductDraftErrors,
 } from '@/ui/pages/product/mocks';
 import { CheckboxField, Field, SelectField, TextField } from './wizard-fields';
 import { ProductTieredPricing } from './product-tiered-pricing';
@@ -13,9 +14,10 @@ import { ProductTieredPricing } from './product-tiered-pricing';
 interface ProductPricingTabProps {
   draft: NewProductDraft;
   onChange: (patch: Partial<NewProductDraft>) => void;
+  errors?: ProductDraftErrors;
 }
 
-export function ProductPricingTab({ draft, onChange }: ProductPricingTabProps) {
+export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTabProps) {
   const grossMargin = computeGrossMargin(draft.costPrice, draft.sellingPrice);
 
   const addTier = () =>
@@ -79,6 +81,7 @@ export function ProductPricingTab({ draft, onChange }: ProductPricingTabProps) {
             value={draft.costPrice}
             onChange={(value) => onChange({ costPrice: value })}
             placeholder="0.00"
+            error={errors?.costPrice}
           />
         </Field>
         <Field label="Selling Price:" required>
@@ -87,6 +90,7 @@ export function ProductPricingTab({ draft, onChange }: ProductPricingTabProps) {
             value={draft.sellingPrice}
             onChange={(value) => onChange({ sellingPrice: value })}
             placeholder="0.00"
+            error={errors?.sellingPrice}
           />
         </Field>
       </div>

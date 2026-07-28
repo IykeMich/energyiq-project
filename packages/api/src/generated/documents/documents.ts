@@ -21,10 +21,11 @@ import type {
 
 import type {
   GetV1DocumentListParams,
+  GetV1DocumentOverviewParams,
   HttpComplianceSummaryResponse,
+  HttpDashboardResponse,
   HttpDocumentListResponse,
   HttpDocumentResponse,
-  InternalDocumentAdaptersHttpCreateRequest,
   InternalDocumentAdaptersHttpRejectRequest,
   ResponseEmptyResponse
 } from '../schemas';
@@ -119,7 +120,7 @@ export const usePostV1DocumentApproveId = <TError = unknown,
       return useMutation(getPostV1DocumentApproveIdMutationOptions(options));
     }
     /**
- * Returns counts for total, verified, pending review, expired and expiring soon documents for dashboard cards.
+ * Returns aggregate compliance counts for summary cards. This endpoint exposes counts only; use `/v1/document/overview` for the complete Figma screen payload.
  * @summary Compliance document summary
  */
 export type getV1DocumentComplianceResponse200 = {
@@ -208,89 +209,6 @@ export function useGetV1DocumentCompliance<TData = Awaited<ReturnType<typeof get
 
 
 /**
- * Registers an uploaded KYC/compliance document after the file has been placed in storage. Prerequisites: document_type must match a configured document type in the supplier workspace; distributor callers may omit distributor_id. Edge cases: invalid expiry date or file metadata returns 400; review starts in pending status.
- * @summary Upload distributor document metadata
- */
-export type postV1DocumentCreateResponse201 = {
-  data: HttpDocumentResponse
-  status: 201
-}
-
-export type postV1DocumentCreateResponseSuccess = (postV1DocumentCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type postV1DocumentCreateResponse = (postV1DocumentCreateResponseSuccess)
-
-export const getPostV1DocumentCreateUrl = () => {
-
-
-
-
-  return `/v1/document/create`
-}
-
-export const postV1DocumentCreate = async (internalDocumentAdaptersHttpCreateRequest: InternalDocumentAdaptersHttpCreateRequest, options?: RequestInit): Promise<postV1DocumentCreateResponse> => {
-
-  return fetcher<postV1DocumentCreateResponse>(getPostV1DocumentCreateUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalDocumentAdaptersHttpCreateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1DocumentCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCreate>>, TError,{data: InternalDocumentAdaptersHttpCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCreate>>, TError,{data: InternalDocumentAdaptersHttpCreateRequest}, TContext> => {
-
-const mutationKey = ['postV1DocumentCreate'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentCreate>>, {data: InternalDocumentAdaptersHttpCreateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1DocumentCreate(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1DocumentCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DocumentCreate>>>
-    export type PostV1DocumentCreateMutationBody = InternalDocumentAdaptersHttpCreateRequest
-    export type PostV1DocumentCreateMutationError = unknown
-
-    /**
- * @summary Upload distributor document metadata
- */
-export const usePostV1DocumentCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCreate>>, TError,{data: InternalDocumentAdaptersHttpCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1DocumentCreate>>,
-        TError,
-        {data: InternalDocumentAdaptersHttpCreateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1DocumentCreateMutationOptions(options));
-    }
-    /**
  * Deletes only pending/unreviewed documents. Reviewed documents are retained for audit and return 409 if deletion is attempted.
  * @summary Delete pending document
  */
@@ -373,7 +291,7 @@ export const useDeleteV1DocumentDeleteId = <TError = unknown,
       return useMutation(getDeleteV1DocumentDeleteIdMutationOptions(options));
     }
     /**
- * Lists supplier compliance documents with optional distributor and status filters. Supports pending review, verified, rejected, expired and expiring soon dashboards.
+ * Returns raw document records for audit and operational flows. This endpoint is not the Figma screen contract; use `/v1/document/overview` for the document-management UI payload.
  * @summary List documents
  */
 export type getV1DocumentListResponse200 = {
@@ -469,8 +387,104 @@ export function useGetV1DocumentList<TData = Awaited<ReturnType<typeof getV1Docu
 
 
 /**
- * Returns document metadata and review status. Use before preview/download screens; unknown IDs return 404.
- * @summary Get document details
+ * Returns the UI-ready document-management payload that matches the Figma overview screen exactly: summary cards, filter options, document type preview cards, distributor table rows, pending-review items, expiring-soon items, and rejection-reason options.
+ * @summary Document overview
+ */
+export type getV1DocumentOverviewResponse200 = {
+  data: HttpDashboardResponse
+  status: 200
+}
+
+export type getV1DocumentOverviewResponseSuccess = (getV1DocumentOverviewResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getV1DocumentOverviewResponse = (getV1DocumentOverviewResponseSuccess)
+
+export const getGetV1DocumentOverviewUrl = (params?: GetV1DocumentOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/document/overview?${stringifiedParams}` : `/v1/document/overview`
+}
+
+export const getV1DocumentOverview = async (params?: GetV1DocumentOverviewParams, options?: RequestInit): Promise<getV1DocumentOverviewResponse> => {
+
+  return fetcher<getV1DocumentOverviewResponse>(getGetV1DocumentOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1DocumentOverviewQueryKey = (params?: GetV1DocumentOverviewParams,) => {
+    return [
+    `/v1/document/overview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1DocumentOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentOverview>>, TError = unknown>(params?: GetV1DocumentOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1DocumentOverviewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DocumentOverview>>> = ({ signal }) => getV1DocumentOverview(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1DocumentOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentOverview>>>
+export type GetV1DocumentOverviewQueryError = unknown
+
+
+/**
+ * @summary Document overview
+ */
+
+export function useGetV1DocumentOverview<TData = Awaited<ReturnType<typeof getV1DocumentOverview>>, TError = unknown>(
+ params?: GetV1DocumentOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1DocumentOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Returns the frontend-facing document preview payload used by the Figma review modal, including distributor identity, display labels, status copy, and rejection reason options.
+ * @summary Read document preview
  */
 export type getV1DocumentReadIdResponse200 = {
   data: HttpDocumentResponse
@@ -537,7 +551,7 @@ export type GetV1DocumentReadIdQueryError = unknown
 
 
 /**
- * @summary Get document details
+ * @summary Read document preview
  */
 
 export function useGetV1DocumentReadId<TData = Awaited<ReturnType<typeof getV1DocumentReadId>>, TError = unknown>(

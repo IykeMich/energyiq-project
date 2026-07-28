@@ -46,7 +46,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Returns paginated warehouses for the inventory screen. Filters: status accepts active or inactive; search matches warehouse name or location. Expected outcome: each item includes stock_level_percentage as a 0-100 percentage and product_preview with at most 4 products for table/card rendering.
+ * Returns paginated warehouses for the warehouse inventory screen. Filters: status accepts active or inactive; search matches warehouse name or location. Each item is Figma-shaped and includes warehouse_name, location, stock_level_percentage, last_updated_at, and status.
  * @summary List warehouses
  */
 export type getV1WarehousesResponse200 = {
@@ -149,7 +149,7 @@ export function useGetV1Warehouses<TData = Awaited<ReturnType<typeof getV1Wareho
 
 
 /**
- * Creates a supplier-scoped active or inactive warehouse with an optional same-supplier staff manager. Stock starts at zero until products are allocated.
+ * Creates a supplier-scoped warehouse for the warehouse inventory screen. The request accepts only the Figma-aligned fields: warehouse_name, location, manager_id, and status. Stock starts at zero until products are allocated.
  * @summary Create warehouse
  */
 export type postV1WarehousesResponse201 = {
@@ -249,7 +249,7 @@ export const usePostV1Warehouses = <TError = ResponseErrorResponse,
       return useMutation(getPostV1WarehousesMutationOptions(options));
     }
     /**
- * Returns warehouse dashboard cards and chart data. Expected outcome: total warehouse counts plus chart points where stock_level_percentage is the current stock level as a 0-100 percentage per warehouse, computed from inventory quantity divided by max_stock.
+ * Returns the warehouse dashboard summary for the Figma warehouse list page. The response includes total_warehouses and stock_distribution grouped by product.
  * @summary Get warehouse stats
  */
 export type getV1WarehousesStatsResponse200 = {
@@ -338,7 +338,7 @@ export function useGetV1WarehousesStats<TData = Awaited<ReturnType<typeof getV1W
 
 
 /**
- * Returns paginated transfer history for the frontend transfer history table. Filters: status accepts pending, processing, confirmed, cancelled or failed; date_from/date_to use YYYY-MM-DD. Expected outcome: transfer rows show product, source/destination warehouse IDs, quantity, reviewer, notes and audit timestamps.
+ * Returns paginated transfer history for the Figma transfer history table. Filters: status accepts pending, processing, confirmed, cancelled or failed; date_from/date_to use YYYY-MM-DD. Each row includes product, source and destination warehouse names and locations, quantity, requester, reviewer, notes, status, and timestamps.
  * @summary List stock transfer history
  */
 export type getV1WarehousesTransfersResponse200 = {
@@ -441,7 +441,7 @@ export function useGetV1WarehousesTransfers<TData = Awaited<ReturnType<typeof ge
 
 
 /**
- * Creates a pending warehouse-to-warehouse stock transfer. Prerequisites: source and destination warehouses must be different and belong to the supplier; product must exist; source warehouse must have enough stock. Expected outcome: transfer history row is created with status pending; inventory quantity is not moved until confirm endpoint is called.
+ * Creates a pending warehouse-to-warehouse stock transfer. Prerequisites: source and destination warehouses must be different and belong to the supplier; product must exist; source warehouse must have enough stock. The response is enriched with product and warehouse display fields required by the Figma transfer flow.
  * @summary Create stock transfer
  */
 export type postV1WarehousesTransfersResponse201 = {
@@ -531,7 +531,7 @@ export const usePostV1WarehousesTransfers = <TError = ResponseErrorResponse,
       return useMutation(getPostV1WarehousesTransfersMutationOptions(options));
     }
     /**
- * Cancels a pending stock transfer without changing inventory. Prerequisites: caller must be authorized by RBAC and must not be the same user who created the transfer. Expected outcome: transfer status becomes cancelled and reviewer metadata is stored.
+ * Cancels a pending stock transfer without changing inventory. Prerequisites: caller must be authorized by RBAC and must not be the same user who created the transfer. The response is enriched with product and warehouse display fields for the transfer flow.
  * @summary Cancel stock transfer
  */
 export type postV1WarehousesTransfersIdCancelResponse200 = {
@@ -615,7 +615,7 @@ export const usePostV1WarehousesTransfersIdCancel = <TError = unknown,
       return useMutation(getPostV1WarehousesTransfersIdCancelMutationOptions(options));
     }
     /**
- * Confirms a pending stock transfer and moves inventory atomically. Prerequisites: caller must be authorized by RBAC and must not be the same user who created the transfer. Edge cases: insufficient source stock marks the transfer failed and returns validation error; non-pending transfers cannot be confirmed.
+ * Confirms a pending stock transfer and moves inventory atomically. Prerequisites: caller must be authorized by RBAC and must not be the same user who created the transfer. The response is enriched with product and warehouse display fields for the transfer flow.
  * @summary Confirm stock transfer
  */
 export type postV1WarehousesTransfersIdConfirmResponse200 = {
@@ -704,7 +704,7 @@ export const usePostV1WarehousesTransfersIdConfirm = <TError = ResponseErrorResp
       return useMutation(getPostV1WarehousesTransfersIdConfirmMutationOptions(options));
     }
     /**
- * Returns one warehouse basic record. Use /v1/warehouses/{id}/stock for aggregate stock percentage and /products for paginated product rows. Stock percentages are expressed as a 0-100 percentage.
+ * Returns one warehouse detail record for the edit warehouse basic-information view. The response includes warehouse_id, warehouse_name, location, manager_id, manager_name, status, and last_updated_at.
  * @summary Get warehouse details
  */
 export type getV1WarehousesIdResponse200 = {
@@ -793,8 +793,8 @@ export function useGetV1WarehousesId<TData = Awaited<ReturnType<typeof getV1Ware
 
 
 /**
- * Updates warehouse basic details and can add/update/remove warehouse product inventory rows in one payload. Prerequisites: warehouse and products must belong to the authenticated supplier. Enum values: status must be active or inactive. Product assignment rules: remove=true deletes the product from the warehouse inventory; otherwise product_id is upserted with quantity, reorder_point, max_stock and storage_location. Edge cases: quantity cannot exceed max_stock when max_stock is provided.
- * @summary Updates warehouse basic details and can add/update/remove warehouse product inventory rows in one payload.
+ * Updates the Figma-aligned warehouse fields warehouse_name, location, manager_id, and status. Product assignment rows accept product_id, stock_quantity, and remove. When remove=true the product is deleted from the warehouse inventory; otherwise stock_quantity is upserted for that product.
+ * @summary Updates warehouse basic details and can add or remove warehouse products.
  */
 export type putV1WarehousesIdResponse200 = {
   data: HttpWarehouseResponse
@@ -864,7 +864,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutV1WarehousesIdMutationError = unknown
 
     /**
- * @summary Updates warehouse basic details and can add/update/remove warehouse product inventory rows in one payload.
+ * @summary Updates warehouse basic details and can add or remove warehouse products.
  */
 export const usePutV1WarehousesId = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: HttpWarehouseUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
@@ -958,7 +958,7 @@ export const useDeleteV1WarehousesId = <TError = unknown,
       return useMutation(getDeleteV1WarehousesIdMutationOptions(options));
     }
     /**
- * Returns paginated products assigned to a warehouse. Filters: search matches product name or SKU. Expected outcome: each item includes quantity, thresholds, storage location and stock_level_percentage as a 0-100 percentage for the frontend warehouse-product table.
+ * Returns paginated products assigned to a warehouse for the edit warehouse product tab. Filters: search matches product name or SKU. Each item includes product_name, unit, stock_quantity, price_per_unit, and last_updated_at.
  * @summary List warehouse products
  */
 export type getV1WarehousesIdProductsResponse200 = {

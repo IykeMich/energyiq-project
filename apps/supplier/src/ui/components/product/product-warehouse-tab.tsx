@@ -1,21 +1,32 @@
 import { Trash2 } from 'lucide-react';
 import {
   STORAGE_LOCATION_OPTIONS,
-  WAREHOUSE_OPTIONS,
   type NewProductDraft,
+  type ProductDraftErrors,
   type WarehouseAllocationDraft,
 } from '@/ui/pages/product/mocks';
-import { Field, SelectField, TextField } from './wizard-fields';
+import { NumericTextField } from '@energyiq/ui';
+import { useWarehousesQuery } from '@/hooks/use-warehouses';
+import { Field, SelectField } from './wizard-fields';
 
 interface ProductWarehouseTabProps {
   draft: NewProductDraft;
   onChange: (id: string, patch: Partial<WarehouseAllocationDraft>) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
+  errors?: ProductDraftErrors;
 }
 
-export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove }: ProductWarehouseTabProps) {
-  const warehouseOptions = WAREHOUSE_OPTIONS.map((warehouse) => warehouse.name);
+export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }: ProductWarehouseTabProps) {
+  const warehousesQuery = useWarehousesQuery({ status: 'active' });
+  const warehouses = warehousesQuery.data?.items ?? [];
+
+  const warehouseOptions = warehouses
+    .filter((warehouse) => warehouse.id && warehouse.name)
+    .map((warehouse) => ({ value: warehouse.id as string, label: warehouse.name as string }));
+
+  const isLoading = warehousesQuery.isLoading;
+  const isEmpty = !isLoading && warehouses.length === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -24,15 +35,26 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove }: Produc
         <button
           type="button"
           onClick={onAdd}
-          className="tap-effect text-sm font-semibold text-brand transition-opacity hover:opacity-80"
+          disabled={isEmpty}
+          className="tap-effect text-sm font-semibold text-brand transition-opacity hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none"
         >
           + Add Warehouse
         </button>
       </div>
 
+      {isEmpty && (
+        <p className="text-sm text-muted-foreground bg-surface-card border border-border-subtle rounded-[24px] p-5">
+          No active warehouses found. Add a warehouse first to allocate stock.
+        </p>
+      )}
+
       {draft.warehouseAllocations.map((allocation, index) => {
-        const warehouse = WAREHOUSE_OPTIONS.find((option) => option.name === allocation.warehouseLocation);
+        const warehouse = warehouses.find((option) => option.id === allocation.warehouseId);
         const canRemove = draft.warehouseAllocations.length > 1;
+        const availableCapacity =
+          warehouse?.capacity !== undefined && warehouse?.stock_level_percentage !== undefined
+            ? Math.round(warehouse.capacity * (1 - warehouse.stock_level_percentage / 100))
+            : undefined;
         return (
           <div
             key={allocation.id}
@@ -53,18 +75,20 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove }: Produc
             </div>
             <Field label="Warehouse Location:" required>
               <SelectField
-                value={allocation.warehouseLocation}
-                onChange={(value) => onChange(allocation.id, { warehouseLocation: value })}
-                placeholder="Select warehouse"
+                value={allocation.warehouseId}
+                onChange={(value) => onChange(allocation.id, { warehouseId: value })}
+                placeholder={isLoading ? 'Loading warehouses...' : 'Select warehouse'}
                 options={warehouseOptions}
+                error={index === 0 ? errors?.warehouseId : undefined}
               />
             </Field>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Allocated Quantity:">
-                <TextField
+                <NumericTextField
                   value={allocation.allocatedQuantity}
                   onChange={(value) => onChange(allocation.id, { allocatedQuantity: value })}
-                  placeholder="e.g. 30,000L"
+                  placeholder="e.g. 30,000"
+                  suffix="L"
                 />
               </Field>
               <Field label="Storage Location:">
@@ -76,10 +100,9 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove }: Produc
                 />
               </Field>
             </div>
-            {warehouse && (
+            {availableCapacity !== undefined && (
               <p className="text-xs text-foreground text-right">
-                Available Stock:{' '}
-                <span className="text-brand font-semibold">{warehouse.availableStockL.toLocaleString()}L</span>
+                Available Capacity: <span className="text-brand font-semibold">{availableCapacity.toLocaleString()}</span>
               </p>
             )}
           </div>

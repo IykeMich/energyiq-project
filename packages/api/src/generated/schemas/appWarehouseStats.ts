@@ -5,13 +5,9 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { AppWarehouseStock } from './appWarehouseStock';
-import type { AppWarehouseStockPoint } from './appWarehouseStockPoint';
+import type { AppWarehouseStockDistribution } from './appWarehouseStockDistribution';
 
 export interface AppWarehouseStats {
-  active?: number;
-  chart?: AppWarehouseStockPoint[];
-  inactive?: number;
-  total_stock?: AppWarehouseStock;
+  stock_distribution?: AppWarehouseStockDistribution[];
   total_warehouses?: number;
 }

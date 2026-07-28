@@ -7,14 +7,8 @@
  */
 
 export interface HttpWarehouseProductAssignmentRequest {
-  /** @minimum 0 */
-  max_stock?: number;
   product_id: string;
-  /** @minimum 0 */
-  quantity?: number;
   remove?: boolean;
   /** @minimum 0 */
-  reorder_point?: number;
-  /** @maxLength 100 */
-  storage_location?: string;
+  stock_quantity?: number;
 }

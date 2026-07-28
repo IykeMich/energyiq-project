@@ -1,30 +1,22 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@energyiq/ui';
+import type { HttpRaiseRequestComplaintCategory } from '@energyiq/api/generated/schemas';
 import { ComplaintSelectCard } from './complaint-select-card';
+import { ComplaintOrderSelect } from './complaint-order-select';
 import { ComplaintTextField } from './complaint-text-field';
-import { ISSUE_TYPE_OPTIONS, type RaiseComplaintDraft } from './complaints-mocks';
-
-interface OrderOption {
-  value: string;
-  label: string;
-}
+import { ISSUE_TYPE_OPTIONS, type ComplaintOption, type RaiseComplaintDraft } from './complaints-mocks';
 
 interface RaiseComplaintIssueTypeStepProps {
   draft: RaiseComplaintDraft;
-  orderOptions: OrderOption[];
   onChange: (patch: Partial<RaiseComplaintDraft>) => void;
+  orderOptions: ComplaintOption[];
+  isLoadingOrders?: boolean;
 }
 
 /** Step 1 — pick a complaint type, the related order, and a title. */
 export function RaiseComplaintIssueTypeStep({
   draft,
-  orderOptions,
   onChange,
+  orderOptions,
+  isLoadingOrders,
 }: RaiseComplaintIssueTypeStepProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -36,7 +28,7 @@ export function RaiseComplaintIssueTypeStep({
               key={option.value}
               option={option}
               selected={draft.issueType === option.value}
-              onSelect={(value) => onChange({ issueType: value })}
+              onSelect={(value) => onChange({ issueType: value as HttpRaiseRequestComplaintCategory })}
             />
           ))}
         </div>
@@ -44,23 +36,13 @@ export function RaiseComplaintIssueTypeStep({
 
       <label className="flex flex-col gap-2">
         <span className="text-sm text-[#FFFFFFCC]">Related Order:</span>
-        <Select
-          value={draft.relatedOrder ?? ''}
-          onValueChange={(value) => onChange({ relatedOrder: value || undefined })}
-        >
-          <SelectTrigger className="w-full rounded-full border-[#FFFFFF33] bg-transparent px-5 py-3.5 text-sm text-[#FAFAFA]">
-            <SelectValue placeholder="Select an order" />
-          </SelectTrigger>
-          <SelectContent>
-            {orderOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ComplaintOrderSelect
+          options={orderOptions}
+          value={draft.relatedOrder}
+          onChange={(value) => onChange({ relatedOrder: value })}
+          isLoading={isLoadingOrders}
+        />
       </label>
-
       <ComplaintTextField
         label="Complaint Title:"
         value={draft.complaintTitle}

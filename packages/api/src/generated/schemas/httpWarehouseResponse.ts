@@ -5,10 +5,10 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { DomainWarehouse } from './domainWarehouse';
+import type { AppWarehouseDetail } from './appWarehouseDetail';
 
 export interface HttpWarehouseResponse {
-  data?: DomainWarehouse;
+  data?: AppWarehouseDetail;
   responseCode?: string;
   responseMessage?: string;
 }

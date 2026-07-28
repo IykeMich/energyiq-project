@@ -26,50 +26,11 @@ export function useOrderStatsQuery(params?: order.OrderStatsParams) {
   });
 }
 
-export function useApproveOrderMutation() {
+export function useCreateOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => orderUseCases.approveOrder(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
-  });
-}
-
-export function useRejectOrderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, req }: { id: string; req: order.OrderRejectRequest }) =>
-      orderUseCases.rejectOrder(id, req),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
-  });
-}
-
-export function useCancelOrderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => orderUseCases.cancelOrder(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
-  });
-}
-
-export function useDispatchOrderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, req }: { id: string; req: order.OrderDispatchRequest }) =>
-      orderUseCases.dispatchOrder(id, req),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
-  });
-}
-
-export function useReceiveOrderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => orderUseCases.receiveOrder(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
+    mutationFn: (req: order.OrderCreateRequest) => orderUseCases.createOrder(req),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
   });
 }
 
@@ -78,16 +39,48 @@ export function useUpdateOrderMutation() {
   return useMutation({
     mutationFn: ({ id, req }: { id: string; req: order.OrderUpdateRequest }) =>
       orderUseCases.updateOrder(id, req),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
   });
 }
 
-export function useCreateOrderMutation() {
+export function useApproveOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (req: order.OrderCreateRequest) => orderUseCases.createOrder(req),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
+    mutationFn: (id: string) => orderUseCases.approveOrder(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
+  });
+}
+
+export function useRejectOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, req }: { id: string; req: order.OrderRejectRequest }) =>
+      orderUseCases.rejectOrder(id, req),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
+  });
+}
+
+export function useCancelOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => orderUseCases.cancelOrder(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
+  });
+}
+
+export function useDispatchOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, req }: { id: string; req: order.OrderDispatchRequest }) =>
+      orderUseCases.dispatchOrder(id, req),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
+  });
+}
+
+export function useReceiveOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => orderUseCases.receiveOrder(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY }),
   });
 }

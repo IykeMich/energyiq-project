@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { GetV1EmployeeListRole } from './getV1EmployeeListRole';
+import type { GetV1EmployeeListSort } from './getV1EmployeeListSort';
 import type { GetV1EmployeeListStatus } from './getV1EmployeeListStatus';
 
 export type GetV1EmployeeListParams = {
@@ -21,6 +22,10 @@ status?: GetV1EmployeeListStatus;
  * Name or email search
  */
 search?: string;
+/**
+ * Sort by created date
+ */
+sort?: GetV1EmployeeListSort;
 /**
  * Page size
  */

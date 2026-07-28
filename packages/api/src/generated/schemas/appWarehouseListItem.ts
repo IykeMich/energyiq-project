@@ -5,19 +5,12 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { AppWarehouseListItemStatus } from './appWarehouseListItemStatus';
-import type { AppWarehouseProductPreview } from './appWarehouseProductPreview';
 
 export interface AppWarehouseListItem {
-  capacity?: number;
-  created_at?: string;
-  id?: string;
+  last_updated_at?: string;
   location?: string;
-  manager_id?: string;
-  name?: string;
-  product_preview?: AppWarehouseProductPreview[];
-  status?: AppWarehouseListItemStatus;
+  status?: string;
   stock_level_percentage?: number;
-  supplier_id?: string;
-  updated_at?: string;
+  warehouse_id?: string;
+  warehouse_name?: string;
 }

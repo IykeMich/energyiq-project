@@ -55,12 +55,15 @@ export async function fetcher<T>(
     await throwDomainError(response);
   }
 
-  const body = await response.json() as shared.ApiResponse<T>;
+  const body = await response.json() as shared.ApiResponse;
   if (!isSuccess(body.responseCode)) {
     throw new DomainError(body.responseCode, body.responseMessage, body.data);
   }
 
-  return { data: body.data, status: response.status, headers: response.headers } as T;
+  // Orval's generated response types declare `data` as the swagger response schema
+  // (which is itself the full `{ data, responseCode, responseMessage }` envelope) —
+  // so `data` here must be the raw parsed body, not a further-unwrapped `body.data`.
+  return { data: body, status: response.status, headers: response.headers } as T;
 }
 
 async function safeFetch(url: string, init?: RequestInit): Promise<Response> {

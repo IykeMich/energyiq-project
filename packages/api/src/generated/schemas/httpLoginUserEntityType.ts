@@ -11,6 +11,5 @@ export type HttpLoginUserEntityType = typeof HttpLoginUserEntityType[keyof typeo
 
 export const HttpLoginUserEntityType = {
   supplier: 'supplier',
-  staff: 'staff',
   distributor: 'distributor',
 } as const;

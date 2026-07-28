@@ -3,14 +3,12 @@ import { Modal } from '@energyiq/ui';
 import { cn } from '@energyiq/shared';
 import type { warehouse } from '@energyiq/domain';
 import {
-  WAREHOUSE_LOCATION_OPTIONS,
-  WAREHOUSE_MANAGER_OPTIONS,
-  WAREHOUSE_NAME_OPTIONS,
   WAREHOUSE_STATUS_OPTIONS,
   type EditWarehouseProduct,
   type Warehouse,
 } from '@/ui/pages/inventory/mocks';
 import { Field, SelectField, TextField } from '@/ui/components/product/wizard-fields';
+import { useEmployeeQuery, useEmployeesQuery } from '@/hooks/use-employees';
 
 type Tab = 'basic' | 'product';
 
@@ -29,10 +27,26 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
   const [status, setStatus] = useState('active');
   const [products, setProducts] = useState<EditWarehouseProduct[]>([]);
 
-  const nameOptions = useMemo(
-    () => (warehouse?.name ? [...new Set([warehouse.name, ...WAREHOUSE_NAME_OPTIONS])] : WAREHOUSE_NAME_OPTIONS),
-    [warehouse?.name],
-  );
+  const { data: managers } = useEmployeesQuery({ role: 'manager' });
+  // The warehouse's current manager may fall outside the role/pagination filters above
+  // (e.g. their role changed since assignment) — fetch them directly so their name is
+  // always resolvable as the field's default value, even if the list above omits them.
+  const { data: assignedManager } = useEmployeeQuery(warehouse?.managerId ?? '', {
+    enabled: Boolean(warehouse?.managerId),
+  });
+  const managerOptions = useMemo(() => {
+    const options = (managers?.items ?? []).map((employee) => ({
+      value: employee.id ?? '',
+      label: employee.name ?? employee.email ?? 'Unnamed',
+    }));
+    if (assignedManager?.id && !options.some((option) => option.value === assignedManager.id)) {
+      options.push({
+        value: assignedManager.id,
+        label: assignedManager.name ?? assignedManager.email ?? 'Unnamed',
+      });
+    }
+    return options;
+  }, [managers, assignedManager]);
 
  useEffect(() => {
   if (open && warehouse) {
@@ -52,6 +66,9 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
         name: product.name,
         stockQuantity: `${product.quantity}`,
         pricePerUnit: '',
+        maxStock: `${product.maxStock}`,
+        reorderPoint: `${product.reorderPoint}`,
+        storageLocation: product.storageLocation,
       })) ?? []
     );
   }
@@ -63,33 +80,26 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
   const removeProduct = (id: string) =>
     setProducts((prev) => prev.filter((product) => product.id !== id));
 
- const handleSave = () => {
- const managerId = warehouse?.managerId;
-
-  const productAssignments: warehouse.WarehouseProductAssignment[] =
-    products.map((product) => ({
+  const handleSave = () => {
+    const productAssignments: warehouse.WarehouseProductAssignment[] = products.map((product) => ({
       product_id: product.id,
       quantity: parseQuantity(product.stockQuantity),
-      max_stock: parseQuantity(product.stockQuantity),
-      reorder_point: 0,
-      storage_location: '',
+      max_stock: parseQuantity(product.maxStock),
+      reorder_point: parseQuantity(product.reorderPoint),
+      storage_location: product.storageLocation,
       remove: false,
     }));
 
-  const payload: warehouse.WarehouseUpdateRequest = {
-    name,
-    location,
-    // capacity: warehouse?.capacity ?? 0, // Uncomment if WarehouseUpdateRequest requires it
-    manager_id: managerId,
-    status: status as warehouse.WarehouseStatus,
-    products: productAssignments,
+    const payload: warehouse.WarehouseUpdateRequest = {
+      name,
+      location,
+      manager_id: manager || undefined,
+      status: status as warehouse.WarehouseStatus,
+      products: productAssignments,
+    };
+
+    onSave(payload);
   };
-
-  console.log('Warehouse ID:', warehouse?.id);
-  console.log('Update Payload:', payload);
-
-  onSave(payload);
-};
 
   return (
     <Modal
@@ -111,13 +121,13 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
       {tab === 'basic' ? (
         <div className="flex flex-col gap-5">
           <Field label="Warehouse Name:">
-            <SelectField value={name} onChange={setName} options={nameOptions} placeholder="Select warehouse" />
-          </Field>
+              <TextField value={name} onChange={setName} placeholder="Enter warehouse name" />
+            </Field>
           <Field label="Location:">
-            <SelectField value={location} onChange={setLocation} options={WAREHOUSE_LOCATION_OPTIONS} placeholder="Select location" />
+            <TextField value={location} onChange={setLocation} placeholder="Enter location" />
           </Field>
           <Field label="Warehouse Manager:">
-            <SelectField value={manager} onChange={setManager} options={WAREHOUSE_MANAGER_OPTIONS} placeholder="Select manager" />
+            <SelectField value={manager} onChange={setManager} options={managerOptions} placeholder="Select manager" />
           </Field>
           <Field label="Status:">
             <SelectField value={status} onChange={setStatus} options={WAREHOUSE_STATUS_OPTIONS} placeholder="Select status" />
@@ -151,6 +161,29 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                     value={product.pricePerUnit}
                     onChange={(value) => updateProduct(product.id, { pricePerUnit: value })}
                     placeholder="0"
+                  />
+                </Field>
+                <Field label="Max Stock:">
+                  <TextField
+                    type="number"
+                    value={product.maxStock}
+                    onChange={(value) => updateProduct(product.id, { maxStock: value })}
+                    placeholder="e.g. 5000"
+                  />
+                </Field>
+                <Field label="Reorder Point:">
+                  <TextField
+                    type="number"
+                    value={product.reorderPoint}
+                    onChange={(value) => updateProduct(product.id, { reorderPoint: value })}
+                    placeholder="e.g. 500"
+                  />
+                </Field>
+                <Field label="Storage Location:">
+                  <TextField
+                    value={product.storageLocation}
+                    onChange={(value) => updateProduct(product.id, { storageLocation: value })}
+                    placeholder="e.g. Bay A-3"
                   />
                 </Field>
               </div>

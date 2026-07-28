@@ -17,6 +17,7 @@ export function ProductListPage() {
   const [pendingDelete, setPendingDelete] = useState<product.Product | null>(null);
   const [assignWarehouseOpen, setAssignWarehouseOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<product.Product | null>(null);
+  const [sheetMode, setSheetMode] = useState<'view' | 'edit'>('view');
 
   const productsQuery = useProductsQuery();
   const deleteProduct = useDeleteProductMutation();
@@ -64,13 +65,19 @@ export function ProductListPage() {
         cellRenderer: (p: { data: product.Product }) => (
           <ProductActionsCell
             product={p.data}
-            onEdit={(prod) => navigate(`/${slug}/products/${prod.id}/edit`)}
+            onEdit={(prod) => {
+              setSelectedProduct(prod);
+              setSheetMode('edit');
+            }}
             onDelete={(prod) => setPendingDelete(prod)}
           />
         ),
+        // Clicking the edit/delete icons must not also trigger onRowClicked
+        // (which opens the details sheet) — see onRowClicked below.
+        cellRendererParams: { suppressMouseEventHandling: () => true },
       },
     ],
-    [navigate, slug],
+    [],
   );
 
   const handleDeleteConfirmed = () => {
@@ -120,15 +127,20 @@ export function ProductListPage() {
           rowHeight={56}
           loading={productsQuery.isLoading}
           suppressRowClickSelection
-          onRowClicked={(event) => setSelectedProduct(event.data ?? null)}
+          onRowClicked={(event) => {
+            if (event.isEventHandlingSuppressed) return;
+            setSelectedProduct(event.data ?? null);
+            setSheetMode('view');
+          }}
           className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
         />
       )}
 
       <ProductDetailsSheet
         product={selectedProduct}
+        initialMode={sheetMode}
         onOpenChange={(open) => !open && setSelectedProduct(null)}
-        onEdit={(prod) => navigate(`/${slug}/products/${prod.id}/edit`)}
+        onGoHome={() => navigate(`/${slug}/dashboard`)}
       />
 
       <AssignWarehouseWizardModal

@@ -13,7 +13,7 @@ export type GetV1DocumentListParams = {
  */
 distributor_id?: string;
 /**
- * Document status
+ * Stored document status filter
  */
 status?: GetV1DocumentListStatus;
 };

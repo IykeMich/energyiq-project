@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./generated": "./src/generated/index.ts",
+    "./generated/schemas": "./src/generated/schemas/index.ts",
+    "./generated/*": "./src/generated/*.ts",
     "./fetcher": "./src/fetcher.ts"
   },
   "scripts": {

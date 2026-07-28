@@ -14,6 +14,12 @@ export interface Warehouse {
   supplier_id?: string;
   stock_level_percentage?: number;
   product_preview?: ProductPreview[];
+  /**
+   * Per-product stock config (max stock, reorder point, storage location) — an
+   * additive field on GET /v1/warehouses/{id}, same shape as the update-request
+   * assignment. Optional: older backend responses simply omit it.
+   */
+  products?: WarehouseProductAssignment[];
   created_at?: string;
   updated_at?: string;
 }

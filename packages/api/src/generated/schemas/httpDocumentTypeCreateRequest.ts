@@ -5,38 +5,28 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
-import type { HttpDocumentTypeCreateRequestFileTypesItem } from './httpDocumentTypeCreateRequestFileTypesItem';
-import type { HttpDocumentTypeCreateRequestTierRequiredItem } from './httpDocumentTypeCreateRequestTierRequiredItem';
+import type { HttpDocumentTypeCreateRequestAllowedFileTypesItem } from './httpDocumentTypeCreateRequestAllowedFileTypesItem';
 
 export interface HttpDocumentTypeCreateRequest {
-  /**
-     * @minimum 0
-     * @maximum 365
-     */
-  auto_remind_days?: number;
-  description?: string;
-  /**
-     * @minimum 1
-     * @maximum 120
-     */
-  expiry_months?: number;
   /** @minItems 1 */
-  file_types: HttpDocumentTypeCreateRequestFileTypesItem[];
+  allowed_file_types: HttpDocumentTypeCreateRequestAllowedFileTypesItem[];
+  description?: string;
+  document_category_id: string;
   /**
      * @minLength 2
      * @maxLength 255
      */
-  label: string;
+  document_name: string;
+  expiry_required?: boolean;
   /**
      * @minimum 1
      * @maximum 100
      */
-  max_size_mb: number;
-  /**
-     * @minLength 2
-     * @maxLength 100
-     */
-  name: string;
+  max_file_size_mb: number;
   required?: boolean;
-  tier_required?: HttpDocumentTypeCreateRequestTierRequiredItem[];
+  /**
+     * @minimum 1
+     * @maximum 120
+     */
+  validity_period_months?: number;
 }

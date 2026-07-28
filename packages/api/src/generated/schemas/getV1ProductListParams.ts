@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { GetV1ProductListCurrency } from './getV1ProductListCurrency';
+import type { GetV1ProductListSort } from './getV1ProductListSort';
 import type { GetV1ProductListStatus } from './getV1ProductListStatus';
 
 export type GetV1ProductListParams = {
@@ -37,6 +38,10 @@ date_from?: string;
  * Created to date in YYYY-MM-DD
  */
 date_to?: string;
+/**
+ * Sort by created date
+ */
+sort?: GetV1ProductListSort;
 /**
  * Limit
  */

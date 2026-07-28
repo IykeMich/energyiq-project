@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Modal, SuccessModal, WizardStepPills } from '@energyiq/ui';
-import type { complaint } from '@energyiq/domain';
-import { useOrdersQuery } from '@/hooks/use-orders';
-import { useCreateDistributorComplaintMutation } from '@/hooks/use-complaints';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Modal, SuccessModal, WizardStepPills, toast } from '@energyiq/ui';
+import {
+  usePostV1DistributorComplaintCreate,
+  getGetV1DistributorComplaintOverviewQueryKey,
+} from '@energyiq/api/generated/distributor-complaints/distributor-complaints';
+import {
+  useGetV1DistributorOrderList,
+  getGetV1DistributorOrderListQueryKey,
+} from '@energyiq/api/generated/distributor-orders/distributor-orders';
 import { RaiseComplaintHeader } from './raise-complaint-header';
 import { RaiseComplaintIssueTypeStep } from './raise-complaint-issue-type-step';
 import { RaiseComplaintDetailsStep } from './raise-complaint-details-step';
 import { RaiseComplaintEvidenceStep } from './raise-complaint-evidence-step';
 import { RaiseComplaintReviewStep } from './raise-complaint-review-step';
-import {
-  EMPTY_RAISE_COMPLAINT_DRAFT,
-  type RaiseComplaintDraft,
-} from './complaints-mocks';
+import { EMPTY_RAISE_COMPLAINT_DRAFT, type ComplaintOption, type RaiseComplaintDraft } from './complaints-mocks';
 
 interface RaiseComplaintModalProps {
   open: boolean;
@@ -21,33 +24,35 @@ interface RaiseComplaintModalProps {
 const STEP_LABELS = ['Issue Type', 'Details', 'Evidence Upload', 'Review and Submit'];
 const LAST_STEP = STEP_LABELS.length;
 
-function useOrderOptions() {
-  const { data } = useOrdersQuery({ limit: 100 });
-  return useMemo(
-    () =>
-      (data?.items ?? []).map((orderItem) => ({
-        value: orderItem.id ?? '',
-        label: `${orderItem.order_number ?? orderItem.id} - ${orderItem.status ?? 'Order'}`,
-      })),
-    [data],
-  );
+/** Parses a free-text amount field (e.g. "₦84,000") down to a plain number for the API. */
+function parseEstimatedAmount(value: string): number {
+  const numeric = Number(value.replace(/[^0-9.]/g, ''));
+  return Number.isFinite(numeric) ? numeric : 0;
 }
 
-/** Four-step "Raise a Complaint" wizard wired to the distributor complaint API. */
+/** Four-step "Raise a Complaint" wizard, submitting to the create-complaint endpoint. */
 export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalProps) {
+  const queryClient = useQueryClient();
+  const createComplaint = usePostV1DistributorComplaintCreate();
+  const { data: ordersData, isLoading: isLoadingOrders } = useGetV1DistributorOrderList(
+    { limit: 100 },
+    { query: { enabled: open, queryKey: getGetV1DistributorOrderListQueryKey({ limit: 100 }) } },
+  );
+  const orderOptions: ComplaintOption[] = (ordersData?.data.data?.items ?? []).map((order) => ({
+    value: order.distributor_order_id ?? '',
+    label: order.distributor_order_number ?? order.distributor_order_id ?? '',
+    description: order.distributor_order_supplier_name,
+  }));
+
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<RaiseComplaintDraft>(EMPTY_RAISE_COMPLAINT_DRAFT);
-  const [submitted, setSubmitted] = useState(false);
-  const [createdReference, setCreatedReference] = useState('');
-  const orderOptions = useOrderOptions();
-  const createMutation = useCreateDistributorComplaintMutation();
+  const [submittedCode, setSubmittedCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setStep(1);
       setDraft(EMPTY_RAISE_COMPLAINT_DRAFT);
-      setSubmitted(false);
-      setCreatedReference('');
+      setSubmittedCode(null);
     }
   }, [open]);
 
@@ -62,48 +67,38 @@ export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalP
     setStep((current) => current - 1);
   };
 
-  const handleContinue = () => {
-    if (step === LAST_STEP) {
-      const payload: complaint.DistributorComplaintCreateRequest = {
-        order_id: draft.relatedOrder ?? '',
-        complaint_title: draft.complaintTitle,
-        complaint_category: draft.issueType,
-        description: draft.description,
-        quantity_affected: draft.quantityAffected,
-        estimated_amount: Number(draft.estimate.replace(/[^0-9.]/g, '')) || 0,
-        product_name: draft.expectedResolution || draft.complaintTitle,
-      };
-
-      createMutation.mutate(payload,
-        {
-          onSuccess: (complaint) => {
-            setCreatedReference(
-              complaint.distributor_complaint_code ?? complaint.distributor_complaint_id ?? '',
-            );
-            setSubmitted(true);
-          },
-        },
-      );
+  const handleContinue = async () => {
+    if (step !== LAST_STEP) {
+      setStep((current) => current + 1);
       return;
     }
-    setStep((current) => current + 1);
+
+    try {
+      const response = await createComplaint.mutateAsync({
+        data: {
+          complaint_category: draft.issueType,
+          complaint_title: draft.complaintTitle,
+          description: draft.description,
+          estimated_amount: parseEstimatedAmount(draft.estimate),
+          order_id: draft.relatedOrder,
+          quantity_affected: draft.quantityAffected,
+          // Evidence stays presentational: no presign/upload endpoint exists yet
+          // for complaint evidence, so files picked in step 3 aren't submitted.
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: getGetV1DistributorComplaintOverviewQueryKey() });
+      // fetcher() throws on non-success responseCode, so a resolved mutateAsync
+      // is always the 201 variant at runtime; narrow the discriminated union to match.
+      if (response.status !== 201) throw new Error('Unexpected complaint create response');
+      setSubmittedCode(response.data.data?.distributor_complaint_code ?? null);
+    } catch {
+      toast.error('Failed to submit complaint', { description: 'Please try again.' });
+    }
   };
-
-  const isSubmitting = createMutation.isPending;
-
-  const canSubmit =
-    Boolean(draft.relatedOrder) &&
-    Boolean(draft.complaintTitle.trim()) &&
-    Boolean(draft.description.trim()) &&
-    Boolean(draft.quantityAffected.trim()) &&
-    Boolean(draft.estimate.trim()) &&
-    Boolean(draft.expectedResolution.trim()) &&
-    Boolean(draft.claimAmount.trim()) &&
-    Boolean(draft.preferredResolution);
 
   return (
     <>
-    <Modal open={open && !submitted} onOpenChange={onOpenChange} showClose={false} size="lg">
+    <Modal open={open && !submittedCode} onOpenChange={onOpenChange} showClose={false} size="lg">
       {/* Capped column: fixed header + stepper, a scrolling step region whose
           content cuts behind solid top/bottom bands, then a fixed footer. */}
       <div className="flex max-h-[80vh] flex-col">
@@ -117,8 +112,9 @@ export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalP
             {step === 1 && (
               <RaiseComplaintIssueTypeStep
                 draft={draft}
-                orderOptions={orderOptions}
                 onChange={updateDraft}
+                orderOptions={orderOptions}
+                isLoadingOrders={isLoadingOrders}
               />
             )}
             {step === 2 && <RaiseComplaintDetailsStep draft={draft} onChange={updateDraft} />}
@@ -139,30 +135,29 @@ export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalP
           <button
             type="button"
             onClick={handleBack}
-            disabled={isSubmitting}
-            className="tap-effect rounded-full bg-[#3A3A3A] px-10 py-3.5 text-sm font-semibold text-[#FAFAFA] disabled:opacity-50"
+            className="tap-effect rounded-full bg-[#3A3A3A] px-10 py-3.5 text-sm font-semibold text-[#FAFAFA]"
           >
             Back
           </button>
           <button
             type="button"
             onClick={handleContinue}
-            disabled={isSubmitting || (step === LAST_STEP && !canSubmit)}
-            className="tap-effect flex-1 rounded-full bg-[#FBC02D] px-6 py-3.5 text-sm font-semibold text-[#121212] disabled:opacity-50"
+            disabled={createComplaint.isPending || (step === LAST_STEP && !draft.relatedOrder)}
+            className="tap-effect flex-1 rounded-full bg-[#FBC02D] px-6 py-3.5 text-sm font-semibold text-[#121212] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {step === LAST_STEP ? (isSubmitting ? 'Submitting…' : 'Submit Complaint') : 'Continue'}
+            {step === LAST_STEP ? (createComplaint.isPending ? 'Submitting…' : 'Submit Complaint') : 'Continue'}
           </button>
         </div>
       </div>
     </Modal>
 
     <SuccessModal
-      open={open && submitted}
+      open={open && submittedCode !== null}
       onOpenChange={() => onOpenChange(false)}
       tone="brand"
       title="Complaint Submitted Successfully!"
-      subtitle="Your complaint has been submitted. You will be notified as it progresses through reviews."
-      highlight={{ label: 'Complaint Reference:', value: createdReference || 'N/A' }}
+      subtitle="Your complaint has been submitted to the supplier. You will be notified as it progresses through reviews."
+      highlight={{ label: 'Complaint Reference:', value: submittedCode ?? '' }}
       footerNote="Expected resolution within 72 hours. Check status in Complaint tab."
     />
     </>

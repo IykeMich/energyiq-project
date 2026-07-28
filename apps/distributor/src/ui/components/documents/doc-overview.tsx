@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useGetV1DocumentList } from '@energyiq/api/generated/documents/documents';
+import type { DomainDocument } from '@energyiq/api/generated/schemas';
 
 import { DocumentManagementCard } from './document-management-card';
 import { DocumentDetails } from './document-details';
@@ -6,56 +8,39 @@ import { DocumentUploadModal } from './document-upload-modal';
 import { DocumentSubmittedModal } from './document-submitted-modal';
 
 export function DocumentsOverview() {
-  const [selectedDocument, setSelectedDocument] =
-    useState<any>(null);
+  const { data, isLoading } = useGetV1DocumentList();
+  const documents = data?.data?.data ?? [];
 
-  const [uploadDocument, setUploadDocument] =
-    useState<any>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [uploadDocument, setUploadDocument] = useState<DomainDocument | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const [showSuccess, setShowSuccess] =
-    useState(false);
-
-  const handleAction = (doc: any) => {
-    if (
-      doc.status === 'rejected' ||
-      doc.status === 'pending'
-    ) {
-      setUploadDocument(doc);
+  const handleAction = (document: DomainDocument) => {
+    if (document.status === 'rejected' || document.status === 'pending') {
+      setUploadDocument(document);
       return;
     }
-
-    setSelectedDocument(doc);
+    setSelectedDocumentId(document.id ?? null);
   };
 
   return (
     <section className="w-full px-6 py-6">
-      {!selectedDocument && (
-        <>
-          <div className="mb-6">
-            
-          </div>
-
-          <DocumentManagementCard
-            onViewDocument={handleAction}
-          />
-        </>
+      {!selectedDocumentId && (
+        <DocumentManagementCard
+          documents={documents}
+          isLoading={isLoading}
+          onViewDocument={handleAction}
+        />
       )}
 
-      {selectedDocument && (
-        <DocumentDetails
-          document={selectedDocument}
-          onBack={() =>
-            setSelectedDocument(null)
-          }
-        />
+      {selectedDocumentId && (
+        <DocumentDetails documentId={selectedDocumentId} onBack={() => setSelectedDocumentId(null)} />
       )}
 
       {uploadDocument && (
         <DocumentUploadModal
           document={uploadDocument}
-          onClose={() =>
-            setUploadDocument(null)
-          }
+          onClose={() => setUploadDocument(null)}
           onSuccess={() => {
             setUploadDocument(null);
             setShowSuccess(true);
@@ -64,11 +49,7 @@ export function DocumentsOverview() {
       )}
 
       {showSuccess && (
-        <DocumentSubmittedModal
-          onClose={() =>
-            setShowSuccess(false)
-          }
-        />
+        <DocumentSubmittedModal onClose={() => setShowSuccess(false)} />
       )}
     </section>
   );
