@@ -7,7 +7,9 @@ import { useProductQuery, useUpdateProductStatusMutation } from '@/hooks/use-pro
 import { ProductWizard } from './product-wizard';
 import { ProductDetailsHeader } from './product-details-header';
 import { ProductDetailsInfo } from './product-details-info';
+import { ProductDetailsAttributes } from './product-details-attributes';
 import { ProductDetailsVariants } from './product-details-variants';
+import { PRODUCT_ATTRIBUTES_MOCK } from './product-catalog-mocks';
 
 type SheetMode = 'view' | 'edit';
 
@@ -40,7 +42,7 @@ export function ProductDetailsSheet({ product, initialMode = 'view', onOpenChang
         overlayClassName="bg-[#121212]/40"
         className={cn(
           'inset-y-3 mr-4 h-auto w-full gap-0 overflow-hidden rounded-[28px] border-l-0 bg-[#121212] p-0',
-          mode === 'edit' ? 'sm:max-w-[760px]' : 'sm:max-w-[480px]',
+          mode === 'edit' ? 'sm:max-w-[760px]' : 'sm:max-w-[480px] lg:max-w-[560px]',
         )}
       >
         {product?.id && (
@@ -132,6 +134,7 @@ function ProductDetailsBody({ productId, fallback, mode, onEnterEdit, onExitEdit
       <div className="relative min-h-0 flex-1">
         <div className="flex h-full flex-col gap-6 overflow-y-auto overscroll-contain px-8 py-6">
           <ProductDetailsInfo product={product} />
+          <ProductDetailsAttributes attributes={PRODUCT_ATTRIBUTES_MOCK} onEdit={onEnterEdit} />
           <ProductDetailsVariants variants={product.product_variants ?? []} />
         </div>
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-[#121212]" />

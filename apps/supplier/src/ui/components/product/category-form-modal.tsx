@@ -35,11 +35,18 @@ export function CategoryFormModal({ open, onOpenChange, initial, onSave, saving 
       size="md"
     >
       <div className="flex flex-col gap-5">
-        <Field label="Category" required>
+        <Field label="Category">
           <TextField
             value={form.name}
             onChange={(v) => setForm((p) => ({ ...p, name: v }))}
             placeholder="e.g. Fuel"
+          />
+        </Field>
+        <Field label="No of Products">
+          <TextField
+            value={''}
+            onChange={(v) => setForm((p) => ({ ...p, noOfProducts: v }))}
+            placeholder="e.g. 10"
           />
         </Field>
         <Field label="Description:">

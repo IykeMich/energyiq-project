@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { ConfirmDialog, DataGrid, type ColDef } from '@energyiq/ui';
+import { ConfirmDialog } from '@energyiq/ui';
 import type { product } from '@energyiq/domain';
 import {
   useProductUnitsQuery,
@@ -8,6 +8,7 @@ import {
   useUpdateProductUnitMutation,
   useDeleteProductUnitMutation,
 } from '@/hooks/use-product-units';
+import { DefaultTable, type Column } from '@/ui/components/table/default-table';
 import { UnitFormModal } from '@/ui/components/product/unit-form-modal';
 
 export function UnitListPage() {
@@ -21,34 +22,31 @@ export function UnitListPage() {
   const [deleting, setDeleting] = useState<product.ProductUnit | null>(null);
 
   const rows = unitsQuery.data ?? [];
-  const isEmpty = unitsQuery.isSuccess && rows.length === 0;
 
-  const columnDefs = useMemo<ColDef<product.ProductUnit>[]>(
+  const columns = useMemo<Column<product.ProductUnit>[]>(
     () => [
-      { field: 'unit_name', headerName: 'Unit Name', minWidth: 140 },
-      { field: 'description', headerName: 'Description', minWidth: 220 },
-      { field: 'type', headerName: 'Type', width: 120, flex: 0 },
-      { field: 'short_code', headerName: 'Short Code', width: 130, flex: 0 },
+      { header: 'Unit Name', accessor: 'unit_name', sortable: true },
+      { header: 'Description', accessor: 'description' },
+      { header: 'Type', accessor: 'type', width: '120px' },
+      { header: 'Short Code', accessor: 'short_code', width: '130px' },
       {
-        headerName: 'Action',
-        width: 110,
-        flex: 0,
-        sortable: false,
-        filter: false,
-        cellRenderer: (p: { data: product.ProductUnit }) => (
-          <div className="flex items-center gap-4 h-full">
+        header: 'Action',
+        accessor: 'id',
+        width: '110px',
+        render: (_value, row) => (
+          <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => setEditing(p.data)}
-              aria-label={`Edit ${p.data.unit_name}`}
+              onClick={() => setEditing(row)}
+              aria-label={`Edit ${row.unit_name}`}
               className="tap-effect text-brand hover:opacity-80"
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button
               type="button"
-              onClick={() => setDeleting(p.data)}
-              aria-label={`Delete ${p.data.unit_name}`}
+              onClick={() => setDeleting(row)}
+              aria-label={`Delete ${row.unit_name}`}
               className="tap-effect text-danger hover:opacity-80"
             >
               <Trash2 className="w-4 h-4" />
@@ -92,19 +90,13 @@ export function UnitListPage() {
         </div>
       )}
 
-      {isEmpty ? (
-        <div className="flex h-[300px] items-center justify-center rounded-[18px] bg-surface-card text-muted-foreground">
-          No units yet. Add your first one to get started.
-        </div>
-      ) : (
-        <DataGrid<product.ProductUnit>
-          rowData={rows}
-          columnDefs={columnDefs}
-          rowHeight={56}
-          loading={unitsQuery.isLoading}
-          className="h-[600px] bg-surface-card rounded-[18px] overflow-hidden"
-        />
-      )}
+      <DefaultTable<product.ProductUnit>
+        columns={columns}
+        data={rows}
+        isLoading={unitsQuery.isLoading}
+        noDataMessage="No units yet. Add your first one to get started."
+        getRowId={(row, index) => row.id ?? index}
+      />
 
       <UnitFormModal
         open={adding || editing !== null}

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
-import { SalesEntryCheckbox } from './sales-entry-checkbox';
+import { TableCheckbox } from '../table/table-checkbox';
 import { SalesEntryStatusBadge } from './sales-entry-status-badge';
 import { SALES_STATUS_COLOR, formatNairaCompact } from './sales-entry-mocks';
 import type { SalesRow } from './sales-entry-mocks';
@@ -30,14 +30,14 @@ function buildColumns(
       width: '48px',
       align: 'center',
       renderHeader: () => (
-        <SalesEntryCheckbox
+        <TableCheckbox
           checked={allSelected}
           onChange={onToggleAll}
           aria-label="Select all sales"
         />
       ),
       render: (_value, row) => (
-        <SalesEntryCheckbox
+        <TableCheckbox
           checked={selectedIds.has(row.id)}
           onChange={() => onToggleRow(row.id)}
           aria-label={`Select sale for ${row.distributor}`}

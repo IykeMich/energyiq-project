@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn } from '@energyiq/shared';
 import {
   type NewProductDraft,
@@ -16,9 +17,11 @@ interface StepProductDetailsProps {
   errors?: ProductDraftErrors;
   tab: ProductDetailsTab;
   onTabChange: (tab: ProductDetailsTab) => void;
+  /** Nav buttons (Cancel/Next etc.) rendered inside this card, below the tab content. */
+  footer?: ReactNode;
 }
 
-export function StepProductDetails({ draft, onChange, errors, tab, onTabChange }: StepProductDetailsProps) {
+export function StepProductDetails({ draft, onChange, errors, tab, onTabChange, footer }: StepProductDetailsProps) {
   const updateAllocation = (id: string, patch: Partial<WarehouseAllocationDraft>) =>
     onChange({
       warehouseAllocations: draft.warehouseAllocations.map((allocation) =>
@@ -45,7 +48,7 @@ export function StepProductDetails({ draft, onChange, errors, tab, onTabChange }
     });
 
   return (
-    <div className="border border-border-subtle rounded-[28px] p-7 flex flex-col gap-6">
+    <div className="bg-[#6161611A] border border-[#616161B2] rounded-[28px] p-7 flex flex-col gap-6">
       <h2 className="text-base font-semibold text-foreground">Product Details</h2>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -56,7 +59,7 @@ export function StepProductDetails({ draft, onChange, errors, tab, onTabChange }
           Pricing
         </TabButton>
         <TabButton active={tab === 'warehouse'} onClick={() => onTabChange('warehouse')}>
-          Warehouse Allocation
+          Inventory/Trading
         </TabButton>
       </div>
 
@@ -73,6 +76,8 @@ export function StepProductDetails({ draft, onChange, errors, tab, onTabChange }
           />
         )}
       </div>
+
+      {footer}
     </div>
   );
 }
@@ -91,9 +96,9 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'tap-effect h-10 px-5 rounded-full text-sm font-semibold transition-colors',
+        'tap-effect h-10 px-5 rounded-[14px] text-sm font-semibold transition-colors',
         active
-          ? 'bg-brand text-brand-foreground hover:opacity-90'
+          ? 'bg-[#FBC02D33] text-[#FBC02D] hover:opacity-90'
           : 'bg-transparent text-foreground hover:bg-foreground/5',
       )}
     >

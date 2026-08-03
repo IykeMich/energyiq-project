@@ -11,6 +11,8 @@ import type {
   ResetPasswordConfirmRequest,
   OnboardingDocumentRequest,
   OnboardingDocument,
+  PresignRegistrationDocumentRequest,
+  RegistrationDocumentRequest,
   CreateInvitationRequest,
   Invitation,
   ListInvitationsParams,
@@ -26,7 +28,7 @@ import type {
   DistributorDocumentType,
   PresignUploadUrlRequest,
   PresignUploadUrlResult,
-} from './types';
+} from "./types";
 
 // ════════════════════════════════════════════════════════════════
 // Outbound ports — interfaces the auth domain needs.
@@ -53,9 +55,22 @@ export interface AuthApi {
   resetPasswordVerify(token: string): Promise<void>;
   resetPasswordConfirm(req: ResetPasswordConfirmRequest): Promise<void>;
   resetPasswordResend(email: string): Promise<void>;
-  createOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument>;
+  createOnboardingDocument(
+    req: OnboardingDocumentRequest,
+  ): Promise<OnboardingDocument>;
   listOnboardingDocuments(): Promise<OnboardingDocument[]>;
   deleteOnboardingDocument(id: string): Promise<void>;
+
+  // Supplier onboarding documents (pre-OTP, registration_token-scoped)
+  presignRegistrationDocument(
+    req: PresignRegistrationDocumentRequest,
+  ): Promise<PresignUploadUrlResult>;
+  createRegistrationDocument(
+    req: RegistrationDocumentRequest,
+  ): Promise<OnboardingDocument>;
+  listRegistrationDocuments(
+    registrationToken: string,
+  ): Promise<OnboardingDocument[]>;
 
   // Distributor invitations (supplier side)
   createInvitation(req: CreateInvitationRequest): Promise<Invitation>;
@@ -64,16 +79,26 @@ export interface AuthApi {
   verifyInvitation(token: string): Promise<Invitation>;
 
   // Distributor public onboarding
-  distributorRegister(req: DistributorRegisterRequest): Promise<DistributorRegisterResult>;
+  distributorRegister(
+    req: DistributorRegisterRequest,
+  ): Promise<DistributorRegisterResult>;
   distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<LoginResult>;
   distributorResendOtp(email: string, password: string): Promise<LoginResult>;
 
   // Distributor authenticated onboarding (JWT-bound)
   getDistributorOnboarding(): Promise<DistributorOnboardingSummary>;
-  saveDistributorBusinessProfile(req: DistributorBusinessProfileRequest): Promise<Distributor>;
-  presignDistributorDocument(req: PresignUploadUrlRequest): Promise<PresignUploadUrlResult>;
-  createDistributorOnboardingDocument(req: DistributorOnboardingDocumentRequest): Promise<DistributorOnboardingDocument>;
-  listDistributorOnboardingDocuments(): Promise<DistributorOnboardingDocument[]>;
+  saveDistributorBusinessProfile(
+    req: DistributorBusinessProfileRequest,
+  ): Promise<Distributor>;
+  presignDistributorDocument(
+    req: PresignUploadUrlRequest,
+  ): Promise<PresignUploadUrlResult>;
+  createDistributorOnboardingDocument(
+    req: DistributorOnboardingDocumentRequest,
+  ): Promise<DistributorOnboardingDocument>;
+  listDistributorOnboardingDocuments(): Promise<
+    DistributorOnboardingDocument[]
+  >;
   deleteDistributorOnboardingDocument(id: string): Promise<void>;
   submitDistributorOnboarding(): Promise<DistributorOnboardingSubmitResult>;
   listDocumentTypes(): Promise<DistributorDocumentType[]>;

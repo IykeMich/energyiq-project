@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '@energyiq/store';
+import { useCallback } from "react";
+import { useAppDispatch, useAppSelector } from "@energyiq/store";
 import {
   initiate as initiateThunk,
   complete as completeThunk,
@@ -24,7 +24,9 @@ import {
   getDistributorOnboarding as getDistributorOnboardingThunk,
   listDistributorOnboardingDocuments as listDistributorOnboardingDocumentsThunk,
   deleteDistributorOnboardingDocument as deleteDistributorOnboardingDocumentThunk,
-} from '@energyiq/store';
+  presignRegistrationDocument as presignRegistrationDocumentThunk,
+  createRegistrationDocument as createRegistrationDocumentThunk,
+} from "@energyiq/store";
 import type {
   InitiateRequest,
   LoginRequest,
@@ -35,8 +37,10 @@ import type {
   DistributorBusinessProfileRequest,
   DistributorOnboardingDocumentRequest,
   PresignUploadUrlRequest,
+  PresignRegistrationDocumentRequest,
+  RegistrationDocumentRequest,
   CreateInvitationRequest,
-} from '@energyiq/domain/auth';
+} from "@energyiq/domain/auth";
 
 // ════════════════════════════════════════════════════════════════
 // useAuth — hook that bridges React components to Redux auth slice.
@@ -47,23 +51,32 @@ export function useAuth() {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
 
-  const handleInitiate = useCallback(async (req: InitiateRequest) => {
-    const result = await dispatch(initiateThunk(req));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleInitiate = useCallback(
+    async (req: InitiateRequest) => {
+      const result = await dispatch(initiateThunk(req));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleComplete = useCallback(async (otpCode: string) => {
-    const result = await dispatch(completeThunk(otpCode));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleComplete = useCallback(
+    async (otpCode: string) => {
+      const result = await dispatch(completeThunk(otpCode));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleLogin = useCallback(async (req: LoginRequest): Promise<LoginResult | null> => {
-    const result = await dispatch(loginThunk(req));
-    if (loginThunk.fulfilled.match(result)) {
-      return result.payload;
-    }
-    return null;
-  }, [dispatch]);
+  const handleLogin = useCallback(
+    async (req: LoginRequest): Promise<LoginResult | null> => {
+      const result = await dispatch(loginThunk(req));
+      if (loginThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
 
   const handleLogout = useCallback(async () => {
     // Revoke the refresh token server-side before clearing it locally.
@@ -77,33 +90,48 @@ export function useAuth() {
 
   const handleResendOtp = useCallback(async () => {
     const result = await dispatch(resendOtpThunk());
-    return result.meta.requestStatus === 'fulfilled';
+    return result.meta.requestStatus === "fulfilled";
   }, [dispatch]);
 
-  const handleResetPassword = useCallback(async (email: string) => {
-    const result = await dispatch(resetPasswordThunk(email));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleResetPassword = useCallback(
+    async (email: string) => {
+      const result = await dispatch(resetPasswordThunk(email));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleResetPasswordVerify = useCallback(async (token: string) => {
-    const result = await dispatch(resetPasswordVerifyThunk(token));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleResetPasswordVerify = useCallback(
+    async (token: string) => {
+      const result = await dispatch(resetPasswordVerifyThunk(token));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleResetPasswordConfirm = useCallback(async (req: ResetPasswordConfirmRequest) => {
-    const result = await dispatch(resetPasswordConfirmThunk(req));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleResetPasswordConfirm = useCallback(
+    async (req: ResetPasswordConfirmRequest) => {
+      const result = await dispatch(resetPasswordConfirmThunk(req));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleDistributorRegister = useCallback(async (req: DistributorRegisterRequest) => {
-    const result = await dispatch(distributorRegisterThunk(req));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleDistributorRegister = useCallback(
+    async (req: DistributorRegisterRequest) => {
+      const result = await dispatch(distributorRegisterThunk(req));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleDistributorVerifyOtp = useCallback(async (req: DistributorVerifyOtpRequest) => {
-    const result = await dispatch(distributorVerifyOtpThunk(req));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleDistributorVerifyOtp = useCallback(
+    async (req: DistributorVerifyOtpRequest) => {
+      const result = await dispatch(distributorVerifyOtpThunk(req));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
   const handleDistributorResendOtp = useCallback(
     async (req: LoginRequest): Promise<LoginResult | null> => {
@@ -117,7 +145,7 @@ export function useAuth() {
   const handleSaveDistributorBusinessProfile = useCallback(
     async (req: DistributorBusinessProfileRequest) => {
       const result = await dispatch(saveDistributorBusinessProfileThunk(req));
-      return result.meta.requestStatus === 'fulfilled';
+      return result.meta.requestStatus === "fulfilled";
     },
     [dispatch],
   );
@@ -130,17 +158,22 @@ export function useAuth() {
     return null;
   }, [dispatch]);
 
-  const handlePresignDistributorDocument = useCallback(async (req: PresignUploadUrlRequest) => {
-    const result = await dispatch(presignDistributorDocumentThunk(req));
-    if (presignDistributorDocumentThunk.fulfilled.match(result)) {
-      return result.payload;
-    }
-    return null;
-  }, [dispatch]);
+  const handlePresignDistributorDocument = useCallback(
+    async (req: PresignUploadUrlRequest) => {
+      const result = await dispatch(presignDistributorDocumentThunk(req));
+      if (presignDistributorDocumentThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
 
   const handleCreateDistributorOnboardingDocument = useCallback(
     async (req: DistributorOnboardingDocumentRequest) => {
-      const result = await dispatch(createDistributorOnboardingDocumentThunk(req));
+      const result = await dispatch(
+        createDistributorOnboardingDocumentThunk(req),
+      );
       if (createDistributorOnboardingDocumentThunk.fulfilled.match(result)) {
         return result.payload;
       }
@@ -173,25 +206,61 @@ export function useAuth() {
     return null;
   }, [dispatch]);
 
-  const handleDeleteDistributorOnboardingDocument = useCallback(async (id: string) => {
-    const result = await dispatch(deleteDistributorOnboardingDocumentThunk(id));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleDeleteDistributorOnboardingDocument = useCallback(
+    async (id: string) => {
+      const result = await dispatch(
+        deleteDistributorOnboardingDocumentThunk(id),
+      );
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleActivateDistributor = useCallback(async (id: string) => {
-    const result = await dispatch(activateDistributorThunk(id));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleActivateDistributor = useCallback(
+    async (id: string) => {
+      const result = await dispatch(activateDistributorThunk(id));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleCreateInvitation = useCallback(async (req: CreateInvitationRequest) => {
-    const result = await dispatch(createInvitationThunk(req));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleCreateInvitation = useCallback(
+    async (req: CreateInvitationRequest) => {
+      const result = await dispatch(createInvitationThunk(req));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
 
-  const handleVerifyInvitation = useCallback(async (token: string) => {
-    const result = await dispatch(verifyInvitationThunk(token));
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleVerifyInvitation = useCallback(
+    async (token: string) => {
+      const result = await dispatch(verifyInvitationThunk(token));
+      return result.meta.requestStatus === "fulfilled";
+    },
+    [dispatch],
+  );
+
+  const handlePresignRegistrationDocument = useCallback(
+    async (req: PresignRegistrationDocumentRequest) => {
+      const result = await dispatch(presignRegistrationDocumentThunk(req));
+      if (presignRegistrationDocumentThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
+
+  const handleCreateRegistrationDocument = useCallback(
+    async (req: RegistrationDocumentRequest) => {
+      const result = await dispatch(createRegistrationDocumentThunk(req));
+      if (createRegistrationDocumentThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
 
   return {
     // State
@@ -226,13 +295,18 @@ export function useAuth() {
     saveDistributorBusinessProfile: handleSaveDistributorBusinessProfile,
     listDocumentTypes: handleListDocumentTypes,
     presignDistributorDocument: handlePresignDistributorDocument,
-    createDistributorOnboardingDocument: handleCreateDistributorOnboardingDocument,
+    createDistributorOnboardingDocument:
+      handleCreateDistributorOnboardingDocument,
     submitDistributorOnboarding: handleSubmitDistributorOnboarding,
     getDistributorOnboarding: handleGetDistributorOnboarding,
-    listDistributorOnboardingDocuments: handleListDistributorOnboardingDocuments,
-    deleteDistributorOnboardingDocument: handleDeleteDistributorOnboardingDocument,
+    listDistributorOnboardingDocuments:
+      handleListDistributorOnboardingDocuments,
+    deleteDistributorOnboardingDocument:
+      handleDeleteDistributorOnboardingDocument,
     activateDistributor: handleActivateDistributor,
     createInvitation: handleCreateInvitation,
     verifyInvitation: handleVerifyInvitation,
+    presignRegistrationDocument: handlePresignRegistrationDocument,
+    createRegistrationDocument: handleCreateRegistrationDocument,
   };
 }

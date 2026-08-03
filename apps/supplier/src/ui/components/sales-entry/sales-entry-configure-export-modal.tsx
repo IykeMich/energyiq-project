@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, X } from 'lucide-react';
 import { Modal } from '@energyiq/ui';
-import { SalesEntryCheckbox } from './sales-entry-checkbox';
+import { TableCheckbox } from '../table/table-checkbox';
 import { SalesEntryFormSelect } from './sales-entry-form-select';
 import {
   EXPORT_COLUMNS,
@@ -91,7 +91,7 @@ export function SalesEntryConfigureExportModal({
           <div className="flex flex-col gap-3">
             {EXPORT_COLUMNS.map((column) => (
               <label key={column.id} className="flex items-center gap-3 text-sm text-[#FAFAFA]">
-                <SalesEntryCheckbox
+                <TableCheckbox
                   checked={selectedColumns.has(column.id)}
                   onChange={() => toggleColumn(column.id)}
                   aria-label={column.label}

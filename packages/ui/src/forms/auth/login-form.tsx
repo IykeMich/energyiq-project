@@ -1,31 +1,38 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Check, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@energyiq/shared';
-import { useAuth } from '../../hooks/use-auth';
-import { store } from '@energyiq/store';
-import { toast } from '@energyiq/ui';
-import { loginSchema, type LoginFormData } from '../../validation/auth/login';
-import type { LoginResult } from '@energyiq/domain/auth';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, Eye, EyeOff } from "lucide-react";
+import { cn } from "@energyiq/shared";
+import { useAuth } from "../../hooks/use-auth";
+import { store } from "@energyiq/store";
+import { toast } from "@energyiq/ui";
+import { loginSchema, type LoginFormData } from "../../validation/auth/login";
+import type { LoginResult } from "@energyiq/domain/auth";
 
 const inputBaseClass =
-  'w-full h-[56px] rounded-full bg-[#FFFFFF1A] px-6 text-white placeholder:text-gray-500 ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#FBC02D]/40 transition-colors';
+  "w-full h-[56px] rounded-full bg-[#FFFFFF1A] px-6 text-white placeholder:text-gray-500 " +
+  "focus:outline-none focus:ring-2 focus:ring-[#FBC02D]/40 transition-colors";
 
 const OTP_LENGTH = 6;
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const { login, distributorVerifyOtp, distributorResendOtp, isLoading, error, clearError } = useAuth();
+  const {
+    login,
+    distributorVerifyOtp,
+    distributorResendOtp,
+    isLoading,
+    error,
+    clearError,
+  } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showMfa, setShowMfa] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
-  const [otpEmail, setOtpEmail] = useState('');
-  const [otpPassword, setOtpPassword] = useState('');
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpPassword, setOtpPassword] = useState("");
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [otpError, setOtpError] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
 
@@ -36,10 +43,10 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', mfaCode: '', rememberMe: true },
+    defaultValues: { email: "", password: "", mfaCode: "", rememberMe: true },
   });
 
-  const rememberMe = watch('rememberMe');
+  const rememberMe = watch("rememberMe");
 
   const handleOtpChange = (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
@@ -55,26 +62,20 @@ export function LoginForm() {
   const routeAfterLogin = (result: Awaited<ReturnType<typeof login>>) => {
     if (!result) return;
 
-    const next = result.next_action ?? 'dashboard';
+    const next = result.next_action ?? "dashboard";
     const slug = result.user?.slug;
 
     switch (next) {
-      case 'dashboard':
+      case "dashboard":
         if (slug) navigate(`/${slug}/dashboard`);
         break;
-      case 'complete_onboarding':
-        toast.info('Please complete onboarding', {
-          description: 'Your distributor onboarding is not finished yet.',
-        });
-        if (slug) navigate(`/${slug}/dashboard`);
+      case "complete_onboarding":
+        if (slug) navigate(`/${slug}/onboarding`);
         break;
-      case 'pending_review':
-        toast.info('Account pending review', {
-          description: 'Your distributor application is awaiting supplier approval.',
-        });
-        if (slug) navigate(`/${slug}/dashboard`);
+      case "pending_review":
+        if (slug) navigate(`/${slug}/onboarding`);
         break;
-      case 'verify_email':
+      case "verify_email":
         // Should be handled before this helper.
         break;
     }
@@ -89,11 +90,13 @@ export function LoginForm() {
     });
 
     if (!result) {
-      toast.error('Login failed', { description: error ?? 'Please check your credentials.' });
+      toast.error("Login failed", {
+        description: error ?? "Please check your credentials.",
+      });
       return;
     }
 
-    if (result.next_action === 'verify_email') {
+    if (result.next_action === "verify_email") {
       setOtpEmail(data.email.trim());
       setOtpPassword(data.password.trim());
       setShowOtp(true);
@@ -105,13 +108,16 @@ export function LoginForm() {
   };
 
   const handleVerifyOtp = async () => {
-    const code = otp.join('');
+    const code = otp.join("");
     if (code.length !== OTP_LENGTH) {
       setOtpError(true);
       return;
     }
     clearError();
-    const success = await distributorVerifyOtp({ email: otpEmail, otp_code: code });
+    const success = await distributorVerifyOtp({
+      email: otpEmail,
+      otp_code: code,
+    });
     if (success) {
       const state = store.getState().auth;
       routeAfterLogin({
@@ -125,16 +131,25 @@ export function LoginForm() {
 
   const handleResendOtp = async () => {
     clearError();
-    const result = await distributorResendOtp({ email: otpEmail, password: otpPassword });
+    const result = await distributorResendOtp({
+      email: otpEmail,
+      password: otpPassword,
+    });
     if (result) {
       setOtpCountdown(result.otp_resend_after_seconds ?? 30);
-      toast.success('Code resent', { description: 'A new OTP has been sent to your email.' });
+      toast.success("Code resent", {
+        description: "A new OTP has been sent to your email.",
+      });
     } else {
-      toast.error('Failed to resend code', { description: error ?? 'Please try again later.' });
+      toast.error("Failed to resend code", {
+        description: error ?? "Please try again later.",
+      });
     }
   };
 
-  const isMfaError = error?.toLowerCase().includes('mfa') || error?.toLowerCase().includes('otp');
+  const isMfaError =
+    error?.toLowerCase().includes("mfa") ||
+    error?.toLowerCase().includes("otp");
 
   if (showOtp) {
     return (
@@ -146,9 +161,12 @@ export function LoginForm() {
         )}
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-xl font-semibold text-white">Verify your email</h2>
+          <h2 className="text-xl font-semibold text-white">
+            Verify your email
+          </h2>
           <p className="text-sm text-gray-400">
-            Enter the 6-digit code sent to <span className="text-white">{otpEmail}</span>.
+            Enter the 6-digit code sent to{" "}
+            <span className="text-white">{otpEmail}</span>.
           </p>
         </div>
 
@@ -163,17 +181,19 @@ export function LoginForm() {
               value={digit}
               onChange={(e) => handleOtpChange(e.target.value, index)}
               className={cn(
-                'h-14 w-12 sm:w-14 rounded-2xl bg-[#FFFFFF1A] text-center text-2xl font-semibold text-white focus:outline-none focus:ring-2 focus:ring-[#FBC02D]/60 transition-colors',
-                otpError && 'ring-2 ring-red-500',
+                "h-14 w-12 sm:w-14 rounded-2xl bg-[#FFFFFF1A] text-center text-2xl font-semibold text-white focus:outline-none focus:ring-2 focus:ring-[#FBC02D]/60 transition-colors",
+                otpError && "ring-2 ring-red-500",
               )}
             />
           ))}
         </div>
 
-        {otpError && <p className="text-red-500 text-xs">Invalid or incomplete code</p>}
+        {otpError && (
+          <p className="text-red-500 text-xs">Invalid or incomplete code</p>
+        )}
 
         <p className="text-sm text-gray-400">
-          Resend available in 0:{otpCountdown.toString().padStart(2, '0')}
+          Resend available in 0:{otpCountdown.toString().padStart(2, "0")}
         </p>
 
         <button
@@ -191,14 +211,17 @@ export function LoginForm() {
           disabled={isLoading}
           className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Verifying...' : 'Verify & Continue'}
+          {isLoading ? "Verifying..." : "Verify & Continue"}
         </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-6">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="w-full flex flex-col gap-6"
+    >
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
           {error}
@@ -214,8 +237,8 @@ export function LoginForm() {
           id="email"
           type="email"
           autoComplete="email"
-          {...register('email')}
-          className={cn(inputBaseClass, errors.email && 'ring-2 ring-red-500')}
+          {...register("email")}
+          className={cn(inputBaseClass, errors.email && "ring-2 ring-red-500")}
         />
         {errors.email && (
           <p className="text-red-500 text-xs ml-6">{errors.email.message}</p>
@@ -230,18 +253,26 @@ export function LoginForm() {
         <div className="relative">
           <input
             id="password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             autoComplete="current-password"
-            {...register('password')}
-            className={cn(inputBaseClass, 'pr-14', errors.password && 'ring-2 ring-red-500')}
+            {...register("password")}
+            className={cn(
+              inputBaseClass,
+              "pr-14",
+              errors.password && "ring-2 ring-red-500",
+            )}
           />
           <button
             type="button"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? "Hide password" : "Show password"}
             onClick={() => setShowPassword((prev) => !prev)}
             className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
           >
-            {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+            {showPassword ? (
+              <Eye className="size-5" />
+            ) : (
+              <EyeOff className="size-5" />
+            )}
           </button>
         </div>
         {errors.password && (
@@ -262,11 +293,16 @@ export function LoginForm() {
             autoComplete="one-time-code"
             maxLength={6}
             placeholder="Enter 6-digit MFA code"
-            {...register('mfaCode')}
-            className={cn(inputBaseClass, errors.mfaCode && 'ring-2 ring-red-500')}
+            {...register("mfaCode")}
+            className={cn(
+              inputBaseClass,
+              errors.mfaCode && "ring-2 ring-red-500",
+            )}
           />
           {errors.mfaCode && (
-            <p className="text-red-500 text-xs ml-6">{errors.mfaCode.message}</p>
+            <p className="text-red-500 text-xs ml-6">
+              {errors.mfaCode.message}
+            </p>
           )}
         </div>
       )}
@@ -283,12 +319,15 @@ export function LoginForm() {
 
       {/* Stay signed in / Forgot password */}
       <div className="flex items-center justify-between flex-wrap gap-3 px-2">
-        <label htmlFor="rememberMe" className="inline-flex items-center gap-2 cursor-pointer select-none">
+        <label
+          htmlFor="rememberMe"
+          className="inline-flex items-center gap-2 cursor-pointer select-none"
+        >
           <span className="relative inline-flex">
             <input
               id="rememberMe"
               type="checkbox"
-              {...register('rememberMe')}
+              {...register("rememberMe")}
               className="peer appearance-none w-4 h-4 rounded-lg bg-[#FBC02D] cursor-pointer"
             />
             {rememberMe && (
@@ -301,7 +340,10 @@ export function LoginForm() {
           </span>
           <span className="text-sm text-white">Stay signed in</span>
         </label>
-        <Link to="/forgot-password" className="text-sm text-white hover:underline">
+        <Link
+          to="/forgot-password"
+          className="text-sm text-white hover:underline"
+        >
           Forgot password?
         </Link>
       </div>
@@ -312,13 +354,16 @@ export function LoginForm() {
         disabled={isLoading}
         className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {isLoading ? 'Signing in...' : 'Sign In'}
+        {isLoading ? "Signing in..." : "Sign In"}
       </button>
 
       {/* Sign up link */}
       <p className="text-center text-sm text-white">
-        Don&apos;t have an account?{' '}
-        <Link to="/register" className="text-[#FBC02D] font-medium hover:underline">
+        Don&apos;t have an account?{" "}
+        <Link
+          to="/register"
+          className="text-[#FBC02D] font-medium hover:underline"
+        >
           Sign Up
         </Link>
       </p>

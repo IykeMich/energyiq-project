@@ -2,30 +2,27 @@
 // Auth domain entities — pure TypeScript, zero framework imports
 // ════════════════════════════════════════════════════════════════
 
-export type LoginType = 'account' | 'staff';
+export type LoginType = "account" | "staff";
 
 export type LoginNextAction =
-  | 'verify_email'
-  | 'complete_onboarding'
-  | 'pending_review'
-  | 'dashboard';
+  "verify_email" | "complete_onboarding" | "pending_review" | "dashboard";
 
 // Closed CAC business-type enum required by the supplier registration endpoint.
 export type BusinessType =
-  | 'business_name'
-  | 'private_limited_company'
-  | 'public_limited_company'
-  | 'incorporated_trustees'
-  | 'limited_partnership'
-  | 'limited_liability_partnership';
+  | "business_name"
+  | "private_limited_company"
+  | "public_limited_company"
+  | "incorporated_trustees"
+  | "limited_partnership"
+  | "limited_liability_partnership";
 
 export const BusinessTypeLabels: Record<BusinessType, string> = {
-  business_name: 'Business Name',
-  private_limited_company: 'Private Limited Company',
-  public_limited_company: 'Public Limited Company',
-  incorporated_trustees: 'Incorporated Trustees',
-  limited_partnership: 'Limited Partnership',
-  limited_liability_partnership: 'Limited Liability Partnership',
+  business_name: "Business Name",
+  private_limited_company: "Private Limited Company",
+  public_limited_company: "Public Limited Company",
+  incorporated_trustees: "Incorporated Trustees",
+  limited_partnership: "Limited Partnership",
+  limited_liability_partnership: "Limited Liability Partnership",
 };
 
 // ── Supplier registration ───────────────────────────────────────
@@ -194,6 +191,25 @@ export interface OnboardingDocument {
   updated_at?: number | string;
 }
 
+// ── Supplier onboarding documents (pre-OTP, registration_token-scoped) ──
+// Uploaded between `initiate()` and `complete()`, while registration_token
+// is still valid (it's deleted once OTP verification succeeds).
+
+export interface PresignRegistrationDocumentRequest {
+  registration_token: string;
+  file_name: string;
+  content_type: string;
+}
+
+export interface RegistrationDocumentRequest {
+  registration_token: string;
+  document_type: string;
+  file_name: string;
+  file_size: number;
+  file_url: string;
+  mime_type: string;
+}
+
 // ── Distributor invitations (supplier side) ───────────────────────
 
 export interface CreateInvitationRequest {
@@ -256,11 +272,10 @@ export interface DistributorRegisterRequest {
   password: string;
   confirm_password: string;
   invitation_token: string;
-  agree_terms: boolean;
 }
 
 export interface DistributorRegisterResult {
-  next_action?: 'verify_email';
+  next_action?: "verify_email";
   otp_resend_after_seconds?: number;
   distributor?: Distributor;
   dev_otp?: string;
@@ -276,7 +291,7 @@ export interface DistributorBusinessProfileRequest {
   cac_number: string;
   tin: string;
   business_address: string;
-  business_phone: string;
+  business_phone_number: string;
   country: string;
   state: string;
   city: string;
@@ -291,7 +306,8 @@ export interface DistributorDocumentType {
   document_name: string;
   required: boolean;
   allowed_file_types: string[];
-  max_file_size: number;
+  max_file_size_mb: number;
+  audience: "supplier" | "distributor" | "both";
 }
 
 export interface DistributorOnboardingDocument {
@@ -315,9 +331,8 @@ export interface DistributorOnboardingDocumentRequest {
 }
 
 export interface PresignUploadUrlRequest {
-  document_type: string;
   file_name: string;
-  mime_type: string;
+  content_type: string;
 }
 
 export interface PresignUploadUrlResult {
@@ -327,11 +342,9 @@ export interface PresignUploadUrlResult {
 }
 
 export interface DistributorOnboardingSummary {
-  business_profile?: DistributorBusinessProfileRequest;
+  distributor?: Distributor;
   documents?: DistributorOnboardingDocument[];
   required_documents?: DistributorDocumentType[];
-  kyc_status?: string;
-  status?: string;
 }
 
 export interface DistributorOnboardingSubmitResult {

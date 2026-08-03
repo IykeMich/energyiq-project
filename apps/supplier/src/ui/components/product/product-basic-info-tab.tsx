@@ -56,7 +56,7 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
 
   return (
     <div className="flex flex-col gap-5">
-      <Field label="Product Name:" required>
+      <Field label="Product Name:">
         <TextField
           value={draft.name}
           onChange={(value) => onChange({ name: value })}
@@ -65,7 +65,7 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
         />
       </Field>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Product Category:" required>
+        <Field label="Product Category:">
           <SelectField
             value={draft.category}
             onChange={(value) => onChange({ category: value })}
@@ -82,7 +82,7 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
             options={TYPE_OPTIONS}
           />
         </Field>
-        <Field label="Measuring Unit:" required>
+        <Field label="Measuring Unit:">
           <SelectField
             value={draft.measuringUnit}
             onChange={(value) => onChange({ measuringUnit: value })}
@@ -110,7 +110,7 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
         />
       )}
 
-      <div className="border-t border-border-subtle pt-5">
+      <div className="border-t border-dashed border-border-subtle pt-5">
         <Field label="Product Description:">
           <TextAreaField
             value={draft.description}

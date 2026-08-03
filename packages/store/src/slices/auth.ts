@@ -1,6 +1,6 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { auth } from '@energyiq/domain';
-import { authUseCases } from '../config';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import type { auth } from "@energyiq/domain";
+import { authUseCases } from "../config";
 
 // ════════════════════════════════════════════════════════════════
 // State
@@ -47,7 +47,7 @@ const initialState: AuthState = {
 // ════════════════════════════════════════════════════════════════
 
 export const initiate = createAsyncThunk(
-  'auth/initiate',
+  "auth/initiate",
   async (req: auth.InitiateRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().initiate(req);
@@ -58,11 +58,11 @@ export const initiate = createAsyncThunk(
 );
 
 export const complete = createAsyncThunk(
-  'auth/complete',
+  "auth/complete",
   async (otpCode: string, { getState, rejectWithValue }) => {
     const state = getState() as { auth: AuthState };
     const token = state.auth.registrationToken;
-    if (!token) return rejectWithValue('No registration token');
+    if (!token) return rejectWithValue("No registration token");
 
     try {
       return await authUseCases().complete({
@@ -76,7 +76,7 @@ export const complete = createAsyncThunk(
 );
 
 export const login = createAsyncThunk(
-  'auth/login',
+  "auth/login",
   async (req: auth.LoginRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().login(req);
@@ -87,11 +87,11 @@ export const login = createAsyncThunk(
 );
 
 export const resendOtp = createAsyncThunk(
-  'auth/resendOtp',
+  "auth/resendOtp",
   async (_: void, { getState, rejectWithValue }) => {
     const state = getState() as { auth: AuthState };
     const token = state.auth.registrationToken;
-    if (!token) return rejectWithValue('No registration token');
+    if (!token) return rejectWithValue("No registration token");
 
     try {
       return await authUseCases().resendOtp(token);
@@ -102,7 +102,7 @@ export const resendOtp = createAsyncThunk(
 );
 
 export const createSupplierOnboardingDocument = createAsyncThunk(
-  'auth/createSupplierOnboardingDocument',
+  "auth/createSupplierOnboardingDocument",
   async (req: auth.OnboardingDocumentRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().createOnboardingDocument(req);
@@ -113,7 +113,7 @@ export const createSupplierOnboardingDocument = createAsyncThunk(
 );
 
 export const listSupplierOnboardingDocuments = createAsyncThunk(
-  'auth/listSupplierOnboardingDocuments',
+  "auth/listSupplierOnboardingDocuments",
   async (_, { rejectWithValue }) => {
     try {
       return await authUseCases().listOnboardingDocuments();
@@ -124,7 +124,7 @@ export const listSupplierOnboardingDocuments = createAsyncThunk(
 );
 
 export const deleteSupplierOnboardingDocument = createAsyncThunk(
-  'auth/deleteSupplierOnboardingDocument',
+  "auth/deleteSupplierOnboardingDocument",
   async (id: string, { rejectWithValue }) => {
     try {
       await authUseCases().deleteOnboardingDocument(id);
@@ -135,8 +135,30 @@ export const deleteSupplierOnboardingDocument = createAsyncThunk(
   },
 );
 
+export const presignRegistrationDocument = createAsyncThunk(
+  "auth/presignRegistrationDocument",
+  async (req: auth.PresignRegistrationDocumentRequest, { rejectWithValue }) => {
+    try {
+      return await authUseCases().presignRegistrationDocument(req);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const createRegistrationDocument = createAsyncThunk(
+  "auth/createRegistrationDocument",
+  async (req: auth.RegistrationDocumentRequest, { rejectWithValue }) => {
+    try {
+      return await authUseCases().createRegistrationDocument(req);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
 export const resetPassword = createAsyncThunk(
-  'auth/resetPasswordRequest',
+  "auth/resetPasswordRequest",
   async (email: string, { rejectWithValue }) => {
     try {
       await authUseCases().resetPassword(email);
@@ -147,7 +169,7 @@ export const resetPassword = createAsyncThunk(
 );
 
 export const resetPasswordVerify = createAsyncThunk(
-  'auth/resetPasswordVerify',
+  "auth/resetPasswordVerify",
   async (token: string, { rejectWithValue }) => {
     try {
       await authUseCases().resetPasswordVerify(token);
@@ -158,7 +180,7 @@ export const resetPasswordVerify = createAsyncThunk(
 );
 
 export const resetPasswordConfirm = createAsyncThunk(
-  'auth/resetPasswordConfirm',
+  "auth/resetPasswordConfirm",
   async (req: auth.ResetPasswordConfirmRequest, { rejectWithValue }) => {
     try {
       await authUseCases().resetPasswordConfirm(req);
@@ -171,7 +193,7 @@ export const resetPasswordConfirm = createAsyncThunk(
 // ── Distributor public onboarding ─────────────────────────────
 
 export const distributorRegister = createAsyncThunk(
-  'auth/distributorRegister',
+  "auth/distributorRegister",
   async (req: auth.DistributorRegisterRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().distributorRegister(req);
@@ -182,7 +204,7 @@ export const distributorRegister = createAsyncThunk(
 );
 
 export const distributorVerifyOtp = createAsyncThunk(
-  'auth/distributorVerifyOtp',
+  "auth/distributorVerifyOtp",
   async (req: auth.DistributorVerifyOtpRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().distributorVerifyOtp(req);
@@ -193,7 +215,7 @@ export const distributorVerifyOtp = createAsyncThunk(
 );
 
 export const saveDistributorBusinessProfile = createAsyncThunk(
-  'auth/saveDistributorBusinessProfile',
+  "auth/saveDistributorBusinessProfile",
   async (req: auth.DistributorBusinessProfileRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().saveDistributorBusinessProfile(req);
@@ -204,7 +226,7 @@ export const saveDistributorBusinessProfile = createAsyncThunk(
 );
 
 export const getDistributorOnboarding = createAsyncThunk(
-  'auth/getDistributorOnboarding',
+  "auth/getDistributorOnboarding",
   async (_, { rejectWithValue }) => {
     try {
       return await authUseCases().getDistributorOnboarding();
@@ -215,7 +237,7 @@ export const getDistributorOnboarding = createAsyncThunk(
 );
 
 export const listDocumentTypes = createAsyncThunk(
-  'auth/listDocumentTypes',
+  "auth/listDocumentTypes",
   async (_, { rejectWithValue }) => {
     try {
       return await authUseCases().listDocumentTypes();
@@ -226,7 +248,7 @@ export const listDocumentTypes = createAsyncThunk(
 );
 
 export const presignDistributorDocument = createAsyncThunk(
-  'auth/presignDistributorDocument',
+  "auth/presignDistributorDocument",
   async (req: auth.PresignUploadUrlRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().presignDistributorDocument(req);
@@ -237,8 +259,11 @@ export const presignDistributorDocument = createAsyncThunk(
 );
 
 export const createDistributorOnboardingDocument = createAsyncThunk(
-  'auth/createDistributorOnboardingDocument',
-  async (req: auth.DistributorOnboardingDocumentRequest, { rejectWithValue }) => {
+  "auth/createDistributorOnboardingDocument",
+  async (
+    req: auth.DistributorOnboardingDocumentRequest,
+    { rejectWithValue },
+  ) => {
     try {
       return await authUseCases().createDistributorOnboardingDocument(req);
     } catch (err) {
@@ -248,7 +273,7 @@ export const createDistributorOnboardingDocument = createAsyncThunk(
 );
 
 export const listDistributorOnboardingDocuments = createAsyncThunk(
-  'auth/listDistributorOnboardingDocuments',
+  "auth/listDistributorOnboardingDocuments",
   async (_, { rejectWithValue }) => {
     try {
       return await authUseCases().listDistributorOnboardingDocuments();
@@ -259,7 +284,7 @@ export const listDistributorOnboardingDocuments = createAsyncThunk(
 );
 
 export const deleteDistributorOnboardingDocument = createAsyncThunk(
-  'auth/deleteDistributorOnboardingDocument',
+  "auth/deleteDistributorOnboardingDocument",
   async (id: string, { rejectWithValue }) => {
     try {
       await authUseCases().deleteDistributorOnboardingDocument(id);
@@ -270,7 +295,7 @@ export const deleteDistributorOnboardingDocument = createAsyncThunk(
 );
 
 export const submitDistributorOnboarding = createAsyncThunk(
-  'auth/submitDistributorOnboarding',
+  "auth/submitDistributorOnboarding",
   async (_, { rejectWithValue }) => {
     try {
       return await authUseCases().submitDistributorOnboarding();
@@ -281,7 +306,7 @@ export const submitDistributorOnboarding = createAsyncThunk(
 );
 
 export const activateDistributor = createAsyncThunk(
-  'auth/activateDistributor',
+  "auth/activateDistributor",
   async (id: string, { rejectWithValue }) => {
     try {
       return await authUseCases().activateDistributor(id);
@@ -294,7 +319,7 @@ export const activateDistributor = createAsyncThunk(
 // Revokes the refresh token server-side. Must run before the synchronous
 // `logout` reducer clears local storage, since it needs the current refresh
 // token to revoke it. Best-effort: local logout proceeds regardless of outcome.
-export const logoutRemote = createAsyncThunk('auth/logoutRemote', async () => {
+export const logoutRemote = createAsyncThunk("auth/logoutRemote", async () => {
   try {
     await authUseCases().logoutRemote();
   } catch {
@@ -305,7 +330,7 @@ export const logoutRemote = createAsyncThunk('auth/logoutRemote', async () => {
 // ── Distributor invitations (supplier side) ─────────────────────
 
 export const createInvitation = createAsyncThunk(
-  'auth/createInvitation',
+  "auth/createInvitation",
   async (req: auth.CreateInvitationRequest, { rejectWithValue }) => {
     try {
       return await authUseCases().createInvitation(req);
@@ -316,7 +341,7 @@ export const createInvitation = createAsyncThunk(
 );
 
 export const verifyInvitation = createAsyncThunk(
-  'auth/verifyInvitation',
+  "auth/verifyInvitation",
   async (token: string, { rejectWithValue }) => {
     try {
       return await authUseCases().verifyInvitation(token);
@@ -348,7 +373,7 @@ function setAuthFromLogin(state: AuthState, payload: auth.LoginResult) {
 }
 
 export const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     logout(state) {
@@ -392,15 +417,15 @@ export const authSlice = createSlice({
       .addCase(complete.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.loginType = 'account';
+        state.loginType = "account";
         state.registrationToken = null;
-        state.nextAction = 'dashboard';
+        state.nextAction = "dashboard";
         state.user = {
           id: action.payload.supplier.id,
-          name: '',
-          email: '',
-          role: 'owner',
-          entity_type: 'supplier',
+          name: "",
+          email: "",
+          role: "owner",
+          entity_type: "supplier",
           entity_id: action.payload.supplier.id,
           account_number: action.payload.supplier.account_number,
           slug: action.payload.supplier.slug,
@@ -487,7 +512,8 @@ export const authSlice = createSlice({
         state.isLoading = false;
         state.distributor = action.payload.distributor ?? null;
         state.nextAction = action.payload.next_action ?? null;
-        state.otpResendAfterSeconds = action.payload.otp_resend_after_seconds ?? null;
+        state.otpResendAfterSeconds =
+          action.payload.otp_resend_after_seconds ?? null;
         state.devOtp = action.payload.dev_otp ?? null;
       })
       .addCase(distributorRegister.rejected, (state, action) => {
@@ -574,10 +600,13 @@ export const authSlice = createSlice({
       .addCase(createDistributorOnboardingDocument.fulfilled, (state) => {
         state.isLoading = false;
       })
-      .addCase(createDistributorOnboardingDocument.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+      .addCase(
+        createDistributorOnboardingDocument.rejected,
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload as string;
+        },
+      );
 
     builder
       .addCase(listDistributorOnboardingDocuments.pending, (state) => {
@@ -600,10 +629,13 @@ export const authSlice = createSlice({
       .addCase(deleteDistributorOnboardingDocument.fulfilled, (state) => {
         state.isLoading = false;
       })
-      .addCase(deleteDistributorOnboardingDocument.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+      .addCase(
+        deleteDistributorOnboardingDocument.rejected,
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload as string;
+        },
+      );
 
     builder
       .addCase(submitDistributorOnboarding.pending, (state) => {
@@ -613,7 +645,7 @@ export const authSlice = createSlice({
       .addCase(submitDistributorOnboarding.fulfilled, (state, action) => {
         state.isLoading = false;
         state.distributor = action.payload.distributor;
-        state.nextAction = 'pending_review';
+        state.nextAction = "pending_review";
       })
       .addCase(submitDistributorOnboarding.rejected, (state, action) => {
         state.isLoading = false;

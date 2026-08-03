@@ -42,6 +42,10 @@ interface DefaultTableProps<RowData extends object> {
   onRowClick?: (row: RowData) => void;
   /** Extra classes for the outer wrapper. */
   className?: string;
+  /** Content rendered above the table but inside `cardClassName` (e.g. a filter bar). */
+  header?: ReactNode;
+  /** Extra classes for the card wrapping `header` + the table, excluding pagination. */
+  cardClassName?: string;
 }
 
 const ALIGNMENT_CLASS: Record<ColumnAlignment, string> = {
@@ -86,6 +90,8 @@ export function DefaultTable<RowData extends object>({
   getRowId,
   onRowClick,
   className,
+  header,
+  cardClassName = 'bg-surface-card rounded-[18px] p-4',
 }: DefaultTableProps<RowData>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [sort, setSort] = useState<SortState<RowData> | null>(null);
@@ -149,7 +155,9 @@ export function DefaultTable<RowData extends object>({
           </button>
         </div>
       )}
-      <div className="w-full overflow-x-auto no-scrollbar">
+      <div className={cn('flex flex-col gap-4', cardClassName)}>
+        {header}
+        <div className="w-full overflow-x-auto no-scrollbar">
         <table className="w-full min-w-max border-separate border-spacing-y-1">
           <thead>
             <tr>
@@ -161,7 +169,7 @@ export function DefaultTable<RowData extends object>({
                     style={{ width: column.width }}
                     onClick={() => toggleSort(column)}
                     className={cn(
-                      'border-y border-[#616161B2] bg-transparent px-4 py-3 text-base font-semibold text-[#FAFAFA] whitespace-nowrap',
+                      'border-y border-[#616161B2] bg-[#FBC02D1A] px-4 py-3 text-base font-semibold text-[#FAFAFA] whitespace-nowrap',
                       ALIGNMENT_CLASS[alignment],
                       columnIndex === 0 && 'rounded-l-[28px] border-l',
                       columnIndex === columns.length - 1 && 'rounded-r-[28px] border-r',
@@ -245,6 +253,7 @@ export function DefaultTable<RowData extends object>({
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showPagination && !isLoading && sortedData.length > 0 && (

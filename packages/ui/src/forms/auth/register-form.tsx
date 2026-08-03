@@ -1,26 +1,26 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Lock, Upload, FileCheck } from 'lucide-react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Lock, Upload, FileCheck } from "lucide-react";
 
-import { useAuth } from '../../hooks/use-auth';
-import { toast } from '@energyiq/ui';
-import { BusinessTypeLabels, type BusinessType } from '@energyiq/domain/auth';
+import { useAuth } from "../../hooks/use-auth";
+import { toast } from "@energyiq/ui";
+import { BusinessTypeLabels, type BusinessType } from "@energyiq/domain/auth";
 import {
   registerSchema,
   type RegisterFormData,
-} from '../../validation/auth/register';
+} from "../../validation/auth/register";
 
 const steps = [
-  'Company Information',
-  'Account Setup',
-  'OTP Verification',
-  'Document Upload',
+  "Company Information",
+  "Account Setup",
+  "Document Upload",
+  "OTP Verification",
 ];
 
 const inputClass =
-  'w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#FBC02D]';
+  "w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#FBC02D]";
 
 export function RegisterForm() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -36,9 +36,20 @@ export function RegisterForm() {
   const [isUploading, setIsUploading] = useState(false);
 
   const navigate = useNavigate();
-  const { isLoading, error, clearError, initiate, complete, resendOtp: resendOtpAction, slug } = useAuth();
+  const {
+    isLoading,
+    error,
+    clearError,
+    initiate,
+    complete,
+    resendOtp: resendOtpAction,
+    slug,
+    registrationToken,
+    presignRegistrationDocument,
+    createRegistrationDocument,
+  } = useAuth();
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
 
@@ -50,34 +61,35 @@ export function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: 'onChange',
+    mode: "onChange",
     defaultValues: {
-      company_name: '',
-      company_email: '',
-      business_type: '',
-      registration_number: '',
-      first_name: '',
-      last_name: '',
-      account_email: '',
-      admin_phone: '',
-      password: '',
-      confirm_password: '',
+      company_name: "",
+      company_email: "",
+      business_type: "",
+      registration_number: "",
+      first_name: "",
+      last_name: "",
+      account_email: "",
+      admin_phone: "",
+      password: "",
+      confirm_password: "",
       accepted_terms: false,
       accepted_privacy_policy: false,
     },
   });
 
-  const password = watch('password');
-  const accountEmail = watch('account_email');
+  const password = watch("password");
+  const accountEmail = watch("account_email");
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+  const nextStep = () =>
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
 
   const handleStep1Next = async () => {
     const valid = await trigger([
-      'company_name',
-      'company_email',
-      'business_type',
-      'registration_number',
+      "company_name",
+      "company_email",
+      "business_type",
+      "registration_number",
     ]);
     if (valid) nextStep();
   };
@@ -104,13 +116,13 @@ export function RegisterForm() {
       },
     });
     if (success) {
-      toast.success('Account created', {
-        description: 'Complete OTP verification to finish registration.',
+      toast.success("Account created", {
+        description: "Complete OTP verification to finish registration.",
       });
       nextStep();
     } else {
-      toast.error('Failed to create account', {
-        description: error ?? 'Please check your details.',
+      toast.error("Failed to create account", {
+        description: error ?? "Please check your details.",
       });
     }
   });
@@ -122,12 +134,14 @@ export function RegisterForm() {
     setOtp(newOtp);
     setOtpError(false);
     if (value && index < 5) {
-      (document.getElementById(`otp-${index + 1}`) as HTMLInputElement)?.focus();
+      (
+        document.getElementById(`otp-${index + 1}`) as HTMLInputElement
+      )?.focus();
     }
   };
 
   const handleOtpSubmit = async () => {
-    const code = otp.join('');
+    const code = otp.join("");
     if (code.length !== 6) {
       setOtpError(true);
       return;
@@ -135,11 +149,11 @@ export function RegisterForm() {
     clearError();
     const success = await complete(code);
     if (success) {
-      toast.success('Email verified', { description: 'Welcome to EnergyIQ.' });
-      nextStep(); // ➡️ Step 4: Document Upload
+      toast.success("Email verified", { description: "Welcome to EnergyIQ." });
+      setAccountCreated(true);
     } else {
       setOtpError(true);
-      toast.error('Invalid OTP', { description: error ?? 'Please try again.' });
+      toast.error("Invalid OTP", { description: error ?? "Please try again." });
     }
   };
 
@@ -148,9 +162,13 @@ export function RegisterForm() {
     const success = await resendOtpAction();
     if (success) {
       setOtpResent(true);
-      toast.success('OTP resent', { description: 'A new code has been sent to your email.' });
+      toast.success("OTP resent", {
+        description: "A new code has been sent to your email.",
+      });
     } else {
-      toast.error('Failed to resend OTP', { description: error ?? 'Please try again later.' });
+      toast.error("Failed to resend OTP", {
+        description: error ?? "Please try again later.",
+      });
     }
   };
 
@@ -165,18 +183,75 @@ export function RegisterForm() {
   };
 
   const strength = getPasswordStrength();
-  const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
-  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+  const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
+  const strengthColors = [
+    "bg-red-500",
+    "bg-orange-500",
+    "bg-yellow-500",
+    "bg-green-500",
+  ];
 
   const handleFileChange = (key: keyof typeof documents, file: File | null) => {
     setDocuments((prev) => ({ ...prev, [key]: file }));
   };
 
+  // Uploads each selected file via the registration_token-scoped presign
+  // flow (presign → PUT/POST to storage → register metadata), mirroring
+  // distributor-form.tsx's uploadFileToPresign. NOTE: the presign endpoint
+  // is guessed (not in the current swagger) — see packages/api/src/auth.ts.
+  const uploadRegistrationDocument = async (
+    file: File,
+    documentType: string,
+  ) => {
+    if (!registrationToken) throw new Error("Missing registration session");
+
+    const presign = await presignRegistrationDocument({
+      registration_token: registrationToken,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+    });
+    if (!presign)
+      throw new Error(`Failed to get an upload URL for ${file.name}`);
+
+    const uploadResponse =
+      presign.fields && Object.keys(presign.fields).length > 0
+        ? await (() => {
+            const formData = new FormData();
+            Object.entries(presign.fields!).forEach(([key, value]) =>
+              formData.append(key, value),
+            );
+            formData.append("file", file);
+            return fetch(presign.upload_url, {
+              method: "POST",
+              body: formData,
+            });
+          })()
+        : await fetch(presign.upload_url, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": file.type || "application/octet-stream",
+            },
+          });
+
+    if (!uploadResponse.ok) throw new Error(`Upload failed for ${file.name}`);
+
+    const created = await createRegistrationDocument({
+      registration_token: registrationToken,
+      document_type: documentType,
+      file_name: file.name,
+      file_size: file.size,
+      file_url: presign.public_url,
+      mime_type: file.type || "application/octet-stream",
+    });
+    if (!created) throw new Error(`Failed to register ${file.name}`);
+  };
+
   const handleDocumentSubmit = async () => {
     // Only CAC, Tax, and Director ID are required. Utility Bill is optional.
     if (!documents.cac || !documents.tax || !documents.directorId) {
-      toast.error('Missing required documents', {
-        description: 'Please upload all required KYC documents.',
+      toast.error("Missing required documents", {
+        description: "Please upload all required KYC documents.",
       });
       return;
     }
@@ -185,22 +260,23 @@ export function RegisterForm() {
     clearError();
 
     try {
-      // TODO: Replace with your actual KYC upload API
-      const formData = new FormData();
-      formData.append('cac', documents.cac);
-      formData.append('tax', documents.tax);
-      formData.append('director_id', documents.directorId);
-      if (documents.utilityBill) formData.append('utility_bill', documents.utilityBill);
-      // await api.post('/auth/kyc-upload', formData);
+      await Promise.all(
+        documentFields
+          .filter(({ key }) => documents[key])
+          .map(({ key, documentType }) =>
+            uploadRegistrationDocument(documents[key] as File, documentType),
+          ),
+      );
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setAccountCreated(true);
-      toast.success('Registration complete', {
-        description: 'Your KYC documents have been submitted.',
+      toast.success("Documents submitted", {
+        description: "Your KYC documents have been uploaded.",
       });
+      nextStep();
     } catch (err) {
-      toast.error('Upload failed', { description: 'Please try again later.' });
+      toast.error("Upload failed", {
+        description:
+          err instanceof Error ? err.message : "Please try again later.",
+      });
     } finally {
       setIsUploading(false);
     }
@@ -214,31 +290,36 @@ export function RegisterForm() {
     description: string;
     hint?: string;
     required: boolean;
+    documentType: string;
   }[] = [
     {
-      key: 'cac',
-      label: 'CAC Certificate',
-      description: 'Certificate of Incorporation',
+      key: "cac",
+      label: "CAC Certificate",
+      description: "Certificate of Incorporation",
       required: true,
+      documentType: "cac_certificate",
     },
     {
-      key: 'tax',
-      label: 'Tax Clearance Certificate',
-      description: 'Current TCC from FIRS',
+      key: "tax",
+      label: "Tax Clearance Certificate",
+      description: "Current TCC from FIRS",
       required: true,
+      documentType: "tax_clearance_certificate",
     },
     {
-      key: 'directorId',
+      key: "directorId",
       label: "Director's Government ID",
       description: "NIN slip, passport, driver's license",
-      hint: 'Both sides required',
+      hint: "Both sides required",
       required: true,
+      documentType: "directors_government_id",
     },
     {
-      key: 'utilityBill',
-      label: 'Utility Bill',
-      description: 'Not older than 3 months',
+      key: "utilityBill",
+      label: "Utility Bill",
+      description: "Not older than 3 months",
       required: false,
+      documentType: "utility_bill",
     },
   ];
 
@@ -258,19 +339,22 @@ export function RegisterForm() {
           const isActive = currentStep >= stepNumber;
           const isCurrent = currentStep === stepNumber;
           return (
-            <div key={step} className="relative z-10 flex flex-col items-center">
+            <div
+              key={step}
+              className="relative z-10 flex flex-col items-center"
+            >
               <div
                 className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                   isActive
-                    ? 'bg-[#FBC02D] border-[#FBC02D] text-black'
-                    : 'bg-black border-gray-500 text-gray-500'
-                } ${isCurrent ? 'ring-2 ring-[#FBC02D] ring-offset-2 ring-offset-black' : ''}`}
+                    ? "bg-[#FBC02D] border-[#FBC02D] text-black"
+                    : "bg-black border-gray-500 text-gray-500"
+                } ${isCurrent ? "ring-2 ring-[#FBC02D] ring-offset-2 ring-offset-black" : ""}`}
               >
                 {stepNumber}
               </div>
               <span
                 className={`text-[10px] mt-2 whitespace-nowrap ${
-                  isActive ? 'text-white' : 'text-gray-500'
+                  isActive ? "text-white" : "text-gray-500"
                 }`}
               >
                 {step}
@@ -285,33 +369,46 @@ export function RegisterForm() {
         {currentStep === 1 && (
           <>
             <div>
-              <label className="block text-sm text-white mb-2">Company Name:</label>
+              <label className="block text-sm text-white mb-2">
+                Company Name:
+              </label>
               <input
-                {...register('company_name')}
+                {...register("company_name")}
                 placeholder="e.g Emeka Fuels"
                 className={inputClass}
               />
               {errors.company_name && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.company_name.message}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.company_name.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">Company Email Address:</label>
+              <label className="block text-sm text-white mb-2">
+                Company Email Address:
+              </label>
               <input
                 type="email"
-                {...register('company_email')}
+                {...register("company_email")}
                 placeholder="e.g emeka@fuels.com"
                 className={inputClass}
               />
               {errors.company_email && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.company_email.message}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.company_email.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">Business Type:</label>
-              <select {...register('business_type')} className={`${inputClass} appearance-none`}>
+              <label className="block text-sm text-white mb-2">
+                Business Type:
+              </label>
+              <select
+                {...register("business_type")}
+                className={`${inputClass} appearance-none`}
+              >
                 <option value="">Select a business type</option>
                 {Object.entries(BusinessTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -320,14 +417,18 @@ export function RegisterForm() {
                 ))}
               </select>
               {errors.business_type && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.business_type.message}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.business_type.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">Registration Number (CAC)</label>
+              <label className="block text-sm text-white mb-2">
+                Registration Number (CAC)
+              </label>
               <input
-                {...register('registration_number')}
+                {...register("registration_number")}
                 placeholder="RC-12345678"
                 className={inputClass}
               />
@@ -339,7 +440,9 @@ export function RegisterForm() {
             </div>
 
             <div className="flex flex-col gap-3 pt-4">
-              {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+              {error && (
+                <p className="text-red-500 text-xs text-center">{error}</p>
+              )}
               <button
                 type="button"
                 onClick={handleStep1Next}
@@ -359,44 +462,68 @@ export function RegisterForm() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-white mb-2">First Name</label>
-                <input {...register('first_name')} placeholder="Thomas" className={inputClass} />
+                <label className="block text-sm text-white mb-2">
+                  First Name
+                </label>
+                <input
+                  {...register("first_name")}
+                  placeholder="Thomas"
+                  className={inputClass}
+                />
                 {errors.first_name && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.first_name.message}</p>
+                  <p className="text-red-500 text-xs mt-1 ml-1">
+                    {errors.first_name.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className="block text-sm text-white mb-2">Last Name</label>
-                <input {...register('last_name')} placeholder="Okeke" className={inputClass} />
+                <label className="block text-sm text-white mb-2">
+                  Last Name
+                </label>
+                <input
+                  {...register("last_name")}
+                  placeholder="Okeke"
+                  className={inputClass}
+                />
                 {errors.last_name && (
-                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.last_name.message}</p>
+                  <p className="text-red-500 text-xs mt-1 ml-1">
+                    {errors.last_name.message}
+                  </p>
                 )}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">Work Email</label>
+              <label className="block text-sm text-white mb-2">
+                Work Email
+              </label>
               <input
                 type="email"
-                {...register('account_email')}
+                {...register("account_email")}
                 placeholder="admin@company.com"
                 className={inputClass}
               />
               {errors.account_email && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.account_email.message}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.account_email.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">Phone Number</label>
+              <label className="block text-sm text-white mb-2">
+                Phone Number
+              </label>
               <input
                 type="tel"
-                {...register('admin_phone')}
+                {...register("admin_phone")}
                 placeholder="08012345678"
                 className={inputClass}
               />
               {errors.admin_phone && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.admin_phone.message}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.admin_phone.message}
+                </p>
               )}
             </div>
 
@@ -404,8 +531,8 @@ export function RegisterForm() {
               <label className="block text-sm text-white mb-2">Password</label>
               <div className="relative">
                 <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   className={`${inputClass} pr-14`}
                 />
@@ -414,11 +541,17 @@ export function RegisterForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"
                 >
-                  {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                  {showPassword ? (
+                    <Eye className="w-5 h-5" />
+                  ) : (
+                    <EyeOff className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{errors.password.message}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.password.message}
+                </p>
               )}
 
               <div className="flex gap-1 mt-3">
@@ -426,16 +559,18 @@ export function RegisterForm() {
                   <div
                     key={i}
                     className={`h-1 flex-1 rounded-full transition-colors ${
-                      strength > i ? strengthColors[strength - 1] : 'bg-[#2D2D2D]'
+                      strength > i
+                        ? strengthColors[strength - 1]
+                        : "bg-[#2D2D2D]"
                     }`}
                   />
                 ))}
               </div>
               {password && (
                 <p
-                  className={`text-right text-[10px] mt-1 ${
-                    strengthColors[strength - 1].replace('bg-', 'text-')
-                  }`}
+                  className={`text-right text-[10px] mt-1 ${strengthColors[
+                    strength - 1
+                  ].replace("bg-", "text-")}`}
                 >
                   {strengthLabels[strength - 1]}
                 </p>
@@ -443,11 +578,13 @@ export function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">Confirm Password</label>
+              <label className="block text-sm text-white mb-2">
+                Confirm Password
+              </label>
               <div className="relative">
                 <input
-                  {...register('confirm_password')}
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  {...register("confirm_password")}
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm password"
                   className={`${inputClass} pr-14`}
                 />
@@ -474,26 +611,28 @@ export function RegisterForm() {
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  {...register('accepted_terms')}
+                  {...register("accepted_terms")}
                   className="accent-[#FBC02D] mt-1"
                 />
                 <p className="text-xs text-gray-400">
-                  I agree to the EnergyIQ{' '}
+                  I agree to the EnergyIQ{" "}
                   <span className="text-[#FBC02D]">Terms of Service</span>
                 </p>
               </label>
               {errors.accepted_terms && (
-                <p className="text-red-500 text-xs -mt-2 ml-6">{errors.accepted_terms.message}</p>
+                <p className="text-red-500 text-xs -mt-2 ml-6">
+                  {errors.accepted_terms.message}
+                </p>
               )}
 
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  {...register('accepted_privacy_policy')}
+                  {...register("accepted_privacy_policy")}
                   className="accent-[#FBC02D] mt-1"
                 />
                 <p className="text-xs text-gray-400">
-                  I have read and accept the EnergyIQ{' '}
+                  I have read and accept the EnergyIQ{" "}
                   <span className="text-[#FBC02D]">Privacy Policy</span>
                 </p>
               </label>
@@ -505,31 +644,37 @@ export function RegisterForm() {
             </div>
 
             <div className="flex flex-col gap-3 pt-4">
-              {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+              {error && (
+                <p className="text-red-500 text-xs text-center">{error}</p>
+              )}
               <button
                 type="button"
                 onClick={onStep2Submit}
                 disabled={isLoading}
                 className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
               >
-                {isLoading ? 'Creating account...' : 'Create Account'}
+                {isLoading ? "Creating account..." : "Create Account"}
               </button>
             </div>
           </>
         )}
 
-        {/* STEP 3 — OTP Verification */}
-        {currentStep === 3 && (
+        {/* STEP 4 — OTP Verification */}
+        {currentStep === 4 && !accountCreated && (
           <div className="flex flex-col items-center text-center py-6">
             <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-6">
               <Lock size={28} className="text-green-500" strokeWidth={2} />
             </div>
 
-            <h2 className="text-2xl font-semibold text-white">OTP Verification</h2>
+            <h2 className="text-2xl font-semibold text-white">
+              OTP Verification
+            </h2>
             <p className="text-sm text-gray-400 mt-3 mb-8">
               We sent a 6-digit code to
               <br />
-              <span className="text-white">{accountEmail || 'admin@company.com'}</span>
+              <span className="text-white">
+                {accountEmail || "admin@company.com"}
+              </span>
             </p>
 
             <div className="flex justify-center gap-3 mb-4">
@@ -542,15 +687,21 @@ export function RegisterForm() {
                   maxLength={1}
                   onChange={(e) => handleOtpChange(e.target.value, index)}
                   className={`w-12 h-12 rounded-lg bg-[#111111] border text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D] ${
-                    otpError ? 'border-red-500' : 'border-[#2D2D2D]'
+                    otpError ? "border-red-500" : "border-[#2D2D2D]"
                   }`}
                 />
               ))}
             </div>
 
-            {otpError && <p className="text-red-500 text-xs mb-4">{error ?? 'Invalid code'}</p>}
+            {otpError && (
+              <p className="text-red-500 text-xs mb-4">
+                {error ?? "Invalid code"}
+              </p>
+            )}
             {otpResent && !otpError && (
-              <p className="text-xs text-gray-400 mb-4">A new code has been sent.</p>
+              <p className="text-xs text-gray-400 mb-4">
+                A new code has been sent.
+              </p>
             )}
 
             <button
@@ -568,13 +719,13 @@ export function RegisterForm() {
               disabled={isLoading}
               className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
             >
-              {isLoading ? 'Verifying...' : 'Verify Code'}
+              {isLoading ? "Verifying..." : "Verify Code"}
             </button>
           </div>
         )}
 
-        {/* STEP 4 — Document Upload (KYC) — Styled like screenshot */}
-        {currentStep === 4 && !accountCreated && (
+        {/* STEP 3 — Document Upload (KYC) — Styled like screenshot */}
+        {currentStep === 3 && (
           <div className="py-2">
             {/* Progress bar */}
             <div className="mb-6">
@@ -586,94 +737,115 @@ export function RegisterForm() {
               <div className="w-full h-1.5 bg-[#2D2D2D] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-green-500 rounded-full transition-all duration-500"
-                  style={{ width: `${(uploadedCount / documentFields.length) * 100}%` }}
+                  style={{
+                    width: `${(uploadedCount / documentFields.length) * 100}%`,
+                  }}
                 />
               </div>
             </div>
 
             {/* Document cards */}
             <div className="space-y-4">
-              {documentFields.map(({ key, label, description, hint, required }) => (
-                <div
-                  key={key}
-                  className="border border-dashed border-[#2D2D2D] rounded-xl p-5 bg-[#111111]"
-                >
-                  {/* Header */}
-                  <div className="flex justify-between items-start mb-1">
-                    <div>
-                      <h3 className="text-sm font-medium text-white">
-                        {label}{' '}
-                        <span
-                          className={`text-[10px] uppercase tracking-wider ml-1 ${
-                            required ? 'text-[#FBC02D]' : 'text-gray-500'
-                          }`}
-                        >
-                          {required ? 'REQUIRED' : 'OPTIONAL'}
-                        </span>
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-                      {hint && <p className="text-[10px] text-gray-600 mt-0.5">{hint}</p>}
-                    </div>
-                    {documents[key] && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 whitespace-nowrap">
-                        Uploaded - Awaiting review
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Upload area or file row */}
-                  {!documents[key] ? (
-                    <label className="mt-4 flex flex-col items-center justify-center w-full h-28 rounded-lg border border-dashed border-[#2D2D2D] bg-[#0a0a0a] cursor-pointer hover:border-[#FBC02D] transition-colors">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => handleFileChange(key, e.target.files?.[0] ?? null)}
-                      />
-                      <Upload size={24} className="text-gray-500 mb-2" />
-                      <span className="text-xs text-gray-400">Click to upload or drag and drop</span>
-                      <span className="text-[10px] text-gray-600 mt-1">
-                        PDF, JPG, PNG, Max 10MB
-                      </span>
-                    </label>
-                  ) : (
-                    <div className="mt-4 flex items-center justify-between p-3 rounded-lg bg-[#0a0a0a] border border-[#1D1D1D]">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <FileCheck size={18} className="text-gray-400 shrink-0" />
-                        <span className="text-sm text-gray-300 truncate">
-                          {documents[key]?.name}
-                        </span>
+              {documentFields.map(
+                ({ key, label, description, hint, required }) => (
+                  <div
+                    key={key}
+                    className="border border-dashed border-[#2D2D2D] rounded-xl p-5 bg-[#111111]"
+                  >
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <h3 className="text-sm font-medium text-white">
+                          {label}{" "}
+                          <span
+                            className={`text-[10px] uppercase tracking-wider ml-1 ${
+                              required ? "text-[#FBC02D]" : "text-gray-500"
+                            }`}
+                          >
+                            {required ? "REQUIRED" : "OPTIONAL"}
+                          </span>
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {description}
+                        </p>
+                        {hint && (
+                          <p className="text-[10px] text-gray-600 mt-0.5">
+                            {hint}
+                          </p>
+                        )}
                       </div>
-                      <label className="text-xs text-[#FBC02D] hover:underline cursor-pointer shrink-0 ml-3">
-                        Replace
+                      {documents[key] && (
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 whitespace-nowrap">
+                          Uploaded - Awaiting review
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Upload area or file row */}
+                    {!documents[key] ? (
+                      <label className="mt-4 flex flex-col items-center justify-center w-full h-28 rounded-lg border border-dashed border-[#2D2D2D] bg-[#0a0a0a] cursor-pointer hover:border-[#FBC02D] transition-colors">
                         <input
                           type="file"
                           className="hidden"
                           accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileChange(key, e.target.files?.[0] ?? null)}
+                          onChange={(e) =>
+                            handleFileChange(key, e.target.files?.[0] ?? null)
+                          }
                         />
+                        <Upload size={24} className="text-gray-500 mb-2" />
+                        <span className="text-xs text-gray-400">
+                          Click to upload or drag and drop
+                        </span>
+                        <span className="text-[10px] text-gray-600 mt-1">
+                          PDF, JPG, PNG, Max 10MB
+                        </span>
                       </label>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    ) : (
+                      <div className="mt-4 flex items-center justify-between p-3 rounded-lg bg-[#0a0a0a] border border-[#1D1D1D]">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileCheck
+                            size={18}
+                            className="text-gray-400 shrink-0"
+                          />
+                          <span className="text-sm text-gray-300 truncate">
+                            {documents[key]?.name}
+                          </span>
+                        </div>
+                        <label className="text-xs text-[#FBC02D] hover:underline cursor-pointer shrink-0 ml-3">
+                          Replace
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) =>
+                              handleFileChange(key, e.target.files?.[0] ?? null)
+                            }
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                ),
+              )}
             </div>
 
             <div className="flex flex-col gap-3 pt-8">
-              {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+              {error && (
+                <p className="text-red-500 text-xs text-center">{error}</p>
+              )}
               <button
                 type="button"
                 onClick={handleDocumentSubmit}
                 disabled={isUploading || isLoading}
                 className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
               >
-                {isUploading ? 'Uploading...' : 'Create account'}
+                {isUploading ? "Uploading..." : "Create account"}
               </button>
             </div>
           </div>
         )}
 
-        {/* Success Screen — shown ONLY after Document Upload */}
+        {/* Success Screen — shown ONLY after OTP verification */}
         {currentStep === 4 && accountCreated && (
           <div className="flex flex-col items-center text-center py-10">
             <div className="w-20 h-20 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-8">
@@ -687,7 +859,7 @@ export function RegisterForm() {
             </p>
             <button
               type="button"
-              onClick={() => navigate(slug ? `/${slug}/dashboard` : '/login')}
+              onClick={() => navigate(slug ? `/${slug}/dashboard` : "/login")}
               className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold"
             >
               Go to Dashboard

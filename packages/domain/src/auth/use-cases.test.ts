@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuthUseCases } from './use-cases';
-import type { AuthApi, TokenStorage, UserStorage } from './ports';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { AuthUseCases } from "./use-cases";
+import type { AuthApi, TokenStorage, UserStorage } from "./ports";
 
 // ════════════════════════════════════════════════════════════════
 // Domain test — pure TypeScript, mock ports, no React.
@@ -24,6 +24,9 @@ const mockApi: AuthApi = {
   createOnboardingDocument: vi.fn(),
   listOnboardingDocuments: vi.fn(),
   deleteOnboardingDocument: vi.fn(),
+  presignRegistrationDocument: vi.fn(),
+  createRegistrationDocument: vi.fn(),
+  listRegistrationDocuments: vi.fn(),
   createInvitation: vi.fn(),
   listInvitations: vi.fn(),
   revokeInvitation: vi.fn(),
@@ -55,7 +58,7 @@ const mockUser: UserStorage = {
   clearUser: vi.fn(),
 };
 
-describe('AuthUseCases', () => {
+describe("AuthUseCases", () => {
   let auth: AuthUseCases;
 
   beforeEach(() => {
@@ -63,23 +66,32 @@ describe('AuthUseCases', () => {
     auth = new AuthUseCases(mockApi, mockTokens, mockUser);
   });
 
-  describe('initiate', () => {
-    it('calls api.initiate with the request', async () => {
+  describe("initiate", () => {
+    it("calls api.initiate with the request", async () => {
       const req = {
-        company: { name: 'MegaEnergy', email: '', business_type: 'private_limited_company' as const, registration_number: 'RC123' },
+        company: {
+          name: "MegaEnergy",
+          email: "",
+          business_type: "private_limited_company" as const,
+          registration_number: "RC123",
+        },
         account: {
-          first_name: 'Chioma',
-          last_name: 'Admin',
-          name: 'Chioma Admin',
-          email: 'chioma@mega.com',
-          phone: '08012345678',
-          password: 'SecurePass123!',
-          confirm_password: 'SecurePass123!',
+          first_name: "Chioma",
+          last_name: "Admin",
+          name: "Chioma Admin",
+          email: "chioma@mega.com",
+          phone: "08012345678",
+          password: "SecurePass123!",
+          confirm_password: "SecurePass123!",
           accepted_terms: true,
           accepted_privacy_policy: true,
         },
       };
-      const result = { registration_token: 'token123', account_number: '1234567890', slug: 'megaenergy' };
+      const result = {
+        registration_token: "token123",
+        account_number: "1234567890",
+        slug: "megaenergy",
+      };
       vi.mocked(mockApi.initiate).mockResolvedValue(result);
 
       const response = await auth.initiate(req);
@@ -88,20 +100,26 @@ describe('AuthUseCases', () => {
       expect(response).toEqual(result);
     });
 
-    it('does not store tokens on initiate', async () => {
+    it("does not store tokens on initiate", async () => {
       vi.mocked(mockApi.initiate).mockResolvedValue({
-        registration_token: 'tok', account_number: '123', slug: 'test',
+        registration_token: "tok",
+        account_number: "123",
+        slug: "test",
       });
 
       await auth.initiate({
-        company: { name: 'X', business_type: 'private_limited_company' as const, registration_number: 'Z' },
+        company: {
+          name: "X",
+          business_type: "private_limited_company" as const,
+          registration_number: "Z",
+        },
         account: {
-          first_name: 'A',
-          last_name: 'B',
-          email: 'a@b.com',
-          phone: '08012345678',
-          password: 'password12345',
-          confirm_password: 'password12345',
+          first_name: "A",
+          last_name: "B",
+          email: "a@b.com",
+          phone: "08012345678",
+          password: "password12345",
+          confirm_password: "password12345",
           accepted_terms: true,
           accepted_privacy_policy: true,
         },
@@ -111,49 +129,71 @@ describe('AuthUseCases', () => {
     });
   });
 
-  describe('complete', () => {
-    it('stores tokens and user on success', async () => {
+  describe("complete", () => {
+    it("stores tokens and user on success", async () => {
       const result = {
-        access_token: 'acc_token',
-        refresh_token: 'ref_token',
+        access_token: "acc_token",
+        refresh_token: "ref_token",
         expires_in: 3600,
         supplier: {
-          id: 'sup-1', account_number: '1234567890', slug: 'mega',
-          company_name: 'MegaEnergy', status: 'active', kyc_status: 'pending',
+          id: "sup-1",
+          account_number: "1234567890",
+          slug: "mega",
+          company_name: "MegaEnergy",
+          status: "active",
+          kyc_status: "pending",
         },
       };
       vi.mocked(mockApi.complete).mockResolvedValue(result);
 
-      await auth.complete({ registration_token: 'reg_tok', otp_code: '123456' });
+      await auth.complete({
+        registration_token: "reg_tok",
+        otp_code: "123456",
+      });
 
-      expect(mockTokens.setTokens).toHaveBeenCalledWith('acc_token', 'ref_token');
+      expect(mockTokens.setTokens).toHaveBeenCalledWith(
+        "acc_token",
+        "ref_token",
+      );
       expect(mockUser.setUser).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'sup-1', role: 'owner', account_number: '1234567890' }),
+        expect.objectContaining({
+          id: "sup-1",
+          role: "owner",
+          account_number: "1234567890",
+        }),
       );
     });
   });
 
-  describe('login', () => {
-    it('stores tokens and user on success', async () => {
+  describe("login", () => {
+    it("stores tokens and user on success", async () => {
       const result = {
-        access_token: 'acc', refresh_token: 'ref', expires_in: 3600,
-        login_type: 'account' as const,
+        access_token: "acc",
+        refresh_token: "ref",
+        expires_in: 3600,
+        login_type: "account" as const,
         user: {
-          id: 'u-1', name: 'Chioma', email: 'chioma@mega.com', role: 'owner',
-          entity_type: 'supplier', entity_id: 'sup-1', account_number: '123', slug: 'mega',
+          id: "u-1",
+          name: "Chioma",
+          email: "chioma@mega.com",
+          role: "owner",
+          entity_type: "supplier",
+          entity_id: "sup-1",
+          account_number: "123",
+          slug: "mega",
         },
       };
       vi.mocked(mockApi.login).mockResolvedValue(result);
 
-      await auth.login({ email: 'chioma@mega.com', password: 'pass' });
+      await auth.login({ email: "chioma@mega.com", password: "pass" });
 
-      expect(mockTokens.setTokens).toHaveBeenCalledWith('acc', 'ref');
+      expect(mockTokens.setTokens).toHaveBeenCalledWith("acc", "ref");
       expect(mockUser.setUser).toHaveBeenCalledWith(result.user);
     });
   });
 
-  describe('logout', () => {
-    it('clears tokens and user', () => {
+  describe("logout", () => {
+    it("clears tokens and user", () => {
       auth.logout();
 
       expect(mockTokens.clearTokens).toHaveBeenCalled();
@@ -161,8 +201,8 @@ describe('AuthUseCases', () => {
     });
   });
 
-  describe('refresh', () => {
-    it('returns false if no refresh token', async () => {
+  describe("refresh", () => {
+    it("returns false if no refresh token", async () => {
       vi.mocked(mockTokens.getRefreshToken).mockReturnValue(null);
 
       const result = await auth.refresh();
@@ -171,19 +211,22 @@ describe('AuthUseCases', () => {
       expect(mockApi.refresh).not.toHaveBeenCalled();
     });
 
-    it('updates access token on success', async () => {
-      vi.mocked(mockTokens.getRefreshToken).mockReturnValue('ref_token');
-      vi.mocked(mockApi.refresh).mockResolvedValue({ access_token: 'new_acc', expires_in: 3600 });
+    it("updates access token on success", async () => {
+      vi.mocked(mockTokens.getRefreshToken).mockReturnValue("ref_token");
+      vi.mocked(mockApi.refresh).mockResolvedValue({
+        access_token: "new_acc",
+        expires_in: 3600,
+      });
 
       const result = await auth.refresh();
 
       expect(result).toBe(true);
-      expect(mockTokens.setTokens).toHaveBeenCalledWith('new_acc', 'ref_token');
+      expect(mockTokens.setTokens).toHaveBeenCalledWith("new_acc", "ref_token");
     });
 
-    it('logs out on refresh failure', async () => {
-      vi.mocked(mockTokens.getRefreshToken).mockReturnValue('ref_token');
-      vi.mocked(mockApi.refresh).mockRejectedValue(new Error('expired'));
+    it("logs out on refresh failure", async () => {
+      vi.mocked(mockTokens.getRefreshToken).mockReturnValue("ref_token");
+      vi.mocked(mockApi.refresh).mockRejectedValue(new Error("expired"));
 
       const result = await auth.refresh();
 
@@ -193,22 +236,28 @@ describe('AuthUseCases', () => {
     });
   });
 
-  describe('getState', () => {
-    it('returns authenticated state when token and user exist', () => {
-      vi.mocked(mockTokens.getAccessToken).mockReturnValue('token');
-      vi.mocked(mockTokens.getRefreshToken).mockReturnValue('refresh');
+  describe("getState", () => {
+    it("returns authenticated state when token and user exist", () => {
+      vi.mocked(mockTokens.getAccessToken).mockReturnValue("token");
+      vi.mocked(mockTokens.getRefreshToken).mockReturnValue("refresh");
       vi.mocked(mockUser.getUser).mockReturnValue({
-        id: '1', name: 'Chioma', email: 'c@m.com', role: 'owner',
-        entity_type: 'supplier', entity_id: '1', account_number: '123', slug: 'mega',
+        id: "1",
+        name: "Chioma",
+        email: "c@m.com",
+        role: "owner",
+        entity_type: "supplier",
+        entity_id: "1",
+        account_number: "123",
+        slug: "mega",
       });
 
       const state = auth.getState();
 
       expect(state.isAuthenticated).toBe(true);
-      expect(state.loginType).toBe('account');
+      expect(state.loginType).toBe("account");
     });
 
-    it('returns unauthenticated when no token', () => {
+    it("returns unauthenticated when no token", () => {
       vi.mocked(mockTokens.getAccessToken).mockReturnValue(null);
       vi.mocked(mockUser.getUser).mockReturnValue(null);
 

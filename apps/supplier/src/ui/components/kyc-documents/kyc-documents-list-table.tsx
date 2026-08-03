@@ -18,7 +18,7 @@ function buildColumns(onAction: (row: DocumentListRow) => void): Column<Document
             type="checkbox"
             aria-label={`Select ${row.distributor}`}
             onClick={(event) => event.stopPropagation()}
-            className="h-4 w-4 shrink-0 cursor-pointer accent-[#FBC02D]"
+            className="h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[4px] border border-[#FBC02D80] bg-transparent checked:bg-[#FBC02D80]"
           />
           <Avatar className="h-7 w-7">
             <AvatarFallback className="bg-[#FBC02D] text-[10px] text-[#121212]">
@@ -78,19 +78,19 @@ export function KycDocumentsListTable({
   const columns = useMemo(() => buildColumns(onAction), [onAction]);
 
   return (
-    <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
-      <div className="flex items-center gap-2">
-        <span className="h-5 w-1 rounded-full bg-[#FBC02D]" aria-hidden="true" />
-        <h2 className="text-base font-semibold text-[#FAFAFA]">Document Lists</h2>
-      </div>
-      <DefaultTable
-        columns={columns}
-        data={rows}
-        itemsPerPage={7}
-        isLoading={isLoading}
-        getRowId={(row) => row.id}
-        noDataMessage={noDataMessage}
-      />
-    </div>
+    <DefaultTable
+      columns={columns}
+      data={rows}
+      itemsPerPage={7}
+      isLoading={isLoading}
+      getRowId={(row) => row.id}
+      noDataMessage={noDataMessage}
+      header={
+        <div className="flex items-center gap-2">
+          <span className="h-5 w-1 rounded-full bg-[#FBC02D]" aria-hidden="true" />
+          <h2 className="text-base font-semibold text-[#FAFAFA]">Document Lists</h2>
+        </div>
+      }
+    />
   );
 }

@@ -145,15 +145,13 @@ export function KycDocumentCategoriesOverview() {
         </button>
       </header>
 
-      <div className="rounded-[18px] bg-[#6161611A] p-6">
-        <DefaultTable
-          columns={columns}
-          data={rows}
-          isLoading={isLoading}
-          getRowId={(row) => row.id}
-          noDataMessage="No document categories yet"
-        />
-      </div>
+      <DefaultTable
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        getRowId={(row) => row.id}
+        noDataMessage="No document categories yet"
+      />
 
       <KycDocumentCategoryModal
         open={modalOpen}

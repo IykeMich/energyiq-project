@@ -75,7 +75,7 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
             options={CURRENCY_OPTIONS}
           />
         </Field>
-        <Field label="Cost Price:" required>
+        <Field label="Cost Price:">
           <TextField
             type="number"
             value={draft.costPrice}
@@ -84,7 +84,7 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
             error={errors?.costPrice}
           />
         </Field>
-        <Field label="Selling Price:" required>
+        <Field label="Selling Price:">
           <TextField
             type="number"
             value={draft.sellingPrice}

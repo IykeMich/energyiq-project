@@ -19,7 +19,7 @@ export function ProductDetailsVariants({ variants, onEdit }: ProductDetailsVaria
         {variants.map((variant) => (
           <div
             key={variant.sku}
-            className="flex items-center justify-between gap-4 rounded-[14px] border border-[#FFFFFF1A] px-4 py-3"
+            className="flex items-center justify-between gap-4 rounded-[8px] bg-[#FFFFFF1A] px-4 py-3"
           >
             <span className="text-sm text-[#FFFFFFCC]">{variant.display_name}:</span>
             <span className="text-sm font-medium text-[#FAFAFA]">₦{NGN.format(variant.selling_price)}</span>

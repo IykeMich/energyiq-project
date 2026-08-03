@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { MoreHorizontal, Check } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +8,7 @@ import {
 } from '@energyiq/ui';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
+import { TableCheckbox } from '../table/table-checkbox';
 import type { SaleRow } from './sales-mocks';
 import { SalesStatusBadge } from './sales-status-badge';
 
@@ -79,33 +80,11 @@ function buildColumns(
 
         return (
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => toggleSale(row.id)}
-              className={`
-                flex
-                h-5
-                w-5
-                items-center
-                justify-center
-                rounded-4px
-                border
-                transition-colors
-                ${
-                  checked
-                    ? 'border-[#FBC02D] bg-[#FBC02D]'
-                    : 'border-[#FBC02D] bg-transparent'
-                }
-              `}
-            >
-              {checked && (
-                <Check
-                  className="h-3 w-3 text-black"
-                  strokeWidth={3}
-                />
-              )}
-            </button>
-
+            <TableCheckbox
+              checked={checked}
+              onChange={() => toggleSale(row.id)}
+              aria-label={`Select sale ${row.id}`}
+            />
             <span>{row.id}</span>
           </div>
         );

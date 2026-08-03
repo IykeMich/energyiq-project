@@ -46,7 +46,7 @@ export function TextField({ value, onChange, placeholder, type = 'text', error }
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          'bg-surface-card border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand',
+          'bg-[#6161611A] focus:border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand',
           error && 'border-destructive focus:border-destructive',
         )}
       />
@@ -73,7 +73,7 @@ export function TextAreaField({ value, onChange, placeholder, rows = 4, error }:
         placeholder={placeholder}
         rows={rows}
         className={cn(
-          'bg-surface-card border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none',
+          'bg-[#6161611A] focus:border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none',
           error && 'border-destructive focus:border-destructive',
         )}
       />
@@ -218,7 +218,7 @@ export function SelectField({ value, onChange, placeholder, options, error }: Se
       <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
         <SelectTrigger
           className={cn(
-            'bg-surface-card border-border-strong data-[size=default]:h-13 w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand',
+            'bg-[#6161611A] border-0! focus:border-border-strong data-[size=default]:h-13 w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand',
             error && 'border-destructive focus:ring-destructive',
           )}
         >

@@ -291,8 +291,61 @@ export function ProductWizard({ mode, productId, onCancel, onGoHome, onViewProdu
     },
   });
 
+  const navFooter = (
+    <div className="flex items-center justify-between gap-3 flex-wrap">
+      <button
+        type="button"
+        onClick={step === 1 && productDetailsTab === 'basic' ? onCancel : handlePrev}
+        className="tap-effect h-[42px] rounded-[28px] border border-border-strong text-foreground font-semibold px-8 transition-colors hover:border-brand"
+      >
+        {step === 1 && productDetailsTab === 'basic' ? 'Cancel' : 'Previous'}
+      </button>
+
+      <div className="flex items-center gap-3">
+        {step === 1 && (
+          <button
+            type="button"
+            onClick={handleNext}
+            className="tap-effect h-[42px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 transition-opacity hover:opacity-90"
+          >
+            Next
+          </button>
+        )}
+
+        {step === 2 && (
+          <button
+            type="button"
+            onClick={handleNext}
+            className="tap-effect h-[42px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 transition-opacity hover:opacity-90"
+          >
+            Go to Review
+          </button>
+        )}
+
+        {step === TOTAL_STEPS && (
+          <>
+            <button
+              type="button"
+              onClick={handleExport}
+              className="tap-effect h-[42px] rounded-[28px] bg-brand/20 text-brand font-semibold px-8 transition-colors hover:bg-brand/30"
+            >
+              Export Configuration
+            </button>
+            <button
+              type="button"
+              onClick={handlePublish}
+              className="tap-effect h-[42px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 transition-opacity hover:opacity-90"
+            >
+              Publish Product
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 ">
       {publishError && (
         <ProductPublishFailedBanner
           productName={productName}
@@ -311,61 +364,13 @@ export function ProductWizard({ mode, productId, onCancel, onGoHome, onViewProdu
           errors={fieldErrors}
           tab={productDetailsTab}
           onTabChange={setProductDetailsTab}
+          footer={navFooter}
         />
       )}
       {step === 2 && <StepDistributorAccess draft={draft} onChange={patch} />}
       {step === 3 && <StepReview draft={draft} onChange={patch} />}
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <button
-          type="button"
-          onClick={step === 1 && productDetailsTab === 'basic' ? onCancel : handlePrev}
-          className="tap-effect h-[53px] rounded-[28px] border border-border-strong text-foreground font-semibold px-8 transition-colors hover:border-brand"
-        >
-          {step === 1 && productDetailsTab === 'basic' ? 'Cancel' : 'Previous'}
-        </button>
-
-        <div className="flex items-center gap-3">
-          {step === 1 && (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="tap-effect h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 transition-opacity hover:opacity-90"
-            >
-              Next
-            </button>
-          )}
-
-          {step === 2 && (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="tap-effect h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 transition-opacity hover:opacity-90"
-            >
-              Go to Review
-            </button>
-          )}
-
-          {step === TOTAL_STEPS && (
-            <>
-              <button
-                type="button"
-                onClick={handleExport}
-                className="tap-effect h-[53px] rounded-[28px] bg-brand/20 text-brand font-semibold px-8 transition-colors hover:bg-brand/30"
-              >
-                Export Configuration
-              </button>
-              <button
-                type="button"
-                onClick={handlePublish}
-                className="tap-effect h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 transition-opacity hover:opacity-90"
-              >
-                Publish Product
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      {step !== 1 && navFooter}
 
       <p className="text-sm text-foreground text-center">
         Step <span className="font-bold text-brand">{step}</span> of {TOTAL_STEPS}

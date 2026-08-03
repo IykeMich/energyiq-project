@@ -57,7 +57,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
       items: [
         { title: 'Catalog', url: `/${slug}/products`, icon: Package, description: 'All products' },
         {
-          title: 'Categories',
+          title: 'Category',
           url: `/${slug}/products/categories`,
           icon: Tag,
           description: 'Group products',

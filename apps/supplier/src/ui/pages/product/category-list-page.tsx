@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { ConfirmDialog, DataGrid, type ColDef } from '@energyiq/ui';
+import { ConfirmDialog } from '@energyiq/ui';
 import type { product } from '@energyiq/domain';
 import {
   useProductCategoriesQuery,
@@ -8,8 +8,10 @@ import {
   useUpdateProductCategoryMutation,
   useDeleteProductCategoryMutation,
 } from '@/hooks/use-product-categories';
+import { DefaultTable, type Column } from '@/ui/components/table/default-table';
 import { ProductStatusBadge } from '@/ui/components/product/product-status-badge';
 import { CategoryFormModal } from '@/ui/components/product/category-form-modal';
+import { CATEGORY_PRODUCT_COUNTS, CATEGORY_PRODUCT_COUNT_FALLBACK } from '@/ui/components/product/category-mocks';
 
 export function CategoryListPage() {
   const categoriesQuery = useProductCategoriesQuery();
@@ -22,39 +24,41 @@ export function CategoryListPage() {
   const [deleting, setDeleting] = useState<product.ProductCategory | null>(null);
 
   const rows = categoriesQuery.data ?? [];
-  const isEmpty = categoriesQuery.isSuccess && rows.length === 0;
 
-  const columnDefs = useMemo<ColDef<product.ProductCategory>[]>(
+  const columns = useMemo<Column<product.ProductCategory>[]>(
     () => [
-      { field: 'name', headerName: 'Category', minWidth: 160 },
-      { field: 'description', headerName: 'Description', minWidth: 220 },
+      { header: 'Category', accessor: 'name', sortable: true },
+      { header: 'Description', accessor: 'description' },
       {
-        field: 'status',
-        headerName: 'Status',
-        width: 130,
-        flex: 0,
-        cellRenderer: (p: { value: product.CategoryStatus }) => <ProductStatusBadge value={p.value} />,
+        header: 'No of Products',
+        accessor: 'name',
+        width: '160px',
+        render: (value) => (value && CATEGORY_PRODUCT_COUNTS[String(value)]) ?? CATEGORY_PRODUCT_COUNT_FALLBACK,
       },
       {
-        headerName: 'Action',
-        width: 110,
-        flex: 0,
-        sortable: false,
-        filter: false,
-        cellRenderer: (p: { data: product.ProductCategory }) => (
-          <div className="flex items-center gap-4 h-full">
+        header: 'Status',
+        accessor: 'status',
+        width: '130px',
+        render: (value) => <ProductStatusBadge value={String(value ?? 'active')} />,
+      },
+      {
+        header: 'Action',
+        accessor: 'id',
+        width: '110px',
+        render: (_value, row) => (
+          <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => setEditing(p.data)}
-              aria-label={`Edit ${p.data.name}`}
+              onClick={() => setEditing(row)}
+              aria-label={`Edit ${row.name}`}
               className="tap-effect text-brand hover:opacity-80"
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button
               type="button"
-              onClick={() => setDeleting(p.data)}
-              aria-label={`Delete ${p.data.name}`}
+              onClick={() => setDeleting(row)}
+              aria-label={`Delete ${row.name}`}
               className="tap-effect text-danger hover:opacity-80"
             >
               <Trash2 className="w-4 h-4" />
@@ -84,7 +88,7 @@ export function CategoryListPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <header className="flex items-center justify-between flex-wrap gap-3">
+      <header className="flex items-center justify-between flex-wrap gap-3 mt-8 mb-6">
         <h1 className="text-2xl font-semibold text-foreground">Product Category</h1>
         <button
           type="button"
@@ -101,19 +105,13 @@ export function CategoryListPage() {
         </div>
       )}
 
-      {isEmpty ? (
-        <div className="flex h-[300px] items-center justify-center rounded-[18px] bg-surface-card text-muted-foreground">
-          No categories yet. Add your first one to get started.
-        </div>
-      ) : (
-        <DataGrid<product.ProductCategory>
-          rowData={rows}
-          columnDefs={columnDefs}
-          rowHeight={56}
-          loading={categoriesQuery.isLoading}
-          className="h-[600px] bg-surface-card rounded-[18px] overflow-hidden"
-        />
-      )}
+      <DefaultTable<product.ProductCategory>
+        columns={columns}
+        data={rows}
+        isLoading={categoriesQuery.isLoading}
+        noDataMessage="No categories yet. Add your first one to get started."
+        getRowId={(row, index) => row.id ?? index}
+      />
 
       <CategoryFormModal
         open={adding || editing !== null}

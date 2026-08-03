@@ -73,7 +73,7 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }
                 </button>
               )}
             </div>
-            <Field label="Warehouse Location:" required>
+            <Field label="Warehouse Location:">
               <SelectField
                 value={allocation.warehouseId}
                 onChange={(value) => onChange(allocation.id, { warehouseId: value })}

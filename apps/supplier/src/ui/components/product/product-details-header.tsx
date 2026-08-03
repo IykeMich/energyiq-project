@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from '@energyiq/ui';
 import type { product as productDomain } from '@energyiq/domain';
+import { useProductCategoriesQuery } from '@/hooks/use-product-categories';
 import { ProductStatusBadge } from './product-status-badge';
 
 const STATUS_OPTIONS: { value: productDomain.ProductStatusUpdateValue; label: string }[] = [
@@ -15,6 +16,13 @@ const STATUS_OPTIONS: { value: productDomain.ProductStatusUpdateValue; label: st
   { value: 'inactive', label: 'Inactive' },
   { value: 'scheduled', label: 'Scheduled' },
 ];
+
+/** Contextual trigger label matching the design (e.g. "Pause Product" when active). */
+function statusActionLabel(status?: string): string {
+  if (status === 'active') return 'Pause Product';
+  if (status === 'paused') return 'Activate Product';
+  return 'Change Status';
+}
 
 interface ProductDetailsHeaderProps {
   product: productDomain.Product;
@@ -26,6 +34,10 @@ interface ProductDetailsHeaderProps {
 
 /** Fixed sheet header: title bar with close, then product identity and Edit / Change Status actions. */
 export function ProductDetailsHeader({ product, onClose, onEdit, onStatusChange, statusChanging }: ProductDetailsHeaderProps) {
+  const categoriesQuery = useProductCategoriesQuery();
+  const categoryName = categoriesQuery.data?.find((category) => category.id === product.category_id)?.name;
+  const skuLabel = categoryName ? `${product.sku}, ${categoryName}` : product.sku;
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
@@ -47,8 +59,8 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onStatusChange,
         <div className="flex flex-col gap-2">
           <h3 className="text-2xl font-bold text-[#FAFAFA]">{product.name}</h3>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-[14px] bg-[#FFFFFF1A] px-3 py-1 text-xs font-medium text-[#FAFAFA]">
-              {product.sku}
+            <span className="inline-flex items-center rounded-[14px] bg-[#FBC02D1A] px-3 py-1 text-xs font-medium text-[#FBC02D]">
+              {skuLabel}
             </span>
             {product.status && <ProductStatusBadge value={product.status} />}
           </div>
@@ -69,7 +81,7 @@ export function ProductDetailsHeader({ product, onClose, onEdit, onStatusChange,
                 disabled={statusChanging}
                 className="tap-effect inline-flex h-8 items-center gap-1 rounded-full border border-[#FBC02D] px-4 text-xs font-semibold text-[#FBC02D] transition-colors hover:bg-[#FBC02D]/10 disabled:opacity-50"
               >
-                {statusChanging ? 'Updating...' : 'Change Status'}
+                {statusChanging ? 'Updating...' : statusActionLabel(product.status)}
                 <ChevronDown className="h-3 w-3" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>

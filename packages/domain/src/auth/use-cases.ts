@@ -1,4 +1,4 @@
-import type { AuthApi, TokenStorage, UserStorage } from './ports';
+import type { AuthApi, TokenStorage, UserStorage } from "./ports";
 import type {
   InitiateRequest,
   InitiateResult,
@@ -11,6 +11,8 @@ import type {
   ResetPasswordConfirmRequest,
   OnboardingDocumentRequest,
   OnboardingDocument,
+  PresignRegistrationDocumentRequest,
+  RegistrationDocumentRequest,
   CreateInvitationRequest,
   Invitation,
   ListInvitationsParams,
@@ -26,7 +28,7 @@ import type {
   DistributorDocumentType,
   PresignUploadUrlRequest,
   PresignUploadUrlResult,
-} from './types';
+} from "./types";
 
 // ════════════════════════════════════════════════════════════════
 // Auth use cases — orchestrate domain logic via ports.
@@ -56,10 +58,10 @@ export class AuthUseCases {
     this.tokens.setTokens(result.access_token, result.refresh_token);
     this.user.setUser({
       id: result.supplier.id,
-      name: '',
-      email: '',
-      role: 'owner',
-      entity_type: 'supplier',
+      name: "",
+      email: "",
+      role: "owner",
+      entity_type: "supplier",
       entity_id: result.supplier.id,
       account_number: result.supplier.account_number,
       slug: result.supplier.slug,
@@ -126,14 +128,17 @@ export class AuthUseCases {
       user,
       accessToken,
       refreshToken,
-      loginType: user ? (user.role === 'owner' ? 'account' : 'staff') : null,
+      loginType: user ? (user.role === "owner" ? "account" : "staff") : null,
       isAuthenticated: !!accessToken && !!user,
     };
   }
 
   // ── Password ────────────────────────────────────────────────
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     return this.api.changePassword(currentPassword, newPassword);
   }
 
@@ -169,7 +174,9 @@ export class AuthUseCases {
     return this.api.resendOtp(registrationToken);
   }
 
-  async createOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument> {
+  async createOnboardingDocument(
+    req: OnboardingDocumentRequest,
+  ): Promise<OnboardingDocument> {
     return this.api.createOnboardingDocument(req);
   }
 
@@ -179,6 +186,24 @@ export class AuthUseCases {
 
   async deleteOnboardingDocument(id: string): Promise<void> {
     return this.api.deleteOnboardingDocument(id);
+  }
+
+  async presignRegistrationDocument(
+    req: PresignRegistrationDocumentRequest,
+  ): Promise<PresignUploadUrlResult> {
+    return this.api.presignRegistrationDocument(req);
+  }
+
+  async createRegistrationDocument(
+    req: RegistrationDocumentRequest,
+  ): Promise<OnboardingDocument> {
+    return this.api.createRegistrationDocument(req);
+  }
+
+  async listRegistrationDocuments(
+    registrationToken: string,
+  ): Promise<OnboardingDocument[]> {
+    return this.api.listRegistrationDocuments(registrationToken);
   }
 
   // ── Distributor invitations (supplier side) ─────────────────
@@ -201,11 +226,15 @@ export class AuthUseCases {
 
   // ── Distributor public onboarding ───────────────────────────
 
-  async distributorRegister(req: DistributorRegisterRequest): Promise<DistributorRegisterResult> {
+  async distributorRegister(
+    req: DistributorRegisterRequest,
+  ): Promise<DistributorRegisterResult> {
     return this.api.distributorRegister(req);
   }
 
-  async distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<LoginResult> {
+  async distributorVerifyOtp(
+    req: DistributorVerifyOtpRequest,
+  ): Promise<LoginResult> {
     const result = await this.api.distributorVerifyOtp(req);
 
     if (result.access_token && result.refresh_token && result.user) {
@@ -216,7 +245,10 @@ export class AuthUseCases {
     return result;
   }
 
-  async distributorResendOtp(email: string, password: string): Promise<LoginResult> {
+  async distributorResendOtp(
+    email: string,
+    password: string,
+  ): Promise<LoginResult> {
     // The backend deliberately has no tokenless public resend endpoint.
     // Repeating the login call with the same credentials triggers the OTP send
     // subject to the Redis cooldown, so resend is routed through login.
@@ -229,19 +261,27 @@ export class AuthUseCases {
     return this.api.getDistributorOnboarding();
   }
 
-  async saveDistributorBusinessProfile(req: DistributorBusinessProfileRequest): Promise<Distributor> {
+  async saveDistributorBusinessProfile(
+    req: DistributorBusinessProfileRequest,
+  ): Promise<Distributor> {
     return this.api.saveDistributorBusinessProfile(req);
   }
 
-  async presignDistributorDocument(req: PresignUploadUrlRequest): Promise<PresignUploadUrlResult> {
+  async presignDistributorDocument(
+    req: PresignUploadUrlRequest,
+  ): Promise<PresignUploadUrlResult> {
     return this.api.presignDistributorDocument(req);
   }
 
-  async createDistributorOnboardingDocument(req: DistributorOnboardingDocumentRequest): Promise<DistributorOnboardingDocument> {
+  async createDistributorOnboardingDocument(
+    req: DistributorOnboardingDocumentRequest,
+  ): Promise<DistributorOnboardingDocument> {
     return this.api.createDistributorOnboardingDocument(req);
   }
 
-  async listDistributorOnboardingDocuments(): Promise<DistributorOnboardingDocument[]> {
+  async listDistributorOnboardingDocuments(): Promise<
+    DistributorOnboardingDocument[]
+  > {
     return this.api.listDistributorOnboardingDocuments();
   }
 
