@@ -45,22 +45,12 @@ export const router = createBrowserRouter([
         children: [
           { path: '/login', element: <LoginPage /> },
           { path: '/register', element: <RegisterPage /> },
+          { path: '/register/supplier', element: <RegisterPage /> },
+          { path: '/register/distributor', element: <RegisterPage /> },
           { path: '/verify', element: <VerifyPage /> },
-
-          // Forgot Password Flow
-    {
-      path: '/forgot-password',
-      element: <ForgotPasswordPage/>,
-    },
-    {
-      path: '/check-email',
-      element: <CheckEmailPage />,
-    },
-    {
-      path: '/reset-password',
-      element: <ResetPasswordPage/>,
-    },
-
+          { path: '/forgot-password', element: <ForgotPasswordPage /> },
+          { path: '/check-email', element: <CheckEmailPage /> },
+          { path: '/reset-password', element: <ResetPasswordPage /> },
         ],
       },
 

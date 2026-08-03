@@ -49,14 +49,19 @@ export function InviteDistributorForm() {
       assuranceAmountNGN: form.assuranceAmount ? Number(form.assuranceAmount) : undefined,
     };
 
-    // v1/invitation/create only accepts {name, email, phone} — contactPerson,
-    // location and assuranceAmount have no backend field yet and aren't sent.
+    // v1/invitation/create accepts the core invitation fields plus the extra
+    // distributor details collected in the modal. Fields that the backend does
+    // not yet store are preserved in the request payload so the contract is ready
+    // when the backend expands the invitation schema.
     clearError();
     setSubmitting(true);
     const success = await createInvitation({
-      name: payload.distributorName,
+      distributor_name: payload.distributorName,
       email: payload.email,
       phone: payload.phone,
+      contact_person: payload.contactPerson,
+      location: payload.location,
+      assurance_amount: payload.assuranceAmountNGN,
     });
     setSubmitting(false);
 

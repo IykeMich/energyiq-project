@@ -19,6 +19,13 @@ import type {
   DistributorRegisterResult,
   DistributorVerifyOtpRequest,
   DistributorBusinessProfileRequest,
+  DistributorOnboardingDocument,
+  DistributorOnboardingDocumentRequest,
+  DistributorOnboardingSummary,
+  DistributorOnboardingSubmitResult,
+  DistributorDocumentType,
+  PresignUploadUrlRequest,
+  PresignUploadUrlResult,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════
@@ -47,8 +54,8 @@ export interface AuthApi {
   resetPasswordConfirm(req: ResetPasswordConfirmRequest): Promise<void>;
   resetPasswordResend(email: string): Promise<void>;
   createOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument>;
-  listOnboardingDocuments(registrationToken: string): Promise<OnboardingDocument[]>;
-  deleteOnboardingDocument(id: string, registrationToken: string): Promise<void>;
+  listOnboardingDocuments(): Promise<OnboardingDocument[]>;
+  deleteOnboardingDocument(id: string): Promise<void>;
 
   // Distributor invitations (supplier side)
   createInvitation(req: CreateInvitationRequest): Promise<Invitation>;
@@ -58,13 +65,21 @@ export interface AuthApi {
 
   // Distributor public onboarding
   distributorRegister(req: DistributorRegisterRequest): Promise<DistributorRegisterResult>;
-  distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<void>;
-  distributorResendOtp(registrationToken: string): Promise<ResendOtpResult>;
+  distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<LoginResult>;
+  distributorResendOtp(email: string, password: string): Promise<LoginResult>;
+
+  // Distributor authenticated onboarding (JWT-bound)
+  getDistributorOnboarding(): Promise<DistributorOnboardingSummary>;
   saveDistributorBusinessProfile(req: DistributorBusinessProfileRequest): Promise<Distributor>;
-  activateDistributor(registrationToken: string): Promise<Distributor>;
-  createDistributorOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument>;
-  listDistributorOnboardingDocuments(registrationToken: string): Promise<OnboardingDocument[]>;
-  deleteDistributorOnboardingDocument(id: string, registrationToken: string): Promise<void>;
+  presignDistributorDocument(req: PresignUploadUrlRequest): Promise<PresignUploadUrlResult>;
+  createDistributorOnboardingDocument(req: DistributorOnboardingDocumentRequest): Promise<DistributorOnboardingDocument>;
+  listDistributorOnboardingDocuments(): Promise<DistributorOnboardingDocument[]>;
+  deleteDistributorOnboardingDocument(id: string): Promise<void>;
+  submitDistributorOnboarding(): Promise<DistributorOnboardingSubmitResult>;
+  listDocumentTypes(): Promise<DistributorDocumentType[]>;
+
+  // Supplier activation of a distributor (requires distributor:activate permission)
+  activateDistributor(id: string): Promise<Distributor>;
 }
 
 // TokenStorage — persists tokens across page reloads

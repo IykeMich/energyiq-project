@@ -4,22 +4,53 @@
 
 export type LoginType = 'account' | 'staff';
 
-// Initiate registration
-export interface InitiateRequest {
+export type LoginNextAction =
+  | 'verify_email'
+  | 'complete_onboarding'
+  | 'pending_review'
+  | 'dashboard';
+
+// Closed CAC business-type enum required by the supplier registration endpoint.
+export type BusinessType =
+  | 'business_name'
+  | 'private_limited_company'
+  | 'public_limited_company'
+  | 'incorporated_trustees'
+  | 'limited_partnership'
+  | 'limited_liability_partnership';
+
+export const BusinessTypeLabels: Record<BusinessType, string> = {
+  business_name: 'Business Name',
+  private_limited_company: 'Private Limited Company',
+  public_limited_company: 'Public Limited Company',
+  incorporated_trustees: 'Incorporated Trustees',
+  limited_partnership: 'Limited Partnership',
+  limited_liability_partnership: 'Limited Liability Partnership',
+};
+
+// ── Supplier registration ───────────────────────────────────────
+
+export interface RegisterRequest {
   company: {
     name: string;
     email?: string;
-    business_type: string;
+    business_type: BusinessType;
     registration_number: string;
   };
   account: {
-    name: string;
+    first_name: string;
+    last_name: string;
+    name?: string;
     email: string;
+    phone: string;
     password: string;
+    confirm_password: string;
+    accepted_terms: boolean;
+    accepted_privacy_policy: boolean;
   };
 }
 
-export interface InitiateResult {
+export interface RegisterResult {
   registration_token: string;
   account_number: string;
   slug: string;
@@ -31,18 +62,26 @@ export interface InitiateResult {
   dev_otp?: string;
 }
 
-// Complete registration
-export interface CompleteRequest {
+// Legacy aliases used by the existing use-case/store names.
+export type InitiateRequest = RegisterRequest;
+export type InitiateResult = RegisterResult;
+
+// ── Supplier OTP verification ───────────────────────────────────
+
+export interface VerifyOtpRequest {
   registration_token: string;
   otp_code: string;
 }
 
-export interface CompleteResult {
+export interface VerifyOtpResult {
   access_token: string;
   refresh_token: string;
   expires_in: number;
   supplier: SupplierSummary;
 }
+
+export type CompleteRequest = VerifyOtpRequest;
+export type CompleteResult = VerifyOtpResult;
 
 export interface SupplierSummary {
   id: string;
@@ -53,7 +92,8 @@ export interface SupplierSummary {
   kyc_status: string;
 }
 
-// Login
+// ── Login (shared entry point for suppliers and distributors) ─────
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -61,11 +101,21 @@ export interface LoginRequest {
 }
 
 export interface LoginResult {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  login_type: LoginType;
-  user: AuthUser;
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  login_type?: LoginType;
+  /**
+   * Backend routing hint. Only email-verified accounts return tokens;
+   * pending distributors receive `verify_email` or `complete_onboarding`.
+   */
+  next_action?: LoginNextAction;
+  otp_resend_after_seconds?: number;
+  user?: AuthUser;
+  /**
+   * Dev-only: echoed OTP in development environments.
+   */
+  dev_otp?: string;
 }
 
 export interface AuthUser {
@@ -79,7 +129,8 @@ export interface AuthUser {
   slug: string;
 }
 
-// Token refresh
+// ── Token refresh ───────────────────────────────────────────────
+
 export interface RefreshRequest {
   refresh_token: string;
 }
@@ -89,7 +140,8 @@ export interface RefreshResult {
   expires_in: number;
 }
 
-// Auth state held in memory
+// ── Auth state held in memory ───────────────────────────────────
+
 export interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
@@ -98,26 +150,30 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-// MFA
+// ── MFA ───────────────────────────────────────────────────────────
+
 export interface VerifyMfaRequest {
   code: string;
 }
 
-// OTP resend (shared shape for both supplier and distributor registration flows)
+// ── OTP resend ────────────────────────────────────────────────────
+
 export interface ResendOtpResult {
   dev_otp?: string;
+  otp_resend_after_seconds?: number;
 }
 
-// Password reset
+// ── Password reset ──────────────────────────────────────────────
+
 export interface ResetPasswordConfirmRequest {
   token: string;
   new_password: string;
   confirm_password: string;
 }
 
-// Onboarding documents (shared shape for both supplier and distributor registration flows)
+// ── Supplier onboarding documents (post-login) ────────────────────
+
 export interface OnboardingDocumentRequest {
-  registration_token: string;
   document_type: string;
   file_name: string;
   file_size: number;
@@ -138,16 +194,21 @@ export interface OnboardingDocument {
   updated_at?: number | string;
 }
 
-// Distributor invitations (supplier side)
+// ── Distributor invitations (supplier side) ───────────────────────
+
 export interface CreateInvitationRequest {
+  distributor_name: string;
   email: string;
-  name: string;
   phone?: string;
+  contact_person: string;
+  location: string;
+  assurance_amount?: number;
 }
 
 export interface Invitation {
   id?: string;
   email?: string;
+  distributor_name?: string;
   name?: string;
   phone?: string;
   status?: string;
@@ -165,7 +226,8 @@ export interface ListInvitationsParams {
   offset?: number;
 }
 
-// Distributor public onboarding
+// ── Distributor public onboarding ───────────────────────────────
+
 export interface Distributor {
   id?: string;
   name?: string;
@@ -194,24 +256,86 @@ export interface DistributorRegisterRequest {
   password: string;
   confirm_password: string;
   invitation_token: string;
+  agree_terms: boolean;
 }
 
 export interface DistributorRegisterResult {
-  registration_token?: string;
+  next_action?: 'verify_email';
+  otp_resend_after_seconds?: number;
   distributor?: Distributor;
   dev_otp?: string;
 }
 
 export interface DistributorVerifyOtpRequest {
-  registration_token: string;
+  email: string;
   otp_code: string;
 }
 
 export interface DistributorBusinessProfileRequest {
-  registration_token: string;
-  business_name: string;
-  address: Record<string, unknown>;
-  phone?: string;
-  tax_id?: string;
-  meta?: Record<string, unknown>;
+  registered_business_name: string;
+  cac_number: string;
+  tin: string;
+  business_address: string;
+  business_phone: string;
+  country: string;
+  state: string;
+  city: string;
+  operational_regions: string[];
+  primary_contact_person: string;
+}
+
+// ── Distributor authenticated onboarding (JWT-bound) ──────────────
+
+export interface DistributorDocumentType {
+  document_type: string;
+  document_name: string;
+  required: boolean;
+  allowed_file_types: string[];
+  max_file_size: number;
+}
+
+export interface DistributorOnboardingDocument {
+  id?: string;
+  document_type?: string;
+  file_name?: string;
+  file_size?: number;
+  file_url?: string;
+  mime_type?: string;
+  status?: string;
+  created_at?: number | string;
+  updated_at?: number | string;
+}
+
+export interface DistributorOnboardingDocumentRequest {
+  document_type: string;
+  file_name: string;
+  file_size: number;
+  file_url: string;
+  mime_type: string;
+}
+
+export interface PresignUploadUrlRequest {
+  document_type: string;
+  file_name: string;
+  mime_type: string;
+}
+
+export interface PresignUploadUrlResult {
+  upload_url: string;
+  public_url: string;
+  fields?: Record<string, string>;
+}
+
+export interface DistributorOnboardingSummary {
+  business_profile?: DistributorBusinessProfileRequest;
+  documents?: DistributorOnboardingDocument[];
+  required_documents?: DistributorDocumentType[];
+  kyc_status?: string;
+  status?: string;
+}
+
+export interface DistributorOnboardingSubmitResult {
+  distributor: Distributor;
+  kyc_status: string;
+  status: string;
 }

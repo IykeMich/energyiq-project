@@ -19,6 +19,13 @@ import type {
   DistributorRegisterResult,
   DistributorVerifyOtpRequest,
   DistributorBusinessProfileRequest,
+  DistributorOnboardingDocument,
+  DistributorOnboardingDocumentRequest,
+  DistributorOnboardingSummary,
+  DistributorOnboardingSubmitResult,
+  DistributorDocumentType,
+  PresignUploadUrlRequest,
+  PresignUploadUrlResult,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════
@@ -66,8 +73,12 @@ export class AuthUseCases {
   async login(req: LoginRequest): Promise<LoginResult> {
     const result = await this.api.login(req);
 
-    this.tokens.setTokens(result.access_token, result.refresh_token);
-    this.user.setUser(result.user);
+    // Only fully-verified accounts receive tokens. Pending distributors may
+    // receive a `next_action` routing hint instead.
+    if (result.access_token && result.refresh_token && result.user) {
+      this.tokens.setTokens(result.access_token, result.refresh_token);
+      this.user.setUser(result.user);
+    }
 
     return result;
   }
@@ -162,12 +173,12 @@ export class AuthUseCases {
     return this.api.createOnboardingDocument(req);
   }
 
-  async listOnboardingDocuments(registrationToken: string): Promise<OnboardingDocument[]> {
-    return this.api.listOnboardingDocuments(registrationToken);
+  async listOnboardingDocuments(): Promise<OnboardingDocument[]> {
+    return this.api.listOnboardingDocuments();
   }
 
-  async deleteOnboardingDocument(id: string, registrationToken: string): Promise<void> {
-    return this.api.deleteOnboardingDocument(id, registrationToken);
+  async deleteOnboardingDocument(id: string): Promise<void> {
+    return this.api.deleteOnboardingDocument(id);
   }
 
   // ── Distributor invitations (supplier side) ─────────────────
@@ -194,31 +205,61 @@ export class AuthUseCases {
     return this.api.distributorRegister(req);
   }
 
-  async distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<void> {
-    return this.api.distributorVerifyOtp(req);
+  async distributorVerifyOtp(req: DistributorVerifyOtpRequest): Promise<LoginResult> {
+    const result = await this.api.distributorVerifyOtp(req);
+
+    if (result.access_token && result.refresh_token && result.user) {
+      this.tokens.setTokens(result.access_token, result.refresh_token);
+      this.user.setUser(result.user);
+    }
+
+    return result;
   }
 
-  async distributorResendOtp(registrationToken: string): Promise<ResendOtpResult> {
-    return this.api.distributorResendOtp(registrationToken);
+  async distributorResendOtp(email: string, password: string): Promise<LoginResult> {
+    // The backend deliberately has no tokenless public resend endpoint.
+    // Repeating the login call with the same credentials triggers the OTP send
+    // subject to the Redis cooldown, so resend is routed through login.
+    return this.api.distributorResendOtp(email, password);
+  }
+
+  // ── Distributor authenticated onboarding ────────────────────
+
+  async getDistributorOnboarding(): Promise<DistributorOnboardingSummary> {
+    return this.api.getDistributorOnboarding();
   }
 
   async saveDistributorBusinessProfile(req: DistributorBusinessProfileRequest): Promise<Distributor> {
     return this.api.saveDistributorBusinessProfile(req);
   }
 
-  async activateDistributor(registrationToken: string): Promise<Distributor> {
-    return this.api.activateDistributor(registrationToken);
+  async presignDistributorDocument(req: PresignUploadUrlRequest): Promise<PresignUploadUrlResult> {
+    return this.api.presignDistributorDocument(req);
   }
 
-  async createDistributorOnboardingDocument(req: OnboardingDocumentRequest): Promise<OnboardingDocument> {
+  async createDistributorOnboardingDocument(req: DistributorOnboardingDocumentRequest): Promise<DistributorOnboardingDocument> {
     return this.api.createDistributorOnboardingDocument(req);
   }
 
-  async listDistributorOnboardingDocuments(registrationToken: string): Promise<OnboardingDocument[]> {
-    return this.api.listDistributorOnboardingDocuments(registrationToken);
+  async listDistributorOnboardingDocuments(): Promise<DistributorOnboardingDocument[]> {
+    return this.api.listDistributorOnboardingDocuments();
   }
 
-  async deleteDistributorOnboardingDocument(id: string, registrationToken: string): Promise<void> {
-    return this.api.deleteDistributorOnboardingDocument(id, registrationToken);
+  async deleteDistributorOnboardingDocument(id: string): Promise<void> {
+    return this.api.deleteDistributorOnboardingDocument(id);
+  }
+
+  async submitDistributorOnboarding(): Promise<DistributorOnboardingSubmitResult> {
+    return this.api.submitDistributorOnboarding();
+  }
+
+  async listDocumentTypes(): Promise<DistributorDocumentType[]> {
+    return this.api.listDocumentTypes();
+  }
+
+  // ── Supplier activation of a distributor ─────────────────────
+
+  async activateDistributor(id: string): Promise<Distributor> {
+    return this.api.activateDistributor(id);
   }
 }

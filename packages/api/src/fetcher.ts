@@ -68,7 +68,7 @@ export async function fetcher<T>(
 
 async function safeFetch(url: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(url, init);
+    return await fetch(url, { ...init, credentials: 'include' });
   } catch (error) {
     if (error instanceof TypeError) {
       throw new NetworkError();

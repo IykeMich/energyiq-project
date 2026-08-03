@@ -17,6 +17,11 @@ interface AuthState {
   slug: string | null;
   distributor: auth.Distributor | null;
   invitation: auth.Invitation | null;
+  nextAction: auth.LoginNextAction | null;
+  otpResendAfterSeconds: number | null;
+  devOtp: string | null;
+  documentTypes: auth.DistributorDocumentType[] | null;
+  supplierOnboardingDocuments: auth.OnboardingDocument[] | null;
 }
 
 const initialState: AuthState = {
@@ -30,6 +35,11 @@ const initialState: AuthState = {
   slug: null,
   distributor: null,
   invitation: null,
+  nextAction: null,
+  otpResendAfterSeconds: null,
+  devOtp: null,
+  documentTypes: null,
+  supplierOnboardingDocuments: null,
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -91,6 +101,40 @@ export const resendOtp = createAsyncThunk(
   },
 );
 
+export const createSupplierOnboardingDocument = createAsyncThunk(
+  'auth/createSupplierOnboardingDocument',
+  async (req: auth.OnboardingDocumentRequest, { rejectWithValue }) => {
+    try {
+      return await authUseCases().createOnboardingDocument(req);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const listSupplierOnboardingDocuments = createAsyncThunk(
+  'auth/listSupplierOnboardingDocuments',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await authUseCases().listOnboardingDocuments();
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const deleteSupplierOnboardingDocument = createAsyncThunk(
+  'auth/deleteSupplierOnboardingDocument',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await authUseCases().deleteOnboardingDocument(id);
+      return id;
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
 export const resetPassword = createAsyncThunk(
   'auth/resetPasswordRequest',
   async (email: string, { rejectWithValue }) => {
@@ -139,28 +183,9 @@ export const distributorRegister = createAsyncThunk(
 
 export const distributorVerifyOtp = createAsyncThunk(
   'auth/distributorVerifyOtp',
-  async (otpCode: string, { getState, rejectWithValue }) => {
-    const state = getState() as { auth: AuthState };
-    const token = state.auth.registrationToken;
-    if (!token) return rejectWithValue('No registration token');
-
+  async (req: auth.DistributorVerifyOtpRequest, { rejectWithValue }) => {
     try {
-      await authUseCases().distributorVerifyOtp({ registration_token: token, otp_code: otpCode });
-    } catch (err) {
-      return rejectWithValue((err as Error).message);
-    }
-  },
-);
-
-export const distributorResendOtp = createAsyncThunk(
-  'auth/distributorResendOtp',
-  async (_: void, { getState, rejectWithValue }) => {
-    const state = getState() as { auth: AuthState };
-    const token = state.auth.registrationToken;
-    if (!token) return rejectWithValue('No registration token');
-
-    try {
-      return await authUseCases().distributorResendOtp(token);
+      return await authUseCases().distributorVerifyOtp(req);
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }
@@ -169,16 +194,86 @@ export const distributorResendOtp = createAsyncThunk(
 
 export const saveDistributorBusinessProfile = createAsyncThunk(
   'auth/saveDistributorBusinessProfile',
-  async (
-    req: Omit<auth.DistributorBusinessProfileRequest, 'registration_token'>,
-    { getState, rejectWithValue },
-  ) => {
-    const state = getState() as { auth: AuthState };
-    const token = state.auth.registrationToken;
-    if (!token) return rejectWithValue('No registration token');
-
+  async (req: auth.DistributorBusinessProfileRequest, { rejectWithValue }) => {
     try {
-      return await authUseCases().saveDistributorBusinessProfile({ ...req, registration_token: token });
+      return await authUseCases().saveDistributorBusinessProfile(req);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const getDistributorOnboarding = createAsyncThunk(
+  'auth/getDistributorOnboarding',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await authUseCases().getDistributorOnboarding();
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const listDocumentTypes = createAsyncThunk(
+  'auth/listDocumentTypes',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await authUseCases().listDocumentTypes();
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const presignDistributorDocument = createAsyncThunk(
+  'auth/presignDistributorDocument',
+  async (req: auth.PresignUploadUrlRequest, { rejectWithValue }) => {
+    try {
+      return await authUseCases().presignDistributorDocument(req);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const createDistributorOnboardingDocument = createAsyncThunk(
+  'auth/createDistributorOnboardingDocument',
+  async (req: auth.DistributorOnboardingDocumentRequest, { rejectWithValue }) => {
+    try {
+      return await authUseCases().createDistributorOnboardingDocument(req);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const listDistributorOnboardingDocuments = createAsyncThunk(
+  'auth/listDistributorOnboardingDocuments',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await authUseCases().listDistributorOnboardingDocuments();
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const deleteDistributorOnboardingDocument = createAsyncThunk(
+  'auth/deleteDistributorOnboardingDocument',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await authUseCases().deleteDistributorOnboardingDocument(id);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
+  },
+);
+
+export const submitDistributorOnboarding = createAsyncThunk(
+  'auth/submitDistributorOnboarding',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await authUseCases().submitDistributorOnboarding();
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }
@@ -187,13 +282,9 @@ export const saveDistributorBusinessProfile = createAsyncThunk(
 
 export const activateDistributor = createAsyncThunk(
   'auth/activateDistributor',
-  async (_: void, { getState, rejectWithValue }) => {
-    const state = getState() as { auth: AuthState };
-    const token = state.auth.registrationToken;
-    if (!token) return rejectWithValue('No registration token');
-
+  async (id: string, { rejectWithValue }) => {
     try {
-      return await authUseCases().activateDistributor(token);
+      return await authUseCases().activateDistributor(id);
     } catch (err) {
       return rejectWithValue((err as Error).message);
     }
@@ -239,6 +330,23 @@ export const verifyInvitation = createAsyncThunk(
 // Slice
 // ════════════════════════════════════════════════════════════════
 
+function setAuthFromLogin(state: AuthState, payload: auth.LoginResult) {
+  state.nextAction = payload.next_action ?? null;
+  state.otpResendAfterSeconds = payload.otp_resend_after_seconds ?? null;
+  state.devOtp = payload.dev_otp ?? null;
+
+  if (payload.access_token && payload.refresh_token && payload.user) {
+    state.isAuthenticated = true;
+    state.loginType = payload.login_type ?? null;
+    state.user = payload.user;
+    state.slug = payload.user.slug;
+  } else {
+    state.isAuthenticated = false;
+    state.user = null;
+    state.slug = null;
+  }
+}
+
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -269,6 +377,7 @@ export const authSlice = createSlice({
         state.registrationToken = action.payload.registration_token;
         state.accountNumber = action.payload.account_number;
         state.slug = action.payload.slug;
+        state.devOtp = action.payload.dev_otp ?? null;
       })
       .addCase(initiate.rejected, (state, action) => {
         state.isLoading = false;
@@ -285,6 +394,7 @@ export const authSlice = createSlice({
         state.isAuthenticated = true;
         state.loginType = 'account';
         state.registrationToken = null;
+        state.nextAction = 'dashboard';
         state.user = {
           id: action.payload.supplier.id,
           name: '',
@@ -295,6 +405,7 @@ export const authSlice = createSlice({
           account_number: action.payload.supplier.account_number,
           slug: action.payload.supplier.slug,
         };
+        state.slug = action.payload.supplier.slug;
       })
       .addCase(complete.rejected, (state, action) => {
         state.isLoading = false;
@@ -308,10 +419,7 @@ export const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
-        state.loginType = action.payload.login_type;
-        state.user = action.payload.user;
-        state.slug = action.payload.user.slug;
+        setAuthFromLogin(state, action.payload);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -377,8 +485,10 @@ export const authSlice = createSlice({
       })
       .addCase(distributorRegister.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.registrationToken = action.payload.registration_token ?? null;
         state.distributor = action.payload.distributor ?? null;
+        state.nextAction = action.payload.next_action ?? null;
+        state.otpResendAfterSeconds = action.payload.otp_resend_after_seconds ?? null;
+        state.devOtp = action.payload.dev_otp ?? null;
       })
       .addCase(distributorRegister.rejected, (state, action) => {
         state.isLoading = false;
@@ -390,23 +500,14 @@ export const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(distributorVerifyOtp.fulfilled, (state) => {
+      .addCase(distributorVerifyOtp.fulfilled, (state, action) => {
         state.isLoading = false;
+        setAuthFromLogin(state, action.payload);
+        state.distributor = action.payload.user
+          ? { id: action.payload.user.entity_id, ...state.distributor }
+          : state.distributor;
       })
       .addCase(distributorVerifyOtp.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
-    builder
-      .addCase(distributorResendOtp.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(distributorResendOtp.fulfilled, (state) => {
-        state.isLoading = false;
-      })
-      .addCase(distributorResendOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
@@ -421,6 +522,100 @@ export const authSlice = createSlice({
         state.distributor = action.payload;
       })
       .addCase(saveDistributorBusinessProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(getDistributorOnboarding.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getDistributorOnboarding.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(getDistributorOnboarding.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(listDocumentTypes.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(listDocumentTypes.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.documentTypes = action.payload;
+      })
+      .addCase(listDocumentTypes.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(presignDistributorDocument.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(presignDistributorDocument.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(presignDistributorDocument.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(createDistributorOnboardingDocument.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createDistributorOnboardingDocument.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(createDistributorOnboardingDocument.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(listDistributorOnboardingDocuments.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(listDistributorOnboardingDocuments.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(listDistributorOnboardingDocuments.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(deleteDistributorOnboardingDocument.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteDistributorOnboardingDocument.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(deleteDistributorOnboardingDocument.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(submitDistributorOnboarding.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(submitDistributorOnboarding.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.distributor = action.payload.distributor;
+        state.nextAction = 'pending_review';
+      })
+      .addCase(submitDistributorOnboarding.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

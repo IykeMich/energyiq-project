@@ -8,25 +8,30 @@ import { authSlice, initiate, login, logout, clearError } from './auth';
 // instead of the real composition root.
 // ════════════════════════════════════════════════════════════════
 
-const useCasesMock = {
-  initiate: vi.fn(),
-  complete: vi.fn(),
-  login: vi.fn(),
-  logout: vi.fn(),
-  refresh: vi.fn(),
-  changePassword: vi.fn(),
-  resetPassword: vi.fn(),
-  getState: vi.fn(() => ({
-    user: null,
-    accessToken: null,
-    refreshToken: null,
-    loginType: null,
-    isAuthenticated: false,
-  })),
-};
+// Use vi.hoisted so the mock object exists BEFORE vi.mock runs.
+// This avoids the Temporal Dead Zone (TDZ) / hoisting redline.
+const mocks = vi.hoisted(() => ({
+  useCasesMock: {
+    initiate: vi.fn(),
+    complete: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
+    refresh: vi.fn(),
+    changePassword: vi.fn(),
+    resetPassword: vi.fn(),
+    resendOtp: vi.fn(),
+    getState: vi.fn(() => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      loginType: null,
+      isAuthenticated: false,
+    })),
+  },
+}));
 
 vi.mock('../config', () => ({
-  authUseCases: () => useCasesMock,
+  authUseCases: () => mocks.useCasesMock,
   configureStore: vi.fn(),
 }));
 
@@ -53,18 +58,31 @@ describe('auth slice', () => {
       const state = store.getState().auth;
       expect(state.isAuthenticated).toBe(false);
       expect(state.user).toBeNull();
-      expect(useCasesMock.logout).toHaveBeenCalled();
+      expect(mocks.useCasesMock.logout).toHaveBeenCalled();
     });
   });
 
   describe('initiate thunk', () => {
     const req = {
-      company: { name: 'Test', business_type: 'LPG', registration_number: 'RC1' },
-      account: { name: 'User', email: 'u@t.com', password: 'password12345' },
+      company: {
+        name: 'Test',
+        business_type: 'private_limited_company' as const,
+        registration_number: 'RC1',
+      },
+      account: {
+        first_name: 'User',
+        last_name: 'One',
+        email: 'u@t.com',
+        phone: '08012345678',
+        password: 'password12345',
+        confirm_password: 'password12345',
+        accepted_terms: true,
+        accepted_privacy_policy: true, // ← fixed: was accepted_privacy
+      },
     };
 
     it('sets registration token on success', async () => {
-      useCasesMock.initiate.mockResolvedValue({
+      mocks.useCasesMock.initiate.mockResolvedValue({
         registration_token: 'reg_tok',
         account_number: '1234567890',
         slug: 'test',
@@ -80,7 +98,7 @@ describe('auth slice', () => {
     });
 
     it('sets error on failure', async () => {
-      useCasesMock.initiate.mockRejectedValue(new Error('Email taken'));
+      mocks.useCasesMock.initiate.mockRejectedValue(new Error('Email taken'));
       await store.dispatch(initiate(req));
       const state = store.getState().auth;
       expect(state.error).toBe('Email taken');
@@ -88,10 +106,14 @@ describe('auth slice', () => {
     });
 
     it('sets loading during request', async () => {
-      useCasesMock.initiate.mockImplementation(
-        () => new Promise((resolve) => {
-          setTimeout(() => resolve({ registration_token: 't', account_number: '1', slug: 's' }), 10);
-        }),
+      mocks.useCasesMock.initiate.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(
+              () => resolve({ registration_token: 't', account_number: '1', slug: 's' }),
+              10,
+            );
+          }),
       );
 
       const promise = store.dispatch(initiate(req));
@@ -103,12 +125,20 @@ describe('auth slice', () => {
 
   describe('login thunk', () => {
     it('sets user and auth state on success', async () => {
-      useCasesMock.login.mockResolvedValue({
-        access_token: 'acc', refresh_token: 'ref', expires_in: 3600,
+      mocks.useCasesMock.login.mockResolvedValue({
+        access_token: 'acc',
+        refresh_token: 'ref',
+        expires_in: 3600,
         login_type: 'account',
         user: {
-          id: '1', name: 'Chioma', email: 'c@m.com', role: 'owner',
-          entity_type: 'supplier', entity_id: '1', account_number: '123', slug: 'mega',
+          id: '1',
+          name: 'Chioma',
+          email: 'c@m.com',
+          role: 'owner',
+          entity_type: 'supplier',
+          entity_id: '1',
+          account_number: '123',
+          slug: 'mega',
         },
       });
 

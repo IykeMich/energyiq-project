@@ -37,13 +37,13 @@ function error(status: number, code: string, message: string) {
 }
 
 export const authHandlers = [
-  // Initiate
-  http.post('*/v1/public/auth/initiate', () => {
+  // Register
+  http.post('*/v1/public/auth/register', () => {
     return created(buildInitiateResult());
   }),
 
-  // Complete
-  http.post('*/v1/public/auth/complete', async ({ request }) => {
+  // Verify OTP
+  http.post('*/v1/public/auth/verify-otp', async ({ request }) => {
     const body = await request.json() as { otp_code?: string };
     if (body.otp_code === '000000') {
       return error(400, 'EIQ-1006', 'Invalid or expired OTP');
@@ -65,15 +65,15 @@ export const authHandlers = [
     return ok({ access_token: 'new_access_token', expires_in: 3600 });
   }),
 
-  // Reset password
-  http.post('*/v1/public/auth/reset-password', () => {
+  // Forgot password
+  http.post('*/v1/public/auth/forgot-password', () => {
     return ok(null);
   }),
 ];
 
 // Error handler overrides for specific test scenarios
 export const authErrorHandlers = {
-  emailTaken: http.post('*/v1/public/auth/initiate', () => {
+  emailTaken: http.post('*/v1/public/auth/register', () => {
     return error(409, 'EIQ-1010', 'Email address is already registered');
   }),
 

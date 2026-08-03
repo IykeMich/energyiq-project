@@ -61,13 +61,19 @@ export function buildInitiateRequest(overrides: Partial<InitiateRequest> = {}): 
     company: {
       name: 'MegaEnergy Ltd',
       email: 'info@megaenergy.com',
-      business_type: 'LPG Distribution',
+      business_type: 'private_limited_company',
       registration_number: 'RC123456',
     },
     account: {
+      first_name: 'Chioma',
+      last_name: 'Okonkwo',
       name: 'Chioma Okonkwo',
       email: 'chioma@megaenergy.com',
+      phone: '08012345678',
       password: 'SecurePass123!',
+      confirm_password: 'SecurePass123!',
+      accepted_terms: true,
+      accepted_privacy_policy: true,
     },
     ...overrides,
   };

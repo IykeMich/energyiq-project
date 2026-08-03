@@ -48,7 +48,7 @@ export const ResponseCodes = {
 export type ResponseCode = (typeof ResponseCodes)[keyof typeof ResponseCodes];
 
 export function isSuccess(code: string): boolean {
-  return code.startsWith('EIQ-0');
+  return code.startsWith('EIQ-0') || code === ResponseCodes.REGISTRATION_INIT;
 }
 
 // Pagination

@@ -33,9 +33,13 @@ const mockApi: AuthApi = {
   distributorResendOtp: vi.fn(),
   saveDistributorBusinessProfile: vi.fn(),
   activateDistributor: vi.fn(),
+  getDistributorOnboarding: vi.fn(),
+  presignDistributorDocument: vi.fn(),
   createDistributorOnboardingDocument: vi.fn(),
   listDistributorOnboardingDocuments: vi.fn(),
   deleteDistributorOnboardingDocument: vi.fn(),
+  submitDistributorOnboarding: vi.fn(),
+  listDocumentTypes: vi.fn(),
 };
 
 const mockTokens: TokenStorage = {
@@ -62,8 +66,18 @@ describe('AuthUseCases', () => {
   describe('initiate', () => {
     it('calls api.initiate with the request', async () => {
       const req = {
-        company: { name: 'MegaEnergy', email: '', business_type: 'LPG', registration_number: 'RC123' },
-        account: { name: 'Chioma', email: 'chioma@mega.com', password: 'SecurePass123!' },
+        company: { name: 'MegaEnergy', email: '', business_type: 'private_limited_company' as const, registration_number: 'RC123' },
+        account: {
+          first_name: 'Chioma',
+          last_name: 'Admin',
+          name: 'Chioma Admin',
+          email: 'chioma@mega.com',
+          phone: '08012345678',
+          password: 'SecurePass123!',
+          confirm_password: 'SecurePass123!',
+          accepted_terms: true,
+          accepted_privacy_policy: true,
+        },
       };
       const result = { registration_token: 'token123', account_number: '1234567890', slug: 'megaenergy' };
       vi.mocked(mockApi.initiate).mockResolvedValue(result);
@@ -80,8 +94,17 @@ describe('AuthUseCases', () => {
       });
 
       await auth.initiate({
-        company: { name: 'X', business_type: 'Y', registration_number: 'Z' },
-        account: { name: 'A', email: 'a@b.com', password: 'password12345' },
+        company: { name: 'X', business_type: 'private_limited_company' as const, registration_number: 'Z' },
+        account: {
+          first_name: 'A',
+          last_name: 'B',
+          email: 'a@b.com',
+          phone: '08012345678',
+          password: 'password12345',
+          confirm_password: 'password12345',
+          accepted_terms: true,
+          accepted_privacy_policy: true,
+        },
       });
 
       expect(mockTokens.setTokens).not.toHaveBeenCalled();

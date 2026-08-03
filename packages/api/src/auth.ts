@@ -7,12 +7,14 @@ import { apiGet, apiPost, apiPut, apiDelete } from './client';
 // ════════════════════════════════════════════════════════════════
 
 export class AuthApiAdapter implements auth.AuthApi {
+  // ── Supplier public registration ──────────────────────────────
+
   async initiate(req: auth.InitiateRequest): Promise<auth.InitiateResult> {
-    return apiPost<auth.InitiateResult>('v1/public/auth/initiate', req);
+    return apiPost<auth.InitiateResult>('v1/public/auth/register', req);
   }
 
   async complete(req: auth.CompleteRequest): Promise<auth.CompleteResult> {
-    return apiPost<auth.CompleteResult>('v1/public/auth/complete', req);
+    return apiPost<auth.CompleteResult>('v1/public/auth/verify-otp', req);
   }
 
   async login(req: auth.LoginRequest): Promise<auth.LoginResult> {
@@ -31,10 +33,10 @@ export class AuthApiAdapter implements auth.AuthApi {
   }
 
   async resetPassword(email: string): Promise<void> {
-    await apiPost('v1/public/auth/reset-password', { email });
+    await apiPost('v1/public/auth/forgot-password', { email });
   }
 
-  // ── Supplier account security ───────────────────────────────
+  // ── Supplier account security ─────────────────────────────────
 
   async logout(refreshToken: string): Promise<void> {
     await apiPost('v1/auth/logout', { refresh_token: refreshToken });
@@ -48,7 +50,7 @@ export class AuthApiAdapter implements auth.AuthApi {
     await apiPost('v1/auth/verify-mfa', { code });
   }
 
-  // ── Supplier registration follow-ups ────────────────────────
+  // ── Supplier registration follow-ups (post-login) ───────────────
 
   async resendOtp(registrationToken: string): Promise<auth.ResendOtpResult> {
     return apiPost<auth.ResendOtpResult>('v1/public/auth/resend-otp', {
@@ -69,20 +71,18 @@ export class AuthApiAdapter implements auth.AuthApi {
   }
 
   async createOnboardingDocument(req: auth.OnboardingDocumentRequest): Promise<auth.OnboardingDocument> {
-    return apiPost<auth.OnboardingDocument>('v1/public/auth/onboarding-documents', req);
+    return apiPost<auth.OnboardingDocument>('v1/auth/onboarding-documents', req);
   }
 
-  async listOnboardingDocuments(registrationToken: string): Promise<auth.OnboardingDocument[]> {
-    return apiGet<auth.OnboardingDocument[]>(`v1/public/auth/onboarding-documents/${registrationToken}`);
+  async listOnboardingDocuments(): Promise<auth.OnboardingDocument[]> {
+    return apiGet<auth.OnboardingDocument[]>('v1/auth/onboarding-documents');
   }
 
-  async deleteOnboardingDocument(id: string, registrationToken: string): Promise<void> {
-    await apiDelete(`v1/public/auth/onboarding-documents/${id}`, {
-      json: { registration_token: registrationToken },
-    });
+  async deleteOnboardingDocument(id: string): Promise<void> {
+    await apiDelete(`v1/auth/onboarding-documents/${id}`);
   }
 
-  // ── Distributor invitations (supplier side) ─────────────────
+  // ── Distributor invitations (supplier side) ────────────────────
 
   async createInvitation(req: auth.CreateInvitationRequest): Promise<auth.Invitation> {
     return apiPost<auth.Invitation>('v1/invitation/create', req);
@@ -105,47 +105,62 @@ export class AuthApiAdapter implements auth.AuthApi {
     });
   }
 
-  // ── Distributor public onboarding ───────────────────────────
+  // ── Distributor public onboarding ─────────────────────────────
 
   async distributorRegister(req: auth.DistributorRegisterRequest): Promise<auth.DistributorRegisterResult> {
     return apiPost<auth.DistributorRegisterResult>('v1/public/distributor/register', req);
   }
 
-  async distributorVerifyOtp(req: auth.DistributorVerifyOtpRequest): Promise<void> {
-    await apiPost('v1/public/distributor/verify-otp', req);
+  async distributorVerifyOtp(req: auth.DistributorVerifyOtpRequest): Promise<auth.LoginResult> {
+    return apiPost<auth.LoginResult>('v1/public/distributor/verify-otp', req);
   }
 
-  async distributorResendOtp(registrationToken: string): Promise<auth.ResendOtpResult> {
-    return apiPost<auth.ResendOtpResult>('v1/public/distributor/resend-otp', {
-      registration_token: registrationToken,
-    });
+  async distributorResendOtp(email: string, password: string): Promise<auth.LoginResult> {
+    // The backend deliberately has no tokenless public resend endpoint.
+    // Repeating the login call with the same credentials triggers the OTP send
+    // subject to the Redis cooldown, so resend is routed through login.
+    return this.login({ email, password });
+  }
+
+  // ── Distributor authenticated onboarding (JWT-bound) ───────────
+
+  async getDistributorOnboarding(): Promise<auth.DistributorOnboardingSummary> {
+    return apiGet<auth.DistributorOnboardingSummary>('v1/auth/distributor-onboarding');
   }
 
   async saveDistributorBusinessProfile(req: auth.DistributorBusinessProfileRequest): Promise<auth.Distributor> {
-    return apiPut<auth.Distributor>('v1/public/distributor/business-profile', req);
+    return apiPut<auth.Distributor>('v1/auth/distributor-onboarding/business-profile', req);
   }
 
-  async activateDistributor(registrationToken: string): Promise<auth.Distributor> {
-    return apiPost<auth.Distributor>('v1/public/distributor/activate', {
-      registration_token: registrationToken,
-    });
+  async presignDistributorDocument(req: auth.PresignUploadUrlRequest): Promise<auth.PresignUploadUrlResult> {
+    return apiPost<auth.PresignUploadUrlResult>('v1/auth/distributor-onboarding/documents/presign', req);
   }
 
   async createDistributorOnboardingDocument(
-    req: auth.OnboardingDocumentRequest,
-  ): Promise<auth.OnboardingDocument> {
-    return apiPost<auth.OnboardingDocument>('v1/public/distributor/onboarding-documents', req);
+    req: auth.DistributorOnboardingDocumentRequest,
+  ): Promise<auth.DistributorOnboardingDocument> {
+    return apiPost<auth.DistributorOnboardingDocument>('v1/auth/distributor-onboarding/documents', req);
   }
 
-  async listDistributorOnboardingDocuments(registrationToken: string): Promise<auth.OnboardingDocument[]> {
-    return apiGet<auth.OnboardingDocument[]>(
-      `v1/public/distributor/onboarding-documents/${registrationToken}`,
-    );
+  async listDistributorOnboardingDocuments(): Promise<auth.DistributorOnboardingDocument[]> {
+    return apiGet<auth.DistributorOnboardingDocument[]>('v1/auth/distributor-onboarding/documents');
   }
 
-  async deleteDistributorOnboardingDocument(id: string, registrationToken: string): Promise<void> {
-    await apiDelete(`v1/public/distributor/onboarding-documents/${id}`, {
-      json: { registration_token: registrationToken },
-    });
+  async deleteDistributorOnboardingDocument(id: string): Promise<void> {
+    await apiDelete(`v1/auth/distributor-onboarding/documents/${id}`);
+  }
+
+  async submitDistributorOnboarding(): Promise<auth.DistributorOnboardingSubmitResult> {
+    return apiPost<auth.DistributorOnboardingSubmitResult>('v1/auth/distributor-onboarding/submit');
+  }
+
+  async listDocumentTypes(): Promise<auth.DistributorDocumentType[]> {
+    return apiGet<auth.DistributorDocumentType[]>('v1/document-type/list');
+  }
+
+  // ── Supplier activation of a distributor ──────────────────────
+
+  async activateDistributor(id: string): Promise<auth.Distributor> {
+    return apiPost<auth.Distributor>(`v1/distributor/activate/${id}`);
   }
 }

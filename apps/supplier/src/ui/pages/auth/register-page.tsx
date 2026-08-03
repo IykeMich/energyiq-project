@@ -1,10 +1,28 @@
-import { Link } from 'react-router-dom';
-import { AuthLayout, RegisterForm } from '@energyiq/ui';
+import { Link, useLocation } from 'react-router-dom';
+import { AuthLayout, RegisterForm, DistributorForm, AccountTypeSelect } from '@energyiq/ui';
 
 export function RegisterPage() {
+  const { pathname } = useLocation();
+
+  let form;
+  if (pathname === '/register/supplier') {
+    form = <RegisterForm />;
+  } else if (pathname === '/register/distributor') {
+    form = <DistributorForm />;
+  } else {
+    form = <AccountTypeSelect />;
+  }
+
   return (
-    <AuthLayout title="Create your Account" subtitle="Enter your company details to get started with real-time insights">
-      <RegisterForm />
+    <AuthLayout
+      title={pathname === '/register' ? 'Create your Account' : 'Create your Account'}
+      subtitle={
+        pathname === '/register'
+          ? 'Choose how you want to get started with EnergyIQ'
+          : 'Enter your details to get started with real-time insights'
+      }
+    >
+      {form}
 
       <p className="text-center text-sm text-gray-400 mt-6">
         Already have an account?{' '}

@@ -29,6 +29,7 @@ export function configureClient(
 
 const instance: KyInstance = ky.create({
   timeout: 30_000,
+  credentials: 'include',
   hooks: {
     beforeRequest: [
       ({ request }) => {

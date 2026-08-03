@@ -13,18 +13,28 @@ import {
   resetPasswordConfirm as resetPasswordConfirmThunk,
   distributorRegister as distributorRegisterThunk,
   distributorVerifyOtp as distributorVerifyOtpThunk,
-  distributorResendOtp as distributorResendOtpThunk,
   saveDistributorBusinessProfile as saveDistributorBusinessProfileThunk,
   activateDistributor as activateDistributorThunk,
   createInvitation as createInvitationThunk,
   verifyInvitation as verifyInvitationThunk,
+  listDocumentTypes as listDocumentTypesThunk,
+  presignDistributorDocument as presignDistributorDocumentThunk,
+  createDistributorOnboardingDocument as createDistributorOnboardingDocumentThunk,
+  submitDistributorOnboarding as submitDistributorOnboardingThunk,
+  getDistributorOnboarding as getDistributorOnboardingThunk,
+  listDistributorOnboardingDocuments as listDistributorOnboardingDocumentsThunk,
+  deleteDistributorOnboardingDocument as deleteDistributorOnboardingDocumentThunk,
 } from '@energyiq/store';
 import type {
   InitiateRequest,
   LoginRequest,
+  LoginResult,
   ResetPasswordConfirmRequest,
   DistributorRegisterRequest,
+  DistributorVerifyOtpRequest,
   DistributorBusinessProfileRequest,
+  DistributorOnboardingDocumentRequest,
+  PresignUploadUrlRequest,
   CreateInvitationRequest,
 } from '@energyiq/domain/auth';
 
@@ -47,12 +57,12 @@ export function useAuth() {
     return result.meta.requestStatus === 'fulfilled';
   }, [dispatch]);
 
-  const handleLogin = useCallback(async (req: LoginRequest) => {
+  const handleLogin = useCallback(async (req: LoginRequest): Promise<LoginResult | null> => {
     const result = await dispatch(loginThunk(req));
     if (loginThunk.fulfilled.match(result)) {
-      return { success: true as const, slug: result.payload.user.slug };
+      return result.payload;
     }
-    return { success: false as const };
+    return null;
   }, [dispatch]);
 
   const handleLogout = useCallback(async () => {
@@ -90,26 +100,86 @@ export function useAuth() {
     return result.meta.requestStatus === 'fulfilled';
   }, [dispatch]);
 
-  const handleDistributorVerifyOtp = useCallback(async (otpCode: string) => {
-    const result = await dispatch(distributorVerifyOtpThunk(otpCode));
+  const handleDistributorVerifyOtp = useCallback(async (req: DistributorVerifyOtpRequest) => {
+    const result = await dispatch(distributorVerifyOtpThunk(req));
     return result.meta.requestStatus === 'fulfilled';
   }, [dispatch]);
 
-  const handleDistributorResendOtp = useCallback(async () => {
-    const result = await dispatch(distributorResendOtpThunk());
-    return result.meta.requestStatus === 'fulfilled';
-  }, [dispatch]);
+  const handleDistributorResendOtp = useCallback(
+    async (req: LoginRequest): Promise<LoginResult | null> => {
+      // Distributor OTP resend is implemented by repeating the login call,
+      // which triggers the OTP send subject to the Redis cooldown.
+      return handleLogin(req);
+    },
+    [handleLogin],
+  );
 
   const handleSaveDistributorBusinessProfile = useCallback(
-    async (req: Omit<DistributorBusinessProfileRequest, 'registration_token'>) => {
+    async (req: DistributorBusinessProfileRequest) => {
       const result = await dispatch(saveDistributorBusinessProfileThunk(req));
       return result.meta.requestStatus === 'fulfilled';
     },
     [dispatch],
   );
 
-  const handleActivateDistributor = useCallback(async () => {
-    const result = await dispatch(activateDistributorThunk());
+  const handleListDocumentTypes = useCallback(async () => {
+    const result = await dispatch(listDocumentTypesThunk());
+    if (listDocumentTypesThunk.fulfilled.match(result)) {
+      return result.payload;
+    }
+    return null;
+  }, [dispatch]);
+
+  const handlePresignDistributorDocument = useCallback(async (req: PresignUploadUrlRequest) => {
+    const result = await dispatch(presignDistributorDocumentThunk(req));
+    if (presignDistributorDocumentThunk.fulfilled.match(result)) {
+      return result.payload;
+    }
+    return null;
+  }, [dispatch]);
+
+  const handleCreateDistributorOnboardingDocument = useCallback(
+    async (req: DistributorOnboardingDocumentRequest) => {
+      const result = await dispatch(createDistributorOnboardingDocumentThunk(req));
+      if (createDistributorOnboardingDocumentThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
+
+  const handleSubmitDistributorOnboarding = useCallback(async () => {
+    const result = await dispatch(submitDistributorOnboardingThunk());
+    if (submitDistributorOnboardingThunk.fulfilled.match(result)) {
+      return result.payload;
+    }
+    return null;
+  }, [dispatch]);
+
+  const handleGetDistributorOnboarding = useCallback(async () => {
+    const result = await dispatch(getDistributorOnboardingThunk());
+    if (getDistributorOnboardingThunk.fulfilled.match(result)) {
+      return result.payload;
+    }
+    return null;
+  }, [dispatch]);
+
+  const handleListDistributorOnboardingDocuments = useCallback(async () => {
+    const result = await dispatch(listDistributorOnboardingDocumentsThunk());
+    if (listDistributorOnboardingDocumentsThunk.fulfilled.match(result)) {
+      return result.payload;
+    }
+    return null;
+  }, [dispatch]);
+
+  const handleDeleteDistributorOnboardingDocument = useCallback(async (id: string) => {
+    const result = await dispatch(deleteDistributorOnboardingDocumentThunk(id));
+    return result.meta.requestStatus === 'fulfilled';
+  }, [dispatch]);
+
+  const handleActivateDistributor = useCallback(async (id: string) => {
+    const result = await dispatch(activateDistributorThunk(id));
     return result.meta.requestStatus === 'fulfilled';
   }, [dispatch]);
 
@@ -135,6 +205,10 @@ export function useAuth() {
     slug: auth.slug,
     distributor: auth.distributor,
     invitation: auth.invitation,
+    nextAction: auth.nextAction,
+    otpResendAfterSeconds: auth.otpResendAfterSeconds,
+    devOtp: auth.devOtp,
+    documentTypes: auth.documentTypes,
 
     // Actions
     initiate: handleInitiate,
@@ -150,6 +224,13 @@ export function useAuth() {
     distributorVerifyOtp: handleDistributorVerifyOtp,
     distributorResendOtp: handleDistributorResendOtp,
     saveDistributorBusinessProfile: handleSaveDistributorBusinessProfile,
+    listDocumentTypes: handleListDocumentTypes,
+    presignDistributorDocument: handlePresignDistributorDocument,
+    createDistributorOnboardingDocument: handleCreateDistributorOnboardingDocument,
+    submitDistributorOnboarding: handleSubmitDistributorOnboarding,
+    getDistributorOnboarding: handleGetDistributorOnboarding,
+    listDistributorOnboardingDocuments: handleListDistributorOnboardingDocuments,
+    deleteDistributorOnboardingDocument: handleDeleteDistributorOnboardingDocument,
     activateDistributor: handleActivateDistributor,
     createInvitation: handleCreateInvitation,
     verifyInvitation: handleVerifyInvitation,

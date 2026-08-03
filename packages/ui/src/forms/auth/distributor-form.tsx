@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Upload, FileText } from 'lucide-react';
+import type { DistributorDocumentType, DistributorOnboardingDocument } from '@energyiq/domain/auth';
 
 import { useAuth } from '../../hooks/use-auth';
+import { toast } from '@energyiq/ui';
 import {
   distributorSchema,
   distributorBusinessProfileSchema,
@@ -14,47 +16,20 @@ import {
 
 const steps = [
   'Account Setup',
-  'OTP verification',
+  'OTP Verification',
   'Business Profile',
   'Document Upload',
-  'Assurance Payment',
-  'Activation',
+  'Review Pending',
 ];
 
-const documentRequirements = [
-  {
-    key: 'cac',
-    title: 'CAC Certificate',
-    description: 'Certificate of Incorporation',
-    required: true,
-  },
-  {
-    key: 'tax',
-    title: 'Tax Clearance Certificate',
-    description: 'Current TCC from FIRS',
-    required: true,
-  },
-  {
-    key: 'directorId',
-    title: "Director's Government ID",
-    description: "NIN slip, passport, driver's license",
-    required: true,
-  },
-  {
-    key: 'registration',
-    title: 'Business Registration Certificate',
-    description: 'Not older than 3 months',
-    required: true,
-  },
-  {
-    key: 'utility',
-    title: 'Utility Bill',
-    description: 'Not older than 3 months',
-    required: false,
-  },
-] as const;
+type UploadState = 'idle' | 'uploading' | 'done' | 'error';
 
-type DocumentKey = (typeof documentRequirements)[number]['key'];
+interface DocumentUploadState {
+  file: File | null;
+  status: UploadState;
+  error?: string;
+  uploaded?: DistributorOnboardingDocument;
+}
 
 export function DistributorForm() {
   const navigate = useNavigate();
@@ -65,14 +40,16 @@ export function DistributorForm() {
     isLoading,
     error,
     clearError,
-    registrationToken,
-    invitation,
     distributorRegister,
     distributorVerifyOtp,
     distributorResendOtp,
     saveDistributorBusinessProfile,
-    activateDistributor,
+    listDocumentTypes,
+    presignDistributorDocument,
+    createDistributorOnboardingDocument,
+    submitDistributorOnboarding,
     verifyInvitation,
+    invitation,
   } = useAuth();
 
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
@@ -80,49 +57,74 @@ export function DistributorForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
+
+  const [accountEmail, setAccountEmail] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
   const [countdown, setCountdown] = useState(30);
 
-  const [documentErrors, setDocumentErrors] = useState<Record<string, string>>({});
-  const [documents, setDocuments] = useState<Record<DocumentKey, File | null>>({
-    cac: null,
-    tax: null,
-    directorId: null,
-    registration: null,
-    utility: null,
-  });
+  const [documentTypes, setDocumentTypes] = useState<DistributorDocumentType[]>([]);
+  const [documents, setDocuments] = useState<Record<string, DocumentUploadState>>({});
+
+  const [regionInput, setRegionInput] = useState('');
 
   const accountForm = useForm<DistributorFormData>({
     resolver: zodResolver(distributorSchema),
     mode: 'onChange',
-    defaultValues: { full_name: '', email: '', phone: '', password: '', confirm_password: '' },
+    defaultValues: {
+      full_name: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirm_password: '',
+      agree_terms: false,
+    },
   });
 
   const businessProfileForm = useForm<DistributorBusinessProfileFormData>({
     resolver: zodResolver(distributorBusinessProfileSchema),
     mode: 'onChange',
     defaultValues: {
-      business_name: '',
-      address_line: '',
+      registered_business_name: '',
+      cac_number: '',
+      tin: '',
+      business_address: '',
       city: '',
       state: '',
-      contact_person: '',
-      operational_regions: '',
+      country: '',
+      business_phone: '',
+      primary_contact_person: '',
+      operational_regions: [],
     },
   });
 
-  const nextStep = () => {
-    if (currentStep < steps.length) setCurrentStep((step) => step + 1);
+  const operationalRegions = businessProfileForm.watch('operational_regions') || [];
+
+  const addRegion = () => {
+    const value = regionInput.trim().replace(/,+$/, '');
+    if (!value) return;
+    const current = businessProfileForm.getValues('operational_regions') || [];
+    if (!current.includes(value)) {
+      businessProfileForm.setValue('operational_regions', [...current, value], {
+        shouldValidate: true,
+      });
+    }
+    setRegionInput('');
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) setCurrentStep((step) => step - 1);
+  const removeRegion = (region: string) => {
+    const current = businessProfileForm.getValues('operational_regions') || [];
+    businessProfileForm.setValue(
+      'operational_regions',
+      current.filter((r) => r !== region),
+      { shouldValidate: true },
+    );
   };
+
+  const nextStep = () => setCurrentStep((step) => Math.min(step + 1, steps.length));
 
   const handleOtpChange = (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
@@ -137,17 +139,14 @@ export function DistributorForm() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, key: DocumentKey) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, documentType: string) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setDocumentErrors((prev) => ({ ...prev, [key]: 'File must not exceed 10MB' }));
-      return;
-    }
-
-    setDocumentErrors((prev) => ({ ...prev, [key]: '' }));
-    setDocuments((prev) => ({ ...prev, [key]: file }));
+    setDocuments((prev) => ({
+      ...prev,
+      [documentType]: { file, status: 'idle' },
+    }));
   };
 
   const handleAccountSubmit = accountForm.handleSubmit(async (data) => {
@@ -155,12 +154,17 @@ export function DistributorForm() {
     const success = await distributorRegister({
       full_name: data.full_name,
       email: data.email,
-      phone: data.phone,
+      phone: data.phone || '',
       password: data.password,
       confirm_password: data.confirm_password,
       invitation_token: invitationToken,
+      agree_terms: data.agree_terms,
     });
-    if (success) nextStep();
+    if (success) {
+      setAccountEmail(data.email);
+      setAccountPassword(data.password);
+      nextStep();
+    }
   });
 
   const handleVerifyOtp = async () => {
@@ -171,77 +175,144 @@ export function DistributorForm() {
     }
 
     clearError();
-    const success = await distributorVerifyOtp(code);
+    const success = await distributorVerifyOtp({ email: accountEmail, otp_code: code });
     if (success) {
-      setOtpVerified(true);
       setOtpError(false);
       nextStep();
     } else {
       setOtpError(true);
-      setOtpVerified(false);
     }
   };
 
   const handleResendOtp = async () => {
     clearError();
-    const success = await distributorResendOtp();
-    if (success) {
+    const result = await distributorResendOtp({ email: accountEmail, password: accountPassword });
+    if (result) {
       setOtpResent(true);
-      setCountdown(30);
+      setCountdown(result.otp_resend_after_seconds ?? 30);
     }
   };
 
   const handleBusinessProfileSubmit = businessProfileForm.handleSubmit(async (data) => {
     clearError();
     const success = await saveDistributorBusinessProfile({
-      business_name: data.business_name,
-      address: { line: data.address_line, city: data.city, state: data.state },
-      meta: { contact_person: data.contact_person, operational_regions: data.operational_regions },
+      registered_business_name: data.registered_business_name,
+      cac_number: data.cac_number,
+      tin: data.tin,
+      business_address: data.business_address,
+      business_phone: data.business_phone,
+      country: data.country,
+      state: data.state,
+      city: data.city,
+      operational_regions: data.operational_regions || [],
+      primary_contact_person: data.primary_contact_person,
     });
     if (success) nextStep();
   });
 
-  const handleDocumentsContinue = () => {
-    const requiredKeys = documentRequirements.filter((doc) => doc.required).map((doc) => doc.key);
-    const missing = requiredKeys.filter((key) => !documents[key]);
+  const uploadFileToPresign = async (
+    documentType: string,
+    file: File,
+  ): Promise<DistributorOnboardingDocument | null> => {
+    const presign = await presignDistributorDocument({
+      document_type: documentType,
+      file_name: file.name,
+      mime_type: file.type || 'application/octet-stream',
+    });
+    if (!presign) return null;
 
-    if (missing.length > 0) {
-      const nextErrors: Record<string, string> = {};
-      documentRequirements.forEach((doc) => {
-        if (doc.required && !documents[doc.key]) {
-          nextErrors[doc.key] = `${doc.title} is required`;
-        }
+    let uploadResponse: Response;
+    if (presign.fields && Object.keys(presign.fields).length > 0) {
+      const formData = new FormData();
+      Object.entries(presign.fields).forEach(([key, value]) => formData.append(key, value));
+      formData.append('file', file);
+      uploadResponse = await fetch(presign.upload_url, { method: 'POST', body: formData });
+    } else {
+      uploadResponse = await fetch(presign.upload_url, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
       });
-      setDocumentErrors(nextErrors);
+    }
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+    }
+
+    return createDistributorOnboardingDocument({
+      document_type: documentType,
+      file_name: file.name,
+      file_size: file.size,
+      file_url: presign.public_url,
+      mime_type: file.type || 'application/octet-stream',
+    });
+  };
+
+  const handleDocumentsContinue = async () => {
+    clearError();
+    const requiredTypes = documentTypes.filter((dt) => dt.required).map((dt) => dt.document_type);
+    const missing = requiredTypes.filter((type) => !documents[type]?.file);
+    if (missing.length > 0) {
+      const nextErrors: Record<string, DocumentUploadState> = {};
+      missing.forEach((type) => {
+        nextErrors[type] = {
+          file: null,
+          status: 'error',
+          error: 'This document is required',
+        };
+      });
+      setDocuments((prev) => ({ ...prev, ...nextErrors }));
       return;
     }
 
-    // NOTE: the backend has no file-hosting/presign endpoint for onboarding
-    // documents (unlike product images, which have v1/product/images/presign).
-    // Until one exists, selected files are validated locally but not uploaded
-    // or persisted server-side — createDistributorOnboardingDocument needs a
-    // real file_url, which we cannot produce yet.
-    nextStep();
-  };
+    let hasError = false;
+    const updated: Record<string, DocumentUploadState> = {};
 
-  const handleActivate = async () => {
-    clearError();
-    const success = await activateDistributor();
-    if (success) navigate('/login');
+    await Promise.all(
+      Object.entries(documents).map(async ([documentType, state]) => {
+        if (!state.file || state.status === 'done') return;
+
+        setDocuments((prev) => ({
+          ...prev,
+          [documentType]: { ...state, status: 'uploading' },
+        }));
+
+        try {
+          const uploaded = await uploadFileToPresign(documentType, state.file);
+          if (uploaded) {
+            updated[documentType] = { file: state.file, status: 'done', uploaded };
+          } else {
+            updated[documentType] = { file: state.file, status: 'error', error: 'Upload failed' };
+            hasError = true;
+          }
+        } catch (err) {
+          updated[documentType] = {
+            file: state.file,
+            status: 'error',
+            error: err instanceof Error ? err.message : 'Upload failed',
+          };
+          hasError = true;
+        }
+      }),
+    );
+
+    setDocuments((prev) => ({ ...prev, ...updated }));
+    if (hasError) {
+      toast.error('Document upload failed', {
+        description: 'Some files could not be uploaded. Please try again.',
+      });
+      return;
+    }
+
+    const result = await submitDistributorOnboarding();
+    if (result) nextStep();
   };
 
   useEffect(() => {
-    if (otpVerified || countdown === 0) return;
+    if (otpResent || countdown === 0) return;
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
-  }, [countdown, otpVerified]);
-
-  useEffect(() => {
-    if (currentStep === 2 && !registrationToken) {
-      // Guard against landing on OTP step without a registration in flight.
-      setCurrentStep(1);
-    }
-  }, [currentStep, registrationToken]);
+  }, [countdown, otpResent]);
 
   useEffect(() => {
     if (!invitationToken) {
@@ -251,6 +322,26 @@ export function DistributorForm() {
     verifyInvitation(invitationToken).then(setTokenValid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invitationToken]);
+
+  useEffect(() => {
+    if (invitation?.email) {
+      accountForm.setValue('email', invitation.email, { shouldValidate: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invitation]);
+
+  useEffect(() => {
+    if (currentStep === 4) {
+      listDocumentTypes().then((types) => {
+        if (types) setDocumentTypes(types);
+      });
+    }
+  }, [currentStep, listDocumentTypes]);
+
+  const uploadDisabled = useMemo(
+    () => isLoading || Object.values(documents).some((d) => d.status === 'uploading'),
+    [isLoading, documents],
+  );
 
   if (tokenValid === false) {
     return (
@@ -282,7 +373,7 @@ export function DistributorForm() {
             <div className="-mx-8 -mt-8 h-16 bg-yellow-400 rounded-t-3xl mb-8" />
 
             <h2 className="text-lg font-semibold">
-              Join {invitation?.supplier_name ?? 'your supplier'} on EnergyIQ
+              Join your supplier on EnergyIQ
             </h2>
 
             <p className="text-sm text-gray-400 mt-2 mb-8">
@@ -292,10 +383,10 @@ export function DistributorForm() {
             <div className="space-y-4 text-left max-w-xs mx-auto">
               {[
                 'Create your account',
+                'Verify your email',
                 'Business Information',
                 'Document Verification',
-                'Payment Setup',
-                'Activate account',
+                'Submit for review',
               ].map((item, index) => (
                 <div key={item} className="flex items-center gap-3 text-sm">
                   <div
@@ -342,7 +433,9 @@ export function DistributorForm() {
                         : 'border-gray-600 bg-[#121212]'
                     }`}
                   />
-                  <span className={`text-[10px] mt-2 ${active ? 'text-white' : 'text-gray-500'}`}>
+                  <span
+                    className={`text-[10px] mt-2 ${active ? 'text-white' : 'text-gray-500'}`}
+                  >
                     {step}
                   </span>
                 </div>
@@ -377,11 +470,11 @@ export function DistributorForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Email Address</label>
+                  <label className="block text-sm text-gray-300 mb-2">Work Email</label>
                   <input
                     {...accountForm.register('email')}
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder="Enter your work email"
                     className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
                   />
                   {accountForm.formState.errors.email && (
@@ -457,16 +550,21 @@ export function DistributorForm() {
                 <label className="flex gap-2 text-xs text-gray-400">
                   <input
                     type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(event) => setAgreeTerms(event.target.checked)}
+                    {...accountForm.register('agree_terms')}
+                    className="accent-[#FBC02D] mt-1"
                   />
-                  I confirm the information provided is accurate and that I am authorized to
-                  create this account on behalf of my business
+                  I confirm the information provided is accurate and that I am authorized to create
+                  this account on behalf of my business.
                 </label>
+                {accountForm.formState.errors.agree_terms && (
+                  <p className="text-red-500 text-xs -mt-2 ml-6">
+                    {accountForm.formState.errors.agree_terms.message}
+                  </p>
+                )}
 
                 <button
                   type="submit"
-                  disabled={isLoading || !agreeTerms}
+                  disabled={isLoading}
                   className="tap-effect w-full h-12 rounded-full bg-yellow-400 text-black font-semibold disabled:opacity-40 hover:bg-yellow-400/90"
                 >
                   {isLoading ? 'Creating account...' : 'Continue'}
@@ -479,7 +577,8 @@ export function DistributorForm() {
               <div className="max-w-md mx-auto text-center">
                 <h2 className="text-2xl font-semibold mb-2">Verify your email</h2>
                 <p className="text-sm text-gray-400 mb-10">
-                  We sent a 6-digit code to your email. Enter it below.
+                  We sent a 6-digit code to{' '}
+                  <span className="text-white">{accountEmail}</span>. Enter it below.
                 </p>
 
                 <div className="flex justify-center gap-3 mb-5">
@@ -492,11 +591,7 @@ export function DistributorForm() {
                       maxLength={1}
                       onChange={(event) => handleOtpChange(event.target.value, index)}
                       className={`w-12 h-12 text-center rounded-lg bg-transparent border text-white transition ${
-                        otpVerified
-                          ? 'border-green-500'
-                          : otpError
-                            ? 'border-red-500'
-                            : 'border-[#404040]'
+                        otpError ? 'border-red-500' : 'border-[#404040]'
                       }`}
                     />
                   ))}
@@ -504,13 +599,11 @@ export function DistributorForm() {
 
                 {otpError && <p className="text-red-500 text-sm mb-4">Invalid code</p>}
 
-                {!otpError && (
-                  <p className={`text-sm mb-6 ${otpVerified ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {otpResent && countdown === 30
-                      ? 'A new code has been sent'
-                      : `Resend code in 0:${countdown.toString().padStart(2, '0')}`}
-                  </p>
-                )}
+                <p className="text-sm mb-6 text-gray-500">
+                  {otpResent
+                    ? 'A new code has been sent'
+                    : `Resend code in 0:${countdown.toString().padStart(2, '0')}`}
+                </p>
 
                 <button
                   type="button"
@@ -540,37 +633,70 @@ export function DistributorForm() {
                 </p>
 
                 <div>
+                  <label className="block text-sm text-gray-300 mb-2">Registered Business Name</label>
                   <input
-                    {...businessProfileForm.register('business_name')}
-                    placeholder="Business Name"
-                    className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600"
+                    {...businessProfileForm.register('registered_business_name')}
+                    placeholder="ABC Fuels Ltd"
+                    className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
                   />
-                  {businessProfileForm.formState.errors.business_name && (
+                  {businessProfileForm.formState.errors.registered_business_name && (
                     <p className="text-red-500 text-xs mt-2">
-                      {businessProfileForm.formState.errors.business_name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <input
-                    {...businessProfileForm.register('address_line')}
-                    placeholder="Business Address"
-                    className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600"
-                  />
-                  {businessProfileForm.formState.errors.address_line && (
-                    <p className="text-red-500 text-xs mt-2">
-                      {businessProfileForm.formState.errors.address_line.message}
+                      {businessProfileForm.formState.errors.registered_business_name.message}
                     </p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-sm text-gray-300 mb-2">CAC Number</label>
+                    <input
+                      {...businessProfileForm.register('cac_number')}
+                      placeholder="RC-123456"
+                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
+                    />
+                    {businessProfileForm.formState.errors.cac_number && (
+                      <p className="text-red-500 text-xs mt-2">
+                        {businessProfileForm.formState.errors.cac_number.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">TIN</label>
+                    <input
+                      {...businessProfileForm.register('tin')}
+                      placeholder="12345678-0001"
+                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
+                    />
+                    {businessProfileForm.formState.errors.tin && (
+                      <p className="text-red-500 text-xs mt-2">
+                        {businessProfileForm.formState.errors.tin.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Business Address</label>
+                  <input
+                    {...businessProfileForm.register('business_address')}
+                    placeholder="23 Ikorodu Street"
+                    className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
+                  />
+                  {businessProfileForm.formState.errors.business_address && (
+                    <p className="text-red-500 text-xs mt-2">
+                      {businessProfileForm.formState.errors.business_address.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">City</label>
                     <input
                       {...businessProfileForm.register('city')}
-                      placeholder="City"
-                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600"
+                      placeholder="Port Harcourt"
+                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
                     />
                     {businessProfileForm.formState.errors.city && (
                       <p className="text-red-500 text-xs mt-2">
@@ -580,10 +706,11 @@ export function DistributorForm() {
                   </div>
 
                   <div>
+                    <label className="block text-sm text-gray-300 mb-2">State</label>
                     <input
                       {...businessProfileForm.register('state')}
-                      placeholder="State"
-                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600"
+                      placeholder="Rivers"
+                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
                     />
                     {businessProfileForm.formState.errors.state && (
                       <p className="text-red-500 text-xs mt-2">
@@ -593,17 +720,89 @@ export function DistributorForm() {
                   </div>
                 </div>
 
-                <input
-                  {...businessProfileForm.register('contact_person')}
-                  placeholder="Primary Contact Person"
-                  className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600"
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Country</label>
+                    <input
+                      {...businessProfileForm.register('country')}
+                      placeholder="Nigeria"
+                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
+                    />
+                    {businessProfileForm.formState.errors.country && (
+                      <p className="text-red-500 text-xs mt-2">
+                        {businessProfileForm.formState.errors.country.message}
+                      </p>
+                    )}
+                  </div>
 
-                <input
-                  {...businessProfileForm.register('operational_regions')}
-                  placeholder="Operational Regions"
-                  className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600"
-                />
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Business Phone Number</label>
+                    <input
+                      {...businessProfileForm.register('business_phone')}
+                      type="tel"
+                      placeholder="08012345678"
+                      className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
+                    />
+                    {businessProfileForm.formState.errors.business_phone && (
+                      <p className="text-red-500 text-xs mt-2">
+                        {businessProfileForm.formState.errors.business_phone.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Primary Contact Person</label>
+                  <input
+                    {...businessProfileForm.register('primary_contact_person')}
+                    placeholder="Anselm Mgbufor"
+                    className="w-full h-14 px-6 rounded-full bg-transparent border border-gray-600 text-white"
+                  />
+                  {businessProfileForm.formState.errors.primary_contact_person && (
+                    <p className="text-red-500 text-xs mt-2">
+                      {businessProfileForm.formState.errors.primary_contact_person.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Operational Regions</label>
+                  <div className="min-h-[56px] w-full rounded-full bg-transparent border border-gray-600 px-4 py-2 flex items-center flex-wrap gap-2">
+                    {operationalRegions.map((region) => (
+                      <span
+                        key={region}
+                        className="bg-[#FBC02D] text-black text-xs px-3 py-1 rounded-full flex items-center gap-2"
+                      >
+                        {region}
+                        <button
+                          type="button"
+                          onClick={() => removeRegion(region)}
+                          className="font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      value={regionInput}
+                      onChange={(event) => setRegionInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ',') {
+                          event.preventDefault();
+                          addRegion();
+                        }
+                      }}
+                      placeholder="Select regions you operate in"
+                      className="flex-1 bg-transparent h-10 outline-none text-white text-sm min-w-[140px]"
+                    />
+                  </div>
+                  {businessProfileForm.formState.errors.operational_regions && (
+                    <p className="text-red-500 text-xs mt-2">
+                      {businessProfileForm.formState.errors.operational_regions.message}
+                    </p>
+                  )}
+                  <p className="text-gray-500 text-xs mt-2">Press Enter or comma to add a region</p>
+                </div>
 
                 <button
                   type="submit"
@@ -621,22 +820,26 @@ export function DistributorForm() {
                 <div>
                   <h3 className="text-xl font-semibold">Upload Documents</h3>
                   <p className="text-sm text-gray-400 mt-1">
-                    Upload the following documents for KYC verification.
+                    Upload the required KYC documents. Optional documents may be skipped.
                   </p>
                 </div>
 
-                {documentRequirements.map((doc) => {
-                  const file = documents[doc.key];
+                {documentTypes.length === 0 && !isLoading && (
+                  <p className="text-sm text-gray-400">No document requirements available.</p>
+                )}
+
+                {documentTypes.map((doc) => {
+                  const state = documents[doc.document_type] || { file: null, status: 'idle' };
 
                   return (
                     <div
-                      key={doc.key}
+                      key={doc.document_type}
                       className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-5"
                     >
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h4 className="font-medium">
-                            {doc.title}
+                            {doc.document_name}
                             <span
                               className={`ml-1 text-xs ${
                                 doc.required ? 'text-yellow-400' : 'text-gray-500'
@@ -645,12 +848,19 @@ export function DistributorForm() {
                               {doc.required ? 'REQUIRED' : 'OPTIONAL'}
                             </span>
                           </h4>
-                          <p className="text-xs text-gray-400 mt-1">{doc.description}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Accepted: {doc.allowed_file_types.join(', ')} · Max{' '}
+                            {(doc.max_file_size / (1024 * 1024)).toFixed(1)}MB
+                          </p>
                         </div>
 
-                        {file ? (
+                        {state.status === 'done' ? (
                           <span className="px-3 py-1 rounded-full text-xs bg-green-900/40 text-green-400">
-                            Selected
+                            Uploaded
+                          </span>
+                        ) : state.status === 'uploading' ? (
+                          <span className="px-3 py-1 rounded-full text-xs bg-yellow-900/40 text-yellow-400">
+                            Uploading
                           </span>
                         ) : doc.required ? (
                           <span className="px-3 py-1 rounded-full text-xs bg-red-900/40 text-red-400">
@@ -659,41 +869,44 @@ export function DistributorForm() {
                         ) : null}
                       </div>
 
-                      {!file ? (
+                      {!state.file || state.status === 'error' ? (
                         <label className="tap-effect block cursor-pointer border border-dashed border-gray-500 rounded-xl p-10 text-center hover:border-yellow-400 transition">
                           <Upload className="mx-auto mb-4 text-gray-400" size={28} />
                           <div>
                             <span className="text-yellow-400">Click to upload</span>
                             <span className="text-gray-300"> or drag and drop</span>
                           </div>
-                          <p className="text-xs text-gray-500 mt-2">PDF, JPG, PNG · Max 10MB</p>
+                          <p className="text-xs text-gray-500 mt-2">
+                            {doc.allowed_file_types.join(', ')} · Max{' '}
+                            {(doc.max_file_size / (1024 * 1024)).toFixed(1)}MB
+                          </p>
                           <input
                             type="file"
                             hidden
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(event) => handleFileUpload(event, doc.key)}
+                            accept={doc.allowed_file_types.join(',')}
+                            onChange={(event) => handleFileUpload(event, doc.document_type)}
                           />
                         </label>
                       ) : (
                         <div className="bg-[#222] rounded-xl p-4 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <FileText size={18} />
-                            <span className="text-sm">{file.name}</span>
+                            <span className="text-sm">{state.file.name}</span>
                           </div>
                           <label className="tap-effect cursor-pointer text-yellow-400 text-sm">
                             Replace
                             <input
                               type="file"
                               hidden
-                              accept=".pdf,.jpg,.jpeg,.png"
-                              onChange={(event) => handleFileUpload(event, doc.key)}
+                              accept={doc.allowed_file_types.join(',')}
+                              onChange={(event) => handleFileUpload(event, doc.document_type)}
                             />
                           </label>
                         </div>
                       )}
 
-                      {documentErrors[doc.key] && (
-                        <p className="text-red-500 text-xs mt-2">{documentErrors[doc.key]}</p>
+                      {state.error && (
+                        <p className="text-red-500 text-xs mt-2">{state.error}</p>
                       )}
                     </div>
                   );
@@ -702,76 +915,37 @@ export function DistributorForm() {
                 <button
                   type="button"
                   onClick={handleDocumentsContinue}
-                  className="tap-effect w-full h-12 rounded-full bg-yellow-400 text-black font-semibold hover:bg-yellow-400/90"
+                  disabled={uploadDisabled}
+                  className="tap-effect w-full h-12 rounded-full bg-yellow-400 text-black font-semibold hover:bg-yellow-400/90 disabled:opacity-40"
                 >
-                  Continue
+                  {isLoading || Object.values(documents).some((d) => d.status === 'uploading')
+                    ? 'Uploading...'
+                    : 'Submit for Review'}
                 </button>
               </div>
             )}
 
-            {/* STEP 5 — Assurance Payment (informational summary) */}
+            {/* STEP 5 — Review Pending */}
             {currentStep === 5 && (
-              <div className="space-y-3">
-                <div className="p-4 rounded-xl border border-green-600 bg-green-600/10">
-                  ✓ Account Created
-                </div>
-                <div className="p-4 rounded-xl border border-green-600 bg-green-600/10">
-                  ✓ Email Verified
-                </div>
-                <div className="p-4 rounded-xl border border-green-600 bg-green-600/10">
-                  ✓ Business Profile Completed
-                </div>
-                <div className="p-4 rounded-xl border border-green-600 bg-green-600/10">
-                  ✓ Documents Selected
-                </div>
-                <div className="p-4 rounded-xl border border-orange-500 bg-orange-500/10">
-                  Compliance Review In Progress
-                </div>
-                <div className="p-4 rounded-xl border border-yellow-500 bg-yellow-500/10 text-sm">
-                  Compliance review typically takes 24–72 hours.
-                </div>
-
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="tap-effect w-full h-12 rounded-full bg-yellow-400 text-black font-semibold hover:bg-yellow-400/90"
-                >
-                  Continue
-                </button>
-              </div>
-            )}
-
-            {/* STEP 6 — Activation */}
-            {currentStep === 6 && (
               <div className="text-center py-10">
-                <div className="w-16 h-16 mx-auto rounded-full bg-yellow-400 text-black flex items-center justify-center text-2xl">
+                <div className="w-16 h-16 mx-auto rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center text-2xl text-green-400">
                   ✓
                 </div>
 
-                <h2 className="text-2xl font-bold mt-5">You're Almost There!</h2>
+                <h2 className="text-2xl font-bold mt-5">Submission Received</h2>
                 <p className="text-gray-400 mt-2">
-                  Activate your account to join the EnergyIQ Distributor Network.
+                  Your account is under review. You will receive an email once the supplier
+                  approves your enrollment.
                 </p>
 
                 <button
                   type="button"
-                  onClick={handleActivate}
-                  disabled={isLoading}
-                  className="tap-effect w-full mt-8 h-12 rounded-full bg-yellow-400 text-black font-semibold disabled:opacity-40 hover:bg-yellow-400/90"
+                  onClick={() => navigate('/login')}
+                  className="tap-effect w-full mt-8 h-12 rounded-full bg-yellow-400 text-black font-semibold hover:bg-yellow-400/90"
                 >
-                  {isLoading ? 'Activating...' : 'Activate Account'}
+                  Return to Login
                 </button>
               </div>
-            )}
-
-            {currentStep > 1 && currentStep < 6 && (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="tap-effect w-full h-12 mt-4 border border-yellow-400 text-yellow-400 rounded-full hover:bg-yellow-400/10"
-              >
-                Back
-              </button>
             )}
           </div>
         </>

@@ -91,7 +91,7 @@ function OtpInput({ value, onChange, hasError }: OtpInputProps) {
 
 export function VerifyForm() {
   const navigate = useNavigate();
-  const { complete, isLoading, error, clearError } = useAuth();
+  const { complete, isLoading, error, clearError, slug } = useAuth();
 
   const {
     control,
@@ -109,7 +109,7 @@ export function VerifyForm() {
   const onSubmit = async (data: VerifyFormData) => {
     clearError();
     const success = await complete(data.otp);
-    if (success) navigate('/dashboard');
+    if (success) navigate(slug ? `/${slug}/dashboard` : '/dashboard');
   };
 
   return (

@@ -2,185 +2,275 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff } from 'lucide-react';
-import { UploadCloud } from 'lucide-react';
+import { Eye, EyeOff, Lock, Upload, FileCheck } from 'lucide-react';
 
 import { useAuth } from '../../hooks/use-auth';
+import { toast } from '@energyiq/ui';
+import { BusinessTypeLabels, type BusinessType } from '@energyiq/domain/auth';
 import {
   registerSchema,
   type RegisterFormData,
 } from '../../validation/auth/register';
-import { Lock } from 'lucide-react';
 
-export function RegisterForm() {
-
-  const [accountCreated, setAccountCreated] =
-  useState(false);
-  const navigate = useNavigate();
-  const { isLoading, error, clearError, initiate, complete, resendOtp: resendOtpAction } = useAuth();
 const steps = [
   'Company Information',
   'Account Setup',
-  'Document Upload',
   'OTP Verification',
+  'Document Upload',
 ];
 
-const [otp, setOtp] = useState(['', '', '', '', '', '']);
-const [otpError, setOtpError] = useState(false);
-const [otpResent, setOtpResent] = useState(false);
+const inputClass =
+  'w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#FBC02D]';
 
+export function RegisterForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
- const [documents, setDocuments] = useState({
-  cac: null as File | null,
-  tax: null as File | null,
-  directorId: null as File | null,
-  utilityBill: null as File | null,
-});
+  const [accountCreated, setAccountCreated] = useState(false);
+  const [documents, setDocuments] = useState({
+    cac: null as File | null,
+    tax: null as File | null,
+    directorId: null as File | null,
+    utilityBill: null as File | null,
+  });
+  const [isUploading, setIsUploading] = useState(false);
 
-const handleOtpChange = (
-  value: string,
-  index: number
-) => {
-  if (!/^\d*$/.test(value)) return;
+  const navigate = useNavigate();
+  const { isLoading, error, clearError, initiate, complete, resendOtp: resendOtpAction, slug } = useAuth();
 
-  const newOtp = [...otp];
-  newOtp[index] = value.slice(-1);
-  setOtp(newOtp);
-  setOtpError(false);
-
-  if (value && index < 5) {
-    (
-      document.getElementById(
-        `otp-${index + 1}`
-      ) as HTMLInputElement
-    )?.focus();
-  }
-};
-const handleOtpSubmit = async () => {
-  const code = otp.join('');
-
-  if (code.length !== 6) {
-    setOtpError(true);
-    return;
-  }
-
-  clearError();
-  const success = await complete(code);
-  if (success) {
-    setAccountCreated(true);
-  } else {
-    setOtpError(true);
-  }
-};
-const resendOtp = async () => {
-  clearError();
-  const success = await resendOtpAction();
-  if (success) setOtpResent(true);
-};
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState(false);
+  const [otpResent, setOtpResent] = useState(false);
 
   const {
     register,
     handleSubmit,
     watch,
+    trigger,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: 'onChange',
+    defaultValues: {
+      company_name: '',
+      company_email: '',
+      business_type: '',
+      registration_number: '',
+      first_name: '',
+      last_name: '',
+      account_email: '',
+      admin_phone: '',
+      password: '',
+      confirm_password: '',
+      accepted_terms: false,
+      accepted_privacy_policy: false,
+    },
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const password = watch('password');
+  const accountEmail = watch('account_email');
+
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+
+  const handleStep1Next = async () => {
+    const valid = await trigger([
+      'company_name',
+      'company_email',
+      'business_type',
+      'registration_number',
+    ]);
+    if (valid) nextStep();
+  };
+
+  const onStep2Submit = handleSubmit(async (data) => {
     clearError();
     const success = await initiate({
       company: {
         name: data.company_name,
         email: data.company_email || undefined,
-        business_type: data.business_type,
+        business_type: data.business_type as BusinessType,
         registration_number: data.registration_number,
       },
       account: {
-        name: data.account_name,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        name: `${data.first_name} ${data.last_name}`.trim(),
         email: data.account_email,
+        phone: data.admin_phone,
         password: data.password,
+        confirm_password: data.confirm_password,
+        accepted_terms: data.accepted_terms,
+        accepted_privacy_policy: data.accepted_privacy_policy,
       },
     });
-    if (success) nextStep();
+    if (success) {
+      toast.success('Account created', {
+        description: 'Complete OTP verification to finish registration.',
+      });
+      nextStep();
+    } else {
+      toast.error('Failed to create account', {
+        description: error ?? 'Please check your details.',
+      });
+    }
+  });
+
+  const handleOtpChange = (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+    setOtpError(false);
+    if (value && index < 5) {
+      (document.getElementById(`otp-${index + 1}`) as HTMLInputElement)?.focus();
+    }
   };
 
-  const password = watch('password');
+  const handleOtpSubmit = async () => {
+    const code = otp.join('');
+    if (code.length !== 6) {
+      setOtpError(true);
+      return;
+    }
+    clearError();
+    const success = await complete(code);
+    if (success) {
+      toast.success('Email verified', { description: 'Welcome to EnergyIQ.' });
+      nextStep(); // ➡️ Step 4: Document Upload
+    } else {
+      setOtpError(true);
+      toast.error('Invalid OTP', { description: error ?? 'Please try again.' });
+    }
+  };
 
-  const nextStep = () => {
-    if (currentStep < 4) {
-      setCurrentStep((prev) => prev + 1);
+  const handleResendOtp = async () => {
+    clearError();
+    const success = await resendOtpAction();
+    if (success) {
+      setOtpResent(true);
+      toast.success('OTP resent', { description: 'A new code has been sent to your email.' });
+    } else {
+      toast.error('Failed to resend OTP', { description: error ?? 'Please try again later.' });
+    }
+  };
+
+  const getPasswordStrength = () => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 12) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    return score;
+  };
+
+  const strength = getPasswordStrength();
+  const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+
+  const handleFileChange = (key: keyof typeof documents, file: File | null) => {
+    setDocuments((prev) => ({ ...prev, [key]: file }));
+  };
+
+  const handleDocumentSubmit = async () => {
+    // Only CAC, Tax, and Director ID are required. Utility Bill is optional.
+    if (!documents.cac || !documents.tax || !documents.directorId) {
+      toast.error('Missing required documents', {
+        description: 'Please upload all required KYC documents.',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    clearError();
+
+    try {
+      // TODO: Replace with your actual KYC upload API
+      const formData = new FormData();
+      formData.append('cac', documents.cac);
+      formData.append('tax', documents.tax);
+      formData.append('director_id', documents.directorId);
+      if (documents.utilityBill) formData.append('utility_bill', documents.utilityBill);
+      // await api.post('/auth/kyc-upload', formData);
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      setAccountCreated(true);
+      toast.success('Registration complete', {
+        description: 'Your KYC documents have been submitted.',
+      });
+    } catch (err) {
+      toast.error('Upload failed', { description: 'Please try again later.' });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const uploadedCount = Object.values(documents).filter(Boolean).length;
 
-const progress = (uploadedCount / 4) * 100;
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
-    }
-  };
-
-
-const handleFileUpload = (
-  e: React.ChangeEvent<HTMLInputElement>,
-  key: keyof typeof documents
-) => {
-  const file = e.target.files?.[0];
-
-  if (!file) return;
-
-  setDocuments((prev) => ({
-    ...prev,
-    [key]: file,
-  }));
-};
-
+  const documentFields: {
+    key: keyof typeof documents;
+    label: string;
+    description: string;
+    hint?: string;
+    required: boolean;
+  }[] = [
+    {
+      key: 'cac',
+      label: 'CAC Certificate',
+      description: 'Certificate of Incorporation',
+      required: true,
+    },
+    {
+      key: 'tax',
+      label: 'Tax Clearance Certificate',
+      description: 'Current TCC from FIRS',
+      required: true,
+    },
+    {
+      key: 'directorId',
+      label: "Director's Government ID",
+      description: "NIN slip, passport, driver's license",
+      hint: 'Both sides required',
+      required: true,
+    },
+    {
+      key: 'utilityBill',
+      label: 'Utility Bill',
+      description: 'Not older than 3 months',
+      required: false,
+    },
+  ];
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {/* Header */}
-
       <div className="mb-8">
-        {/* <h1 className="text-3xl font-semibold text-white">
-          Create your Account
-        </h1> */}
-
         <p className="text-sm text-gray-400 mt-2">
           Enter your company details to get started with real-time insights.
         </p>
       </div>
 
-      {/* Stepper */}
-
+      {/* Stepper with numbers */}
       <div className="flex justify-between items-center mb-10 relative">
-        <div className="absolute top-2.5 left-0 w-full `h-[1px] bg-[#2D2D2D]" />
-
+        <div className="absolute top-2.5 left-0 w-full h-[1px] bg-[#2D2D2D]" />
         {steps.map((step, index) => {
-          const active = currentStep >= index + 1;
-
+          const stepNumber = index + 1;
+          const isActive = currentStep >= stepNumber;
+          const isCurrent = currentStep === stepNumber;
           return (
-            <div
-              key={step}
-              className="relative z-10 flex flex-col items-center"
-            >
+            <div key={step} className="relative z-10 flex flex-col items-center">
               <div
-                className={`w-5 h-5 rounded-full border ${
-                  active
-                    ? 'bg-[#FBC02D] border-[#FBC02D]'
-                    : 'bg-black border-gray-500'
-                }`}
-              />
-
+                className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-bold ${
+                  isActive
+                    ? 'bg-[#FBC02D] border-[#FBC02D] text-black'
+                    : 'bg-black border-gray-500 text-gray-500'
+                } ${isCurrent ? 'ring-2 ring-[#FBC02D] ring-offset-2 ring-offset-black' : ''}`}
+              >
+                {stepNumber}
+              </div>
               <span
                 className={`text-[10px] mt-2 whitespace-nowrap ${
-                  active ? 'text-white' : 'text-gray-500'
+                  isActive ? 'text-white' : 'text-gray-500'
                 }`}
               >
                 {step}
@@ -190,187 +280,180 @@ const handleFileUpload = (
         })}
       </div>
 
-      <form
-        // onSubmit={handleSubmit(onSubmit)}
-        className="space-y-5"
-      >
-        {/* STEP 1 */}
-
+      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+        {/* STEP 1 — Company Information */}
         {currentStep === 1 && (
           <>
             <div>
-              <label className="block text-sm text-white mb-2">
-                Company Name:
-              </label>
-
+              <label className="block text-sm text-white mb-2">Company Name:</label>
               <input
                 {...register('company_name')}
                 placeholder="e.g Emeka Fuels"
-                className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white placeholder:text-gray-500"
+                className={inputClass}
               />
-
               {errors.company_name && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.company_name.message}
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.company_name.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-white mb-2">Company Email Address:</label>
+              <input
+                type="email"
+                {...register('company_email')}
+                placeholder="e.g emeka@fuels.com"
+                className={inputClass}
+              />
+              {errors.company_email && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.company_email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-white mb-2">Business Type:</label>
+              <select {...register('business_type')} className={`${inputClass} appearance-none`}>
+                <option value="">Select a business type</option>
+                {Object.entries(BusinessTypeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              {errors.business_type && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.business_type.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-white mb-2">Registration Number (CAC)</label>
+              <input
+                {...register('registration_number')}
+                placeholder="RC-12345678"
+                className={inputClass}
+              />
+              {errors.registration_number && (
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.registration_number.message}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 pt-4">
+              {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+              <button
+                type="button"
+                onClick={handleStep1Next}
+                disabled={isLoading}
+                className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* STEP 2 — Account Setup */}
+        {currentStep === 2 && (
+          <>
+            <h2 className="text-lg font-semibold text-white">Account Owner</h2>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-white mb-2">First Name</label>
+                <input {...register('first_name')} placeholder="Thomas" className={inputClass} />
+                {errors.first_name && (
+                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.first_name.message}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-white mb-2">Last Name</label>
+                <input {...register('last_name')} placeholder="Okeke" className={inputClass} />
+                {errors.last_name && (
+                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.last_name.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-white mb-2">Work Email</label>
+              <input
+                type="email"
+                {...register('account_email')}
+                placeholder="admin@company.com"
+                className={inputClass}
+              />
+              {errors.account_email && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.account_email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-white mb-2">Phone Number</label>
+              <input
+                type="tel"
+                {...register('admin_phone')}
+                placeholder="08012345678"
+                className={inputClass}
+              />
+              {errors.admin_phone && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.admin_phone.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-white mb-2">Password</label>
+              <div className="relative">
+                <input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  className={`${inputClass} pr-14`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.password.message}</p>
+              )}
+
+              <div className="flex gap-1 mt-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className={`h-1 flex-1 rounded-full transition-colors ${
+                      strength > i ? strengthColors[strength - 1] : 'bg-[#2D2D2D]'
+                    }`}
+                  />
+                ))}
+              </div>
+              {password && (
+                <p
+                  className={`text-right text-[10px] mt-1 ${
+                    strengthColors[strength - 1].replace('bg-', 'text-')
+                  }`}
+                >
+                  {strengthLabels[strength - 1]}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm text-white mb-2">
-                Company Email Address:
-              </label>
-
-              <input
-                type="email"
-                {...register('company_email')}
-                placeholder="e.g emeka@fuels.com"
-                className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white placeholder:text-gray-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-white mb-2">
-                Business Type:
-              </label>
-
-              <select
-                {...register('business_type')}
-                className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white"
-              >
-                <option value="">Select a business type</option>
-                <option value="LPG Distribution">
-                  LPG Distribution
-                </option>
-                <option value="Retail Station">
-                  Retail Station
-                </option>
-                <option value="Logistics">
-                  Logistics
-                </option>
-                <option value="Energy Services">
-                  Energy Services
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm text-white mb-2">
-                Registration Number (CAC)
-              </label>
-
-              <input
-                {...register('registration_number')}
-                placeholder="RC-12345678"
-                className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white placeholder:text-gray-500"
-              />
-            </div>
-
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={agreeTerms}
-                onChange={(e) =>
-                  setAgreeTerms(e.target.checked)
-                }
-                className="accent-[#FBC02D] mt-1"
-              />
-
-              <p className="text-xs text-gray-400">
-                I agree to the EnergyIQ Terms of Service
-                and Privacy Policy
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* STEP 2 */}
-
-        {currentStep === 2 && (
-          <>
-            <div>
-              <label className="block text-sm text-white mb-2">
-                Admin Name
-              </label>
-
-              <input
-                {...register('account_name')}
-                placeholder="Thomas Okaka"
-                className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-white mb-2">
-                Admin Email
-              </label>
-
-              <input
-                type="email"
-                {...register('account_email')}
-                placeholder="admin@company.com"
-                className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-white mb-2">
-                Password
-              </label>
-
+              <label className="block text-sm text-white mb-2">Confirm Password</label>
               <div className="relative">
                 <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
-                  className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 pr-14 text-white"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"
-                >
-                  {showPassword ? (
-                    <Eye className="w-5 h-5" />
-                  ) : (
-                    <EyeOff className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex gap-1 mt-3">
-                <div className="h-1 flex-1 rounded-full bg-green-500" />
-                <div className="h-1 flex-1 rounded-full bg-green-500" />
-                <div className="h-1 flex-1 rounded-full bg-green-500" />
-                <div className="h-1 flex-1 rounded-full bg-green-500" />
-              </div>
-
-              <p className="text-right text-[10px] text-green-500 mt-1">
-                {password ? 'Strong' : ''}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm text-white mb-2">
-                Confirm Password
-              </label>
-
-              <div className="relative">
-                <input
+                  {...register('confirm_password')}
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Confirm password"
-                  className="w-full h-14 rounded-full bg-[#111111] border border-[#1D1D1D] px-6 pr-14 text-white"
+                  className={`${inputClass} pr-14`}
                 />
-
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowConfirmPassword(
-                      !showConfirmPassword
-                    )
-                  }
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"
                 >
                   {showConfirmPassword ? (
@@ -380,307 +463,238 @@ const handleFileUpload = (
                   )}
                 </button>
               </div>
-            </div>
-          </>
-        )}
-
-        {/* STEP 3 */}
-        {/* NOTE: same gap as distributor-form.tsx's document step — the backend
-            has no presign/upload endpoint for onboarding documents (only
-            v1/product/images/presign exists, for products). Files are kept
-            local-only here; createOnboardingDocument needs a real file_url,
-            which we can't produce yet. */}
-
-      {currentStep === 3 && (
-  <div className="bg-[#0D0D0D] border border-[#1D1D1D] rounded-[24px] p-6">
-
-    {/* Progress */}
-    <div className="mb-8">
-      <p className="text-xs text-gray-400 mb-3">
-        {uploadedCount} of 4 documents uploaded
-      </p>
-
-      <div className="w-full h-1 bg-[#1F1F1F] rounded-full">
-        <div
-          className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
-          style={{
-            width: `${progress}%`,
-          }}
-        />
-      </div>
-    </div>
-
-    {[
-      {
-        key: 'cac',
-        title: 'CAC Certificate',
-        desc: 'Certificate of Incorporation',
-        required: true,
-      },
-      {
-        key: 'tax',
-        title: 'Tax Clearance Certificate',
-        desc: 'Current TCC from FIRS',
-        required: true,
-      },
-      {
-        key: 'directorId',
-        title: "Director's Government ID",
-        desc: "NIN Slip, Passport, Driver's License",
-        extra: 'Both sides required',
-        required: true,
-      },
-      {
-        key: 'utilityBill',
-        title: 'Utility Bill',
-        desc: 'Not older than 3 months',
-        required: false,
-      },
-    ].map((item) => {
-      const file =
-        documents[item.key as keyof typeof documents];
-
-      return (
-        <div
-          key={item.key}
-          className="border border-dashed border-[#4A4A4A] rounded-xl p-5 mb-4"
-        >
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h4 className="text-sm font-medium text-white">
-                {item.title}
-
-                <span
-                  className={`ml-1 text-[10px] ${
-                    item.required
-                      ? 'text-[#FBC02D]'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {item.required
-                    ? 'REQUIRED'
-                    : 'OPTIONAL'}
-                </span>
-              </h4>
-
-              <p className="text-xs text-gray-400 mt-1">
-                {item.desc}
-              </p>
-
-              {item.extra && (
-                <p className="text-[#FBC02D] text-xs mt-1">
-                  {item.extra}
+              {errors.confirm_password && (
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {errors.confirm_password.message}
                 </p>
               )}
             </div>
 
-            {file && (
-              <span className="bg-green-900/30 text-green-400 text-[10px] px-3 py-1 rounded-full">
-                Uploaded, Awaiting review
-              </span>
-            )}
-          </div>
-
-          {file ? (
-            <div className="bg-[#202020] rounded-lg p-3 flex justify-between items-center">
-              <span className="text-xs text-gray-300">
-                {file.name}
-              </span>
-
-              <label className="text-[#FBC02D] text-xs cursor-pointer">
-                Replace
-
+            <div className="space-y-3">
+              <label className="flex items-start gap-2 cursor-pointer">
                 <input
-                  hidden
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) =>
-                    handleFileUpload(
-                      e,
-                      item.key as keyof typeof documents
-                    )
-                  }
+                  type="checkbox"
+                  {...register('accepted_terms')}
+                  className="accent-[#FBC02D] mt-1"
                 />
+                <p className="text-xs text-gray-400">
+                  I agree to the EnergyIQ{' '}
+                  <span className="text-[#FBC02D]">Terms of Service</span>
+                </p>
               </label>
-            </div>
-          ) : (
-            <label className="flex justify-center cursor-pointer">
-              <div className="`w-[220px] `h-[90px] bg-[#181818] rounded-lg flex flex-col items-center justify-center">
-                <UploadCloud
-                  size={18}
-                  strokeWidth={1.5}
-                  className="text-gray-400 mb-2"
+              {errors.accepted_terms && (
+                <p className="text-red-500 text-xs -mt-2 ml-6">{errors.accepted_terms.message}</p>
+              )}
+
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('accepted_privacy_policy')}
+                  className="accent-[#FBC02D] mt-1"
                 />
-
-                <p className="text-xs">
-                  <span className="text-[#FBC02D] font-medium">
-                    Click to upload
-                  </span>
-
-                  <span className="text-gray-400">
-                    {' '}or drag and drop
-                  </span>
+                <p className="text-xs text-gray-400">
+                  I have read and accept the EnergyIQ{' '}
+                  <span className="text-[#FBC02D]">Privacy Policy</span>
                 </p>
-
-                <p className="text-[10px] text-gray-500 mt-1">
-                  PDF, JPG, PNG, Max 10MB
+              </label>
+              {errors.accepted_privacy_policy && (
+                <p className="text-red-500 text-xs -mt-2 ml-6">
+                  {errors.accepted_privacy_policy.message}
                 </p>
-              </div>
+              )}
+            </div>
 
-              <input
-                hidden
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) =>
-                  handleFileUpload(
-                    e,
-                    item.key as keyof typeof documents
-                  )
-                }
-              />
-            </label>
-          )}
-        </div>
-      );
-    })}
-  </div>
-)}
-
- {/* STEP 4 */}
-{currentStep === 4 && (
-  <>
-    {!accountCreated ? (
-      <div className="flex flex-col items-center text-center py-6">
-
-        {/* Success Circle */}
-       <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-6">
-  <Lock
-    size={28}
-    className="text-green-500"
-    strokeWidth={2}
-  />
-</div>
-
-        <h2 className="text-2xl font-semibold text-white">
-          OTP Verification
-        </h2>
-
-        <p className="text-sm text-gray-400 mt-3 mb-8">
-          We sent a 6-digit code to
-          <br />
-
-          <span className="text-white">
-            {watch('account_email') ||
-              'admin@company.com'}
-          </span>
-        </p>
-
-        {/* OTP Inputs */}
-        <div className="flex justify-center gap-3 mb-4">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              id={`otp-${index}`}
-              type="text"
-              value={digit}
-              maxLength={1}
-              onChange={(e) =>
-                handleOtpChange(
-                  e.target.value,
-                  index
-                )
-              }
-              className={`w-12 h-12 rounded-lg bg-[#111111] border text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D] ${
-                otpError ? 'border-red-500' : 'border-[#2D2D2D]'
-              }`}
-            />
-          ))}
-        </div>
-
-        {otpError && <p className="text-red-500 text-xs mb-4">{error ?? 'Invalid code'}</p>}
-        {otpResent && !otpError && (
-          <p className="text-xs text-gray-400 mb-4">A new code has been sent.</p>
+            <div className="flex flex-col gap-3 pt-4">
+              {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+              <button
+                type="button"
+                onClick={onStep2Submit}
+                disabled={isLoading}
+                className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
+              >
+                {isLoading ? 'Creating account...' : 'Create Account'}
+              </button>
+            </div>
+          </>
         )}
 
-        <button
-          type="button"
-          onClick={resendOtp}
-          disabled={isLoading}
-          className="tap-effect text-xs text-gray-400 hover:text-[#FBC02D] mb-8 disabled:opacity-50"
-        >
-          Didn't receive code? Resend
-        </button>
+        {/* STEP 3 — OTP Verification */}
+        {currentStep === 3 && (
+          <div className="flex flex-col items-center text-center py-6">
+            <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-6">
+              <Lock size={28} className="text-green-500" strokeWidth={2} />
+            </div>
 
-        <button
-          type="button"
-          onClick={handleOtpSubmit}
-          disabled={isLoading}
-          className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
-        >
-          {isLoading ? 'Verifying...' : 'Verify Code'}
-        </button>
-      </div>
-    ) : (
-      <div className="flex flex-col items-center text-center py-10">
+            <h2 className="text-2xl font-semibold text-white">OTP Verification</h2>
+            <p className="text-sm text-gray-400 mt-3 mb-8">
+              We sent a 6-digit code to
+              <br />
+              <span className="text-white">{accountEmail || 'admin@company.com'}</span>
+            </p>
 
-        {/* Big Success Icon */}
-        <div className="w-20 h-20 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-8">
-          <span className="text-green-500 text-3xl font-bold">
-            ✓
-          </span>
-        </div>
+            <div className="flex justify-center gap-3 mb-4">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`otp-${index}`}
+                  type="text"
+                  value={digit}
+                  maxLength={1}
+                  onChange={(e) => handleOtpChange(e.target.value, index)}
+                  className={`w-12 h-12 rounded-lg bg-[#111111] border text-center text-white text-lg font-semibold focus:outline-none focus:border-[#FBC02D] ${
+                    otpError ? 'border-red-500' : 'border-[#2D2D2D]'
+                  }`}
+                />
+              ))}
+            </div>
 
-        <h2 className="text-3xl font-semibold text-white mb-4">
-          Account Created Successfully
-        </h2>
+            {otpError && <p className="text-red-500 text-xs mb-4">{error ?? 'Invalid code'}</p>}
+            {otpResent && !otpError && (
+              <p className="text-xs text-gray-400 mb-4">A new code has been sent.</p>
+            )}
 
-        <p className="text-gray-400 mb-10">
-          Your account is waiting admin approval.
-          You will recieve an email once is active.
-        </p>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={isLoading}
+              className="tap-effect text-xs text-gray-400 hover:text-[#FBC02D] mb-8 disabled:opacity-50"
+            >
+              Didn&apos;t receive code? Resend
+            </button>
 
-        <button
-          type="button"
-          onClick={() => navigate('/login')}
-          className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold"
-        >
-          Login
-        </button>
-      </div>
-    )}
-  </>
-)}
+            <button
+              type="button"
+              onClick={handleOtpSubmit}
+              disabled={isLoading}
+              className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
+            >
+              {isLoading ? 'Verifying...' : 'Verify Code'}
+            </button>
+          </div>
+        )}
 
-         {/* Buttons */}
-{currentStep < 4 && (
-  <div className="flex flex-col gap-3 pt-4">
-    {error && currentStep === 2 && (
-      <p className="text-red-500 text-xs text-center">{error}</p>
-    )}
-    <div className="flex gap-4">
-      {currentStep > 1 && (
-        <button
-          type="button"
-          onClick={prevStep}
-          className="tap-effect w-full h-14 rounded-full border border-[#FBC02D] text-[#FBC02D]"
-        >
-          Back
-        </button>
-      )}
+        {/* STEP 4 — Document Upload (KYC) — Styled like screenshot */}
+        {currentStep === 4 && !accountCreated && (
+          <div className="py-2">
+            {/* Progress bar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <span>
+                  {uploadedCount} of {documentFields.length} documents uploaded
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-[#2D2D2D] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500 rounded-full transition-all duration-500"
+                  style={{ width: `${(uploadedCount / documentFields.length) * 100}%` }}
+                />
+              </div>
+            </div>
 
-      <button
-        type="button"
-        onClick={currentStep === 2 ? () => void handleSubmit(onSubmit)() : nextStep}
-        disabled={(currentStep === 1 && !agreeTerms) || isLoading}
-        className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
-      >
-        {currentStep === 2 && isLoading ? 'Creating account...' : 'Next'}
-      </button>
-    </div>
-  </div>
-)}
+            {/* Document cards */}
+            <div className="space-y-4">
+              {documentFields.map(({ key, label, description, hint, required }) => (
+                <div
+                  key={key}
+                  className="border border-dashed border-[#2D2D2D] rounded-xl p-5 bg-[#111111]"
+                >
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-1">
+                    <div>
+                      <h3 className="text-sm font-medium text-white">
+                        {label}{' '}
+                        <span
+                          className={`text-[10px] uppercase tracking-wider ml-1 ${
+                            required ? 'text-[#FBC02D]' : 'text-gray-500'
+                          }`}
+                        >
+                          {required ? 'REQUIRED' : 'OPTIONAL'}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                      {hint && <p className="text-[10px] text-gray-600 mt-0.5">{hint}</p>}
+                    </div>
+                    {documents[key] && (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 whitespace-nowrap">
+                        Uploaded - Awaiting review
+                      </span>
+                    )}
+                  </div>
 
-</form>
+                  {/* Upload area or file row */}
+                  {!documents[key] ? (
+                    <label className="mt-4 flex flex-col items-center justify-center w-full h-28 rounded-lg border border-dashed border-[#2D2D2D] bg-[#0a0a0a] cursor-pointer hover:border-[#FBC02D] transition-colors">
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleFileChange(key, e.target.files?.[0] ?? null)}
+                      />
+                      <Upload size={24} className="text-gray-500 mb-2" />
+                      <span className="text-xs text-gray-400">Click to upload or drag and drop</span>
+                      <span className="text-[10px] text-gray-600 mt-1">
+                        PDF, JPG, PNG, Max 10MB
+                      </span>
+                    </label>
+                  ) : (
+                    <div className="mt-4 flex items-center justify-between p-3 rounded-lg bg-[#0a0a0a] border border-[#1D1D1D]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileCheck size={18} className="text-gray-400 shrink-0" />
+                        <span className="text-sm text-gray-300 truncate">
+                          {documents[key]?.name}
+                        </span>
+                      </div>
+                      <label className="text-xs text-[#FBC02D] hover:underline cursor-pointer shrink-0 ml-3">
+                        Replace
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => handleFileChange(key, e.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3 pt-8">
+              {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+              <button
+                type="button"
+                onClick={handleDocumentSubmit}
+                disabled={isUploading || isLoading}
+                className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-50"
+              >
+                {isUploading ? 'Uploading...' : 'Create account'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success Screen — shown ONLY after Document Upload */}
+        {currentStep === 4 && accountCreated && (
+          <div className="flex flex-col items-center text-center py-10">
+            <div className="w-20 h-20 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center mb-8">
+              <span className="text-green-500 text-3xl font-bold">✓</span>
+            </div>
+            <h2 className="text-3xl font-semibold text-white mb-4">
+              Account Created Successfully
+            </h2>
+            <p className="text-gray-400 mb-10">
+              Your account is ready. You can now sign in to your dashboard.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(slug ? `/${slug}/dashboard` : '/login')}
+              className="w-full h-14 rounded-full bg-[#FBC02D] text-black font-semibold"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        )}
+      </form>
     </div>
   );
 }

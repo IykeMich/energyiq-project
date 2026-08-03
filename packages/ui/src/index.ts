@@ -53,6 +53,7 @@ export { VerifyForm } from './forms/auth/verify-form';
 export { DistributorForm } from './forms/auth/distributor-form';
 export { ForgotPasswordForm } from './forms/auth/forgot-password-form';
 export { ResetPasswordForm } from './forms/auth/reset-password-form';
+export { AccountTypeSelect } from './forms/auth/account-type-select';
 
 // Validation schemas
 export * from './validation/auth/login';
