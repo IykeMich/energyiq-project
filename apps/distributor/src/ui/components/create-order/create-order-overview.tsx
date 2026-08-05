@@ -89,6 +89,7 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
         moq: Number(product.moq ?? 1),
         goldDiscount: Boolean(product.gold_discount),
         available: true,
+        supplier_id: product.supplier_id,
       })),
     ],
     [productsData],
@@ -147,28 +148,9 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   const goToOrders = () => navigate(`/${slug}/orders`);
   const goToHome = () => navigate(`/${slug}/dashboard`);
 
- const addProduct = (product: CreateOrderProductOption) => {
-  if (lineItems.some((item) => item.productId === product.id)) {
-    return;
-  }
-
-  setLineItems((items) => [
-    ...items,
-    {
-      productId: product.id,
-      name: product.name,
-      shortLabel: product.shortLabel,
-      code: product.code,
-      unit: product.unit,
-      unitAbbrev: product.unitAbbrev,
-      unitPrice: product.unitPrice,
-      moq: product.moq,
-      goldDiscount: product.goldDiscount,
-      available: product.available,
-      quantity: product.moq,
-    },
-  ]);
-};
+  const confirmProducts = (items: CreateOrderLineItem[]) => {
+    setLineItems(items);
+  };
 
   const changeQuantity = (productId: string, quantity: number) => {
     setLineItems((items) =>
@@ -347,10 +329,13 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
               orderReference={isEditMode ? orderReference : undefined}
             />
             <CreateOrderProductsCard
+              supplierId={supplierId}
+              onSupplierChange={setSupplierId}
+              products={productCatalog}
               lineItems={lineItems}
               onQuantityChange={changeQuantity}
               onRemove={removeProduct}
-              onAdd={addProduct}
+              onAddProducts={confirmProducts}
             />
             <CreateOrderDeliveryCard
               selectedMethodId={deliveryMethodId}
