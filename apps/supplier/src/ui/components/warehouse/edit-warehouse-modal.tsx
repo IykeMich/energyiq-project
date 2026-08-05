@@ -134,9 +134,15 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
           </Field>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
-          {products.map((product) => (
-            <div key={product.id} className="flex flex-col gap-4">
+        <div className="flex flex-col">
+          {products.map((product, index) => (
+            <div
+              key={product.id}
+              className={cn(
+                'flex flex-col gap-4',
+                index < products.length - 1 && 'border-b border-border-subtle pb-5 mb-5',
+              )}
+            >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground">{product.name}</p>
                 <button
@@ -161,29 +167,6 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                     value={product.pricePerUnit}
                     onChange={(value) => updateProduct(product.id, { pricePerUnit: value })}
                     placeholder="0"
-                  />
-                </Field>
-                <Field label="Max Stock:">
-                  <TextField
-                    type="number"
-                    value={product.maxStock}
-                    onChange={(value) => updateProduct(product.id, { maxStock: value })}
-                    placeholder="e.g. 5000"
-                  />
-                </Field>
-                <Field label="Reorder Point:">
-                  <TextField
-                    type="number"
-                    value={product.reorderPoint}
-                    onChange={(value) => updateProduct(product.id, { reorderPoint: value })}
-                    placeholder="e.g. 500"
-                  />
-                </Field>
-                <Field label="Storage Location:">
-                  <TextField
-                    value={product.storageLocation}
-                    onChange={(value) => updateProduct(product.id, { storageLocation: value })}
-                    placeholder="e.g. Bay A-3"
                   />
                 </Field>
               </div>

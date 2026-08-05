@@ -3,37 +3,34 @@ import { Boxes, Plus } from 'lucide-react';
 import { CreateOrderCard } from './create-order-card';
 import { CreateOrderProductRow } from './create-order-product-row';
 import { CreateOrderAddProductModal } from './create-order-add-product-modal';
-import { type CreateOrderProductOption } from './create-order-mocks';
+import {
+  type CreateOrderProductOption,
+  type CreateOrderLineItem,
+} from './create-order-mocks';
 
-export interface CreateOrderLineItem {
-  productId: string;
-  name: string;
-  shortLabel: string;
-  code: string;
-  unit: string;
-  unitAbbrev: string;
-  unitPrice: number;
-  moq: number;
-  goldDiscount: boolean;
-  available: boolean;
-  quantity: number;
-}
+export type { CreateOrderLineItem };
 
 interface CreateOrderProductsCardProps {
+  supplierId: string;
+  onSupplierChange: (supplierId: string) => void;
+  products: CreateOrderProductOption[];
   lineItems: CreateOrderLineItem[];
   onQuantityChange: (productId: string, quantity: number) => void;
   onRemove: (productId: string) => void;
-  onAdd: (product: CreateOrderProductOption) => void;
+  onAddProducts: (items: CreateOrderLineItem[]) => void;
 }
 
 const COLUMN_LABELS = ['Product', 'Unit Price', 'Quantity', 'Sub-Total'];
 
 /** "Products" section: column headers, the added line items, and the Add Product flow. */
 export function CreateOrderProductsCard({
+  supplierId,
+  onSupplierChange,
+  products,
   lineItems,
   onQuantityChange,
   onRemove,
-  onAdd,
+  onAddProducts,
 }: CreateOrderProductsCardProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -81,7 +78,11 @@ export function CreateOrderProductsCard({
       <CreateOrderAddProductModal
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
-        onAdd={onAdd}
+        supplierId={supplierId}
+        onSupplierChange={onSupplierChange}
+        products={products}
+        lineItems={lineItems}
+        onConfirm={onAddProducts}
       />
     </CreateOrderCard>
   );

@@ -21,6 +21,10 @@ export interface CreateOrderSupplierOption {
 }
 
 export const SUPPLIER_OPTIONS: CreateOrderSupplierOption[] = [
+  { id: 'adewale-oil', name: 'Adewale Oil & Gas' },
+  { id: 'mrs-interoil', name: 'MRS InterOil' },
+  { id: 'rain-oil-gas', name: 'Rain Oil and Gas' },
+  { id: 'emmea-gas', name: 'Emmea Gas Suppliers' },
   { id: 'rain-oil', name: 'Rain Oil Resources' },
   { id: 'total-energy', name: 'TotalEnergy Depot' },
   { id: 'ardova', name: 'Ardova Plc' },
@@ -59,6 +63,23 @@ export interface CreateOrderProductOption {
   /** Eligible for the gold-tier discount (shown as "Gold: 10% off"). */
   goldDiscount: boolean;
   available: boolean;
+  /** Optional supplier owner; when present the product is only shown for that supplier. */
+  supplier_id?: string;
+}
+
+/** One line in the active order, combining catalog data with a chosen quantity. */
+export interface CreateOrderLineItem {
+  productId: string;
+  name: string;
+  shortLabel: string;
+  code: string;
+  unit: string;
+  unitAbbrev: string;
+  unitPrice: number;
+  moq: number;
+  goldDiscount: boolean;
+  available: boolean;
+  quantity: number;
 }
 
 export const PRODUCT_CATALOG: CreateOrderProductOption[] = [
@@ -92,6 +113,18 @@ export const PRODUCT_CATALOG: CreateOrderProductOption[] = [
     shortLabel: 'DPK',
     code: 'PRD-DPK-001',
     unitPrice: 940,
+    unit: 'Litre',
+    unitAbbrev: 'L',
+    moq: 100,
+    goldDiscount: false,
+    available: true,
+  },
+  {
+    id: 'engine-oil',
+    name: 'Engine Oil (Lubricant)',
+    shortLabel: 'Engine Oil',
+    code: 'PRD-ENG-001',
+    unitPrice: 720,
     unit: 'Litre',
     unitAbbrev: 'L',
     moq: 100,
