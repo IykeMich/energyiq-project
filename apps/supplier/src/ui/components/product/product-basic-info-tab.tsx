@@ -7,7 +7,7 @@ import {
 } from '@/ui/pages/product/mocks';
 import { useProductCategoriesQuery } from '@/hooks/use-product-categories';
 import { useProductUnitsQuery } from '@/hooks/use-product-units';
-import { Field, SelectField, TextAreaField, TextField } from './wizard-fields';
+import { SelectField, TextAreaField, TextField } from './wizard-fields';
 import { ProductVariantEditor } from './product-variant-editor';
 
 interface ProductBasicInfoTabProps {
@@ -56,49 +56,44 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
 
   return (
     <div className="flex flex-col gap-5">
-      <Field label="Product Name:">
-        <TextField
-          value={draft.name}
-          onChange={(value) => onChange({ name: value })}
-          placeholder="e.g. Diesel"
-          error={errors?.name}
-        />
-      </Field>
+      <TextField
+        label="Product Name:"
+        value={draft.name}
+        onChange={(value) => onChange({ name: value })}
+        placeholder="e.g. Diesel"
+        error={errors?.name}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Product Category:">
-          <SelectField
-            value={draft.category}
-            onChange={(value) => onChange({ category: value })}
-            placeholder="Select category"
-            options={categoryOptions}
-            error={errors?.category}
-          />
-        </Field>
-        <Field label="Product Type:">
-          <SelectField
-            value={draft.type}
-            onChange={(value) => onChange({ type: value })}
-            placeholder="Select type"
-            options={TYPE_OPTIONS}
-          />
-        </Field>
-        <Field label="Measuring Unit:">
-          <SelectField
-            value={draft.measuringUnit}
-            onChange={(value) => onChange({ measuringUnit: value })}
-            placeholder="Select unit"
-            options={unitOptions}
-            error={errors?.measuringUnit}
-          />
-        </Field>
-        <Field label="Packaging Type:">
-          <SelectField
-            value={draft.packagingType}
-            onChange={(value) => onChange({ packagingType: value })}
-            placeholder="Select packaging"
-            options={PACKAGING_OPTIONS}
-          />
-        </Field>
+        <SelectField
+          label="Product Category:"
+          value={draft.category}
+          onChange={(value) => onChange({ category: value })}
+          placeholder="Select category"
+          options={categoryOptions}
+          error={errors?.category}
+        />
+        <SelectField
+          label="Product Type:"
+          value={draft.type}
+          onChange={(value) => onChange({ type: value })}
+          placeholder="Select type"
+          options={TYPE_OPTIONS}
+        />
+        <SelectField
+          label="Measuring Unit:"
+          value={draft.measuringUnit}
+          onChange={(value) => onChange({ measuringUnit: value })}
+          placeholder="Select unit"
+          options={unitOptions}
+          error={errors?.measuringUnit}
+        />
+        <SelectField
+          label="Packaging Type:"
+          value={draft.packagingType}
+          onChange={(value) => onChange({ packagingType: value })}
+          placeholder="Select packaging"
+          options={PACKAGING_OPTIONS}
+        />
       </div>
 
       {showVariants && (
@@ -111,13 +106,12 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
       )}
 
       <div className="border-t border-dashed border-border-subtle pt-5">
-        <Field label="Product Description:">
-          <TextAreaField
-            value={draft.description}
-            onChange={(value) => onChange({ description: value })}
-            placeholder="Add Description...."
-          />
-        </Field>
+        <TextAreaField
+          label="Product Description:"
+          value={draft.description}
+          onChange={(value) => onChange({ description: value })}
+          placeholder="Add Description...."
+        />
       </div>
     </div>
   );

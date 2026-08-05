@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, SuccessModal, useAuth } from '@energyiq/ui';
 import type { DistributorInvitePayload } from '@/ui/pages/distributor/mocks';
 import { InviteFormField } from './invite-form-field';
+import { FormActionButton } from '../product/wizard-fields';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -138,13 +139,16 @@ export function InviteDistributorForm() {
         </div>
 
         <div className="flex justify-end">
-          <button
+          {/* <button
             type="submit"
             disabled={!isValid || submitting}
             className="h-[52px] rounded-[28px] bg-brand px-8 font-semibold text-brand-foreground disabled:opacity-40"
           >
             Send Invite
-          </button>
+          </button> */}
+          <FormActionButton variant="forward" type="submit" disabled={!isValid || submitting}>
+            Send Invite
+          </FormActionButton>
         </div>
       </form>
 

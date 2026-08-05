@@ -4,11 +4,11 @@ import type { product } from '@energyiq/domain';
 type BadgeStatus = 'active' | 'inactive' | 'draft' | 'pending_review' | 'paused' | 'retired';
 
 const STATUS_STYLE: Record<BadgeStatus, { bg: string; text: string; label: string }> = {
-  active: { bg: 'bg-success/30', text: 'text-success', label: 'Active' },
+  active: { bg: 'bg-[#388E3C4D]', text: 'text-[#388E3C]', label: 'Active' },
   inactive: { bg: 'bg-danger/30', text: 'text-danger', label: 'Inactive' },
   draft: { bg: 'bg-[#9E9E9E4D]', text: 'text-[#9E9E9E]', label: 'Draft' },
-  pending_review: { bg: 'bg-amber-500/30', text: 'text-amber-500', label: 'Pending Review' },
-  paused: { bg: 'bg-amber-500/30', text: 'text-amber-500', label: 'Paused' },
+  pending_review: { bg: 'bg-[#FB8C1C4D]', text: 'text-[#FB8C1C]', label: 'Pending Review' },
+  paused: { bg: 'bg-[#9E9E9E4D]', text: 'text-[#9E9E9E]', label: 'Paused' },
   retired: { bg: 'bg-danger/30', text: 'text-danger', label: 'Retired' },
 };
 
@@ -26,7 +26,7 @@ export function ProductStatusBadge({ value, className }: { value: string; classN
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-[14px] px-3 py-1 text-xs font-semibold whitespace-nowrap',
+        'inline-flex items-center justify-center rounded-[22px] px-3 py-1 text-xs font-medium whitespace-nowrap',
         style.bg,
         style.text,
         className,

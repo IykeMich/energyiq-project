@@ -5,8 +5,8 @@
 export type WarehouseStatus = 'active' | 'inactive';
 
 export interface Warehouse {
-  id?: string;
-  name?: string;
+  warehouse_id?: string;
+  warehouse_name?: string;
   location?: string;
   manager_id?: string;
   capacity?: number;
@@ -65,7 +65,7 @@ export interface WarehouseStockPoint {
 }
 
 export interface WarehouseCreateRequest {
-  name: string;
+  warehouse_name: string;
   location: string;
   manager_id?: string;
   capacity?: number;
@@ -73,7 +73,7 @@ export interface WarehouseCreateRequest {
 }
 
 export interface WarehouseUpdateRequest {
-  name: string;
+  warehouse_name: string;
   location: string;
   manager_id?: string;
   capacity?: number;

@@ -22,8 +22,8 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }
   const warehouses = warehousesQuery.data?.items ?? [];
 
   const warehouseOptions = warehouses
-    .filter((warehouse) => warehouse.id && warehouse.name)
-    .map((warehouse) => ({ value: warehouse.id as string, label: warehouse.name as string }));
+    .filter((warehouse) => warehouse.warehouse_id && warehouse.warehouse_name)
+    .map((warehouse) => ({ value: warehouse.warehouse_id as string, label: warehouse.warehouse_name as string }));
 
   const isLoading = warehousesQuery.isLoading;
   const isEmpty = !isLoading && warehouses.length === 0;
@@ -49,7 +49,7 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }
       )}
 
       {draft.warehouseAllocations.map((allocation, index) => {
-        const warehouse = warehouses.find((option) => option.id === allocation.warehouseId);
+        const warehouse = warehouses.find((option) => option.warehouse_id === allocation.warehouseId);
         const canRemove = draft.warehouseAllocations.length > 1;
         const availableCapacity =
           warehouse?.capacity !== undefined && warehouse?.stock_level_percentage !== undefined
@@ -73,15 +73,14 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }
                 </button>
               )}
             </div>
-            <Field label="Warehouse Location:">
-              <SelectField
-                value={allocation.warehouseId}
-                onChange={(value) => onChange(allocation.id, { warehouseId: value })}
-                placeholder={isLoading ? 'Loading warehouses...' : 'Select warehouse'}
-                options={warehouseOptions}
-                error={index === 0 ? errors?.warehouseId : undefined}
-              />
-            </Field>
+            <SelectField
+              label="Warehouse Location:"
+              value={allocation.warehouseId}
+              onChange={(value) => onChange(allocation.id, { warehouseId: value })}
+              placeholder={isLoading ? 'Loading warehouses...' : 'Select warehouse'}
+              options={warehouseOptions}
+              error={index === 0 ? errors?.warehouseId : undefined}
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Allocated Quantity:">
                 <NumericTextField
@@ -91,14 +90,13 @@ export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }
                   suffix="L"
                 />
               </Field>
-              <Field label="Storage Location:">
-                <SelectField
-                  value={allocation.storageLocation}
-                  onChange={(value) => onChange(allocation.id, { storageLocation: value })}
-                  placeholder="Select storage"
-                  options={STORAGE_LOCATION_OPTIONS}
-                />
-              </Field>
+              <SelectField
+                label="Storage Location:"
+                value={allocation.storageLocation}
+                onChange={(value) => onChange(allocation.id, { storageLocation: value })}
+                placeholder="Select storage"
+                options={STORAGE_LOCATION_OPTIONS}
+              />
             </div>
             {availableCapacity !== undefined && (
               <p className="text-xs text-foreground text-right">

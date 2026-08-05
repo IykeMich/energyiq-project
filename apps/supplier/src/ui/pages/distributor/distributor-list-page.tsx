@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataGrid, type ColDef } from '@energyiq/ui';
-import { DISTRIBUTORS_MOCK, buildDistributorSummary, type Distributor } from './mocks';
+import { useDistributorsQuery } from '@/hooks/use-distributor';
+import { buildDistributorSummary, toDistributorRow, type Distributor } from './mocks';
 import { DistributorSummaryStats } from '@/ui/components/distributor/distributor-summary-stats';
 import { DistributorFilterBar } from '@/ui/components/distributor/distributor-filter-bar';
 import { DistributorTierBadge } from '@/ui/components/distributor/distributor-tier-badge';
@@ -21,7 +22,9 @@ export function DistributorListPage() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor | null>(null);
 
-  const summary = useMemo(() => buildDistributorSummary(DISTRIBUTORS_MOCK), []);
+  const distributorsQuery = useDistributorsQuery();
+  const rows = useMemo(() => (distributorsQuery.data?.items ?? []).map(toDistributorRow), [distributorsQuery.data]);
+  const summary = useMemo(() => buildDistributorSummary(rows), [rows]);
 
   const columnDefs = useMemo<ColDef<Distributor>[]>(
     () => [
@@ -54,16 +57,34 @@ export function DistributorListPage() {
         flex: 0,
         cellRenderer: (p: { value: Distributor['tier'] }) => <DistributorTierBadge value={p.value} />,
       },
-      { field: 'totalOrders', headerName: 'Total Orders', width: 140, flex: 0, type: 'numericColumn' },
+      {
+        field: 'totalOrders',
+        headerName: 'Total Orders',
+        width: 140,
+        flex: 0,
+        type: 'numericColumn',
+        valueFormatter: (p) => (typeof p.value === 'number' ? String(p.value) : '—'),
+      },
       {
         field: 'totalValueNGN',
         headerName: 'Total Value',
         width: 140,
         flex: 0,
-        valueFormatter: (p) => (typeof p.value === 'number' ? formatMillions(p.value) : ''),
+        valueFormatter: (p) => (typeof p.value === 'number' ? formatMillions(p.value) : '—'),
       },
-      { field: 'lastOrder', headerName: 'Last Order', width: 140, flex: 0 },
-      { field: 'location', headerName: 'Location', minWidth: 180 },
+      {
+        field: 'lastOrder',
+        headerName: 'Last Order',
+        width: 140,
+        flex: 0,
+        valueFormatter: (p) => p.value ?? '—',
+      },
+      {
+        field: 'location',
+        headerName: 'Location',
+        minWidth: 180,
+        valueFormatter: (p) => p.value ?? '—',
+      },
       {
         field: 'status',
         headerName: 'Status',
@@ -118,12 +139,19 @@ export function DistributorListPage() {
         </button>
       </div>
 
+      {distributorsQuery.isError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          Couldn't load distributors. Please try again.
+        </div>
+      )}
+
       <DataGrid<Distributor>
-        rowData={DISTRIBUTORS_MOCK}
+        rowData={rows}
         columnDefs={columnDefs}
         rowHeight={64}
         rowSelection="multiple"
         suppressRowClickSelection
+        loading={distributorsQuery.isLoading}
         onRowClicked={(event) => setSelectedDistributor(event.data ?? null)}
         className="h-[640px] bg-surface-card rounded-[18px] overflow-hidden cursor-pointer"
       />

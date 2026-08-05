@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal } from '@energyiq/ui';
 import type { product } from '@energyiq/domain';
 import { UNIT_TYPE_OPTIONS } from '@/ui/pages/product/mocks';
-import { Field, SelectField, TextField, ToggleSwitch } from './wizard-fields';
+import { FormActionButton, SelectField, TextField } from './wizard-fields';
 
 interface UnitFormModalProps {
   open: boolean;
@@ -40,52 +40,43 @@ export function UnitFormModal({ open, onOpenChange, initial, onSave, saving }: U
       onOpenChange={onOpenChange}
       title={initial ? `Edit ${initial.unit_name}` : 'Add Unit'}
       size="md"
+      className="bg-[#121212]"
     >
       <div className="flex flex-col gap-5">
-        <Field label="Unit Name:" required>
-          <TextField
-            value={form.unit_name}
-            onChange={(v) => setForm((p) => ({ ...p, unit_name: v }))}
-            placeholder="e.g. Litre"
-          />
-        </Field>
-        <Field label="Short Code:" required>
-          <TextField
-            value={form.short_code}
-            onChange={(v) => setForm((p) => ({ ...p, short_code: v }))}
-            placeholder="e.g. L"
-          />
-        </Field>
-        <Field label="Type:">
-          <SelectField
-            value={form.type}
-            onChange={(v) => setForm((p) => ({ ...p, type: v || 'Volume' }))}
-            options={UNIT_TYPE_OPTIONS}
-          />
-        </Field>
-        <Field label="Description:">
-          <TextField
-            value={form.description ?? ''}
-            onChange={(v) => setForm((p) => ({ ...p, description: v }))}
-            placeholder="Short summary"
-          />
-        </Field>
-        <Field label="Status:">
-          <ToggleSwitch
-            checked={form.status === 'active'}
-            onChange={(next) => setForm((p) => ({ ...p, status: next ? 'active' : 'inactive' }))}
-          />
-        </Field>
+        <TextField
+          label="Unit Name:"
+          required
+          value={form.unit_name}
+          onChange={(v) => setForm((p) => ({ ...p, unit_name: v }))}
+          placeholder="e.g. Litre"
+        />
+        <TextField
+          label="Short Code:"
+          required
+          value={form.short_code}
+          onChange={(v) => setForm((p) => ({ ...p, short_code: v }))}
+          placeholder="e.g. L"
+        />
+        <SelectField
+          label="Type:"
+          value={form.type}
+          onChange={(v) => setForm((p) => ({ ...p, type: v || 'Volume' }))}
+          options={UNIT_TYPE_OPTIONS}
+        />
+        <TextField
+          label="Description:"
+          value={form.description ?? ''}
+          onChange={(v) => setForm((p) => ({ ...p, description: v }))}
+          placeholder="Short summary"
+        />
 
-        <div className="flex justify-end mt-2">
-          <button
-            type="button"
-            disabled={!canSave || saving}
-            onClick={() => onSave(form)}
-            className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : initial ? 'Save Changes' : 'Add'}
-          </button>
+        <div className="flex justify-end gap-3 mt-2">
+          <FormActionButton variant="cancel" onClick={() => onOpenChange(false)}>
+            Cancel
+          </FormActionButton>
+          <FormActionButton variant="forward" disabled={!canSave || saving} onClick={() => onSave(form)}>
+            {saving ? 'Saving...' : initial ? 'Save Changes' : 'Add Unit'}
+          </FormActionButton>
         </div>
       </div>
     </Modal>

@@ -4,7 +4,7 @@ import {
   productNameToId,
   type Warehouse,
 } from '@/ui/pages/inventory/mocks';
-import { Field, SelectField, TextAreaField, TextField } from '@/ui/components/product/wizard-fields';
+import { SelectField, TextAreaField, TextField } from '@/ui/components/product/wizard-fields';
 import { WarehouseTransferCard } from './warehouse-transfer-card';
 
 export interface StockTransferPayload {
@@ -59,24 +59,20 @@ export function WarehouseStockTransfer({ warehouses, onCancel, onReview }: Wareh
       </div>
 
       <div className="bg-surface-card rounded-[24px] p-6 flex flex-col gap-5">
-        <Field label="Product:">
-          <SelectField value={product} onChange={setProduct} options={TRANSFER_PRODUCT_OPTIONS} placeholder="Select...." />
-        </Field>
-        <Field label="From Warehouse:">
-          <SelectField value={fromId} onChange={setFromId} options={warehouseOptions} placeholder="Select..." />
-        </Field>
-        <Field label="To Warehouse:">
-          <SelectField value={toId} onChange={setToId} options={warehouseOptions} placeholder="Select..." />
-        </Field>
+        <SelectField label="Product:" value={product} onChange={setProduct} options={TRANSFER_PRODUCT_OPTIONS} placeholder="Select...." />
+        <SelectField label="From Warehouse:" value={fromId} onChange={setFromId} options={warehouseOptions} placeholder="Select..." />
+        <SelectField label="To Warehouse:" value={toId} onChange={setToId} options={warehouseOptions} placeholder="Select..." />
         {fromWarehouse && (
           <p className="-mt-3 text-xs text-brand">{available.toLocaleString()}L available</p>
         )}
-        <Field label={fromWarehouse ? `Quantity (max ${available.toLocaleString()}L available)` : 'Quantity (L):'}>
-          <TextField type="number" value={quantity} onChange={setQuantity} placeholder="Enter quantity..." />
-        </Field>
-        <Field label="Notes (Optional):">
-          <TextAreaField value={notes} onChange={setNotes} placeholder="Reason for transfer" />
-        </Field>
+        <TextField
+          label={fromWarehouse ? `Quantity (max ${available.toLocaleString()}L available)` : 'Quantity (L):'}
+          type="number"
+          value={quantity}
+          onChange={setQuantity}
+          placeholder="Enter quantity..."
+        />
+        <TextAreaField label="Notes (Optional):" value={notes} onChange={setNotes} placeholder="Reason for transfer" />
       </div>
 
       <div className="flex items-center justify-end gap-3">

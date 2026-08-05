@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { useRef, type ReactNode } from 'react';
+import { Calendar, Check } from 'lucide-react';
 import { cn } from '@energyiq/shared';
 import {
   Select,
@@ -9,6 +9,15 @@ import {
   SelectValue,
 } from '@energyiq/ui';
 
+function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+  return (
+    <label className="text-sm text-foreground">
+      {label}
+      {required && <span className="text-danger ml-1">*</span>}
+    </label>
+  );
+}
+
 interface FieldProps {
   label: string;
   required?: boolean;
@@ -16,13 +25,11 @@ interface FieldProps {
   className?: string;
 }
 
+/** Generic label+control wrapper for controls that don't accept a `label` prop directly (e.g. `@energyiq/ui`'s `NumericTextField`). Prefer passing `label` straight to `TextField`/`SelectField`/etc. when available. */
 export function Field({ label, required, children, className }: FieldProps) {
   return (
     <div className={`flex flex-col gap-2 ${className ?? ''}`}>
-      <label className="text-sm text-foreground">
-        {label}
-        {required && <span className="text-danger ml-1">*</span>}
-      </label>
+      <FieldLabel label={label} required={required} />
       {children}
     </div>
   );
@@ -33,24 +40,155 @@ interface TextFieldProps {
   onChange: (next: string) => void;
   placeholder?: string;
   type?: 'text' | 'number';
+  label?: string;
+  required?: boolean;
+  disabled?: boolean;
   /** When set, the control shows the destructive border and the message below it. */
   error?: string;
+  className?: string;
 }
 
-export function TextField({ value, onChange, placeholder, type = 'text', error }: TextFieldProps) {
+export function TextField({
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  label,
+  required,
+  disabled,
+  error,
+  className,
+}: TextFieldProps) {
   return (
-    <div className="flex flex-col gap-1">
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={cn(
-          'bg-[#6161611A] focus:border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand',
-          error && 'border-destructive focus:border-destructive',
-        )}
-      />
-      {error && <p className="text-destructive text-xs">{error}</p>}
+    <div className="flex flex-col gap-2">
+      {label && <FieldLabel label={label} required={required} />}
+      <div className="flex flex-col gap-1">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={cn(
+            'bg-[#6161611A] focus:border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed',
+            error && 'border-destructive focus:border-destructive',
+            className,
+          )}
+        />
+        {error && <p className="text-destructive text-xs">{error}</p>}
+      </div>
+    </div>
+  );
+}
+
+interface PrefixedTextFieldProps {
+  prefix: string;
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+  label?: string;
+  required?: boolean;
+  disabled?: boolean;
+  /** When set, the control shows the destructive border and the message below it. */
+  error?: string;
+  className?: string;
+}
+
+/** Numeric field with a glyph prefix inside the control, e.g. a currency symbol before a price. */
+export function PrefixedTextField({
+  prefix,
+  value,
+  onChange,
+  placeholder,
+  label,
+  required,
+  disabled,
+  error,
+  className,
+}: PrefixedTextFieldProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      {label && <FieldLabel label={label} required={required} />}
+      <div className="flex flex-col gap-1">
+        <div
+          className={cn(
+            'bg-[#6161611A] focus-within:border border-border-strong h-13 rounded-[28px] px-5 flex items-center gap-2 text-foreground transition-colors focus-within:border-brand',
+            disabled && 'opacity-50 cursor-not-allowed',
+            error && 'border-destructive focus-within:border-destructive',
+            className,
+          )}
+        >
+          <span className="text-muted-foreground text-sm">{prefix}</span>
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+          />
+        </div>
+        {error && <p className="text-destructive text-xs">{error}</p>}
+      </div>
+    </div>
+  );
+}
+
+interface DateFieldProps {
+  value: string;
+  onChange: (next: string) => void;
+  label?: string;
+  required?: boolean;
+  disabled?: boolean;
+  /** When set, the control shows the destructive border and the message below it. */
+  error?: string;
+  className?: string;
+}
+
+/** Native date input with a calendar icon on the right, matching the design's date fields. */
+export function DateField({ value, onChange, label, required, disabled, error, className }: DateFieldProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = () => {
+    if (disabled) return;
+    const input = inputRef.current as (HTMLInputElement & { showPicker?: () => void }) | null;
+    if (input?.showPicker) {
+      input.showPicker();
+    } else {
+      input?.focus();
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {label && <FieldLabel label={label} required={required} />}
+      <div className="flex flex-col gap-1">
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="date"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            className={cn(
+              // Hide the browser's own calendar-picker glyph so only the icon button below is visible/clickable.
+              'bg-[#6161611A] border border-border-strong h-13 rounded-[28px] px-5 pr-12 w-full text-foreground outline-none focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:opacity-0',
+              error && 'border-destructive focus:border-destructive',
+              className,
+            )}
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={openPicker}
+            disabled={disabled}
+            className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground disabled:cursor-not-allowed"
+          >
+            <Calendar className="h-5 w-5" />
+          </button>
+        </div>
+        {error && <p className="text-destructive text-xs">{error}</p>}
+      </div>
     </div>
   );
 }
@@ -60,24 +198,43 @@ interface TextAreaProps {
   onChange: (next: string) => void;
   placeholder?: string;
   rows?: number;
+  label?: string;
+  required?: boolean;
+  disabled?: boolean;
   /** When set, the control shows the destructive border and the message below it. */
   error?: string;
+  className?: string;
 }
 
-export function TextAreaField({ value, onChange, placeholder, rows = 4, error }: TextAreaProps) {
+export function TextAreaField({
+  value,
+  onChange,
+  placeholder,
+  rows = 4,
+  label,
+  required,
+  disabled,
+  error,
+  className,
+}: TextAreaProps) {
   return (
-    <div className="flex flex-col gap-1">
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        className={cn(
-          'bg-[#6161611A] focus:border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none',
-          error && 'border-destructive focus:border-destructive',
-        )}
-      />
-      {error && <p className="text-destructive text-xs">{error}</p>}
+    <div className="flex flex-col gap-2">
+      {label && <FieldLabel label={label} required={required} />}
+      <div className="flex flex-col gap-1">
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={rows}
+          disabled={disabled}
+          className={cn(
+            'bg-[#6161611A] focus:border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none disabled:opacity-50 disabled:cursor-not-allowed',
+            error && 'border-destructive focus:border-destructive',
+            className,
+          )}
+        />
+        {error && <p className="text-destructive text-xs">{error}</p>}
+      </div>
     </div>
   );
 }
@@ -87,24 +244,31 @@ interface SelectFieldProps {
   onChange: (next: string) => void;
   placeholder?: string;
   options: readonly { value: string; label: string }[] | readonly string[];
+  label?: string;
+  required?: boolean;
+  disabled?: boolean;
   /** When set, the trigger shows the destructive border and the message below it. */
   error?: string;
+  /** Merged onto the trigger, e.g. to override the default height/radius. */
+  className?: string;
 }
 
 interface CheckboxFieldProps {
   checked: boolean;
   onChange: (next: boolean) => void;
   label: ReactNode;
+  disabled?: boolean;
 }
 
-export function CheckboxField({ checked, onChange, label }: CheckboxFieldProps) {
+export function CheckboxField({ checked, onChange, label, disabled }: CheckboxFieldProps) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2.5 text-sm text-foreground"
+      disabled={disabled}
+      className="flex items-center gap-2.5 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <span
         className={cn(
@@ -124,6 +288,10 @@ interface ToggleSwitchProps {
   onChange: (next: boolean) => void;
   onLabel?: string;
   offLabel?: string;
+  label?: string;
+  required?: boolean;
+  disabled?: boolean;
+  className?: string;
 }
 
 /** Full-width status pill with a state label on the left and a green switch on the right. */
@@ -132,41 +300,112 @@ export function ToggleSwitch({
   onChange,
   onLabel = 'Active',
   offLabel = 'Inactive',
+  label,
+  required,
+  disabled,
+  className = '',
 }: ToggleSwitchProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      {label && <FieldLabel label={label} required={required} />}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        className={cn(
+          'bg-surface-card border border-border-strong h-13 rounded-[28px] px-5 w-full flex items-center justify-between transition-colors hover:border-brand disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-strong',
+          className,
+        )}
+      >
+        <span className={cn('text-sm font-medium', checked ? 'text-success' : 'text-muted-foreground')}>
+          {checked ? onLabel : offLabel}
+        </span>
+        <span
+          className={cn(
+            'w-11 h-6 rounded-full p-0.5 flex items-center transition-colors',
+            checked ? 'bg-success' : 'bg-foreground/20',
+          )}
+        >
+          <span
+            className={cn(
+              'w-5 h-5 rounded-full bg-white transition-transform',
+              checked ? 'translate-x-5' : 'translate-x-0',
+            )}
+          />
+        </span>
+      </button>
+    </div>
+  );
+}
+
+interface ToggleChipProps {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}
+
+/** Pill toggle: outline when unselected, filled brand + check icon when selected (certifications, tiers, return reasons, ...). */
+export function ToggleChip({ label, selected, onClick }: ToggleChipProps) {
   return (
     <button
       type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="bg-surface-card border border-border-strong h-[52px] rounded-[28px] px-5 w-full flex items-center justify-between transition-colors hover:border-brand"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={cn(
+        'tap-effect flex h-9 items-center gap-1.5 rounded-full border px-4.5 text-xs font-semibold transition-colors',
+        selected
+          ? 'border-brand bg-brand text-brand-foreground'
+          : 'border-border-strong text-foreground font-normal hover:border-brand/50',
+      )}
     >
-      <span className={cn('text-sm font-medium', checked ? 'text-success' : 'text-muted-foreground')}>
-        {checked ? onLabel : offLabel}
-      </span>
-      <span
+      {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+      {label}
+    </button>
+  );
+}
+
+interface ToggleSwitchCardProps {
+  title: string;
+  subtitle: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}
+
+/** Rounded row: title + subtitle on the left, a brand-colored switch on the right (promo pricing, return policy, distributor restriction, ...). */
+export function ToggleSwitchCard({ title, subtitle, checked, onChange }: ToggleSwitchCardProps) {
+  return (
+    <div className="rounded-[19px] bg-[#6161611A] px-6 py-3.5 flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
         className={cn(
-          'w-11 h-6 rounded-full p-0.5 flex items-center transition-colors',
-          checked ? 'bg-success' : 'bg-foreground/20',
+          'tap-effect h-4 w-8.25 shrink-0 rounded-full p-0.5 flex items-center transition-colors',
+          checked ? 'bg-brand' : 'bg-[#616161B2]',
         )}
       >
         <span
-          className={cn(
-            'w-5 h-5 rounded-full bg-white transition-transform',
-            checked ? 'translate-x-5' : 'translate-x-0',
-          )}
+          className={cn('h-3 w-3 rounded-full bg-[#121212] transition-transform', checked && 'translate-x-4')}
         />
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
 export type FormActionVariant = 'cancel' | 'forward';
 
 const FORM_ACTION_VARIANT_CLASSES: Record<FormActionVariant, string> = {
-  cancel: 'h-10.5 rounded-[28px] bg-[#616161B2] text-[#121212] font-semibold px-8',
+  cancel:
+    'tap-effect h-10.5 rounded-[28px] bg-[#616161B2] text-[#121212] font-semibold px-8 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed',
   forward:
-    'h-10.5 rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 disabled:opacity-50 disabled:cursor-not-allowed',
+    'tap-effect h-10.5 rounded-[28px] bg-brand text-brand-foreground font-semibold px-12 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed',
 };
 
 interface FormActionButtonProps {
@@ -211,42 +450,50 @@ export function ToolbarActionButton({ variant, type = 'button', children, ...pro
   );
 }
 
-export function SelectField({ value, onChange, placeholder, options, error }: SelectFieldProps) {
+export function SelectField({ value, onChange, placeholder, options, label, required, disabled, error, className }: SelectFieldProps) {
   const normalized = options.map((option) => (typeof option === 'string' ? { value: option, label: option } : option));
   return (
-    <div className="flex flex-col gap-1">
-      <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
-        <SelectTrigger
-          className={cn(
-            'bg-[#6161611A] border-0! focus:border-border-strong data-[size=default]:h-13 w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand',
-            error && 'border-destructive focus:ring-destructive',
-          )}
-        >
-          <SelectValue placeholder={placeholder}>
-            {(selectedValue: string) =>
-              normalized.find((option) => option.value === selectedValue)?.label ?? selectedValue
-            }
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent
-          align="start"
-          sideOffset={6}
-          alignItemWithTrigger={false}
-          className="w-(--anchor-width) rounded-[20px] border border-border-strong bg-surface-modal p-1.5"
-        >
-          {normalized.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              className="h-11 rounded-[14px] pl-4 text-sm text-foreground transition-colors hover:bg-foreground/5
+    <div className="flex flex-col gap-2">
+      {label && <FieldLabel label={label} required={required} />}
+      <div className="flex flex-col gap-1">
+        <Select value={value} onValueChange={(v) => onChange(v ?? '')} disabled={disabled}>
+          <SelectTrigger
+            className={cn(
+              'bg-[#6161611A] border-0! focus:border-border-strong data-[size=default]:h-13 w-full cursor-pointer rounded-[28px] text-foreground px-5 transition-colors hover:border-brand disabled:opacity-50 disabled:cursor-not-allowed',
+              error && 'border-destructive focus:ring-destructive',
+              className,
+            )}
+          >
+            <SelectValue placeholder={placeholder}>
+              {(selectedValue: string) =>
+                selectedValue ? (
+                  (normalized.find((option) => option.value === selectedValue)?.label ?? selectedValue)
+                ) : (
+                  <span className="italic">{placeholder}</span>
+                )
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent
+            align="start"
+            sideOffset={6}
+            alignItemWithTrigger={false}
+            className="w-(--anchor-width) rounded-[20px] border border-border-strong bg-surface-modal p-1.5"
+          >
+            {normalized.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                className="h-11 rounded-[14px] pl-4 text-sm text-foreground transition-colors hover:bg-foreground/5
               cursor-pointer data-[highlighted]:bg-foreground/10 data-[highlighted]:text-foreground data-[state=checked]:bg-brand/10 data-[state=checked]:text-brand-foreground"
-            >
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {error && <p className="text-destructive text-xs">{error}</p>}
+              >
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {error && <p className="text-destructive text-xs">{error}</p>}
+      </div>
     </div>
   );
 }

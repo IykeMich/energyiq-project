@@ -16,7 +16,7 @@ export function CreateWarehousePage() {
   const backToInventory = () => navigate(`/${slug}/inventory`);
 
   const handleCreate = (req: Parameters<typeof createMutation.mutate>[0]) => {
-    setCreatedName(req.name);
+    setCreatedName(req.warehouse_name);
     createMutation.mutate(req, {
       onSuccess: () => setSuccessOpen(true),
     });

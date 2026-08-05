@@ -87,6 +87,8 @@ export interface SupplierSummary {
   company_name: string;
   status: string;
   kyc_status: string;
+  name: string;
+  email: string;
 }
 
 // ── Login (shared entry point for suppliers and distributors) ─────
@@ -338,7 +340,10 @@ export interface PresignUploadUrlRequest {
 export interface PresignUploadUrlResult {
   upload_url: string;
   public_url: string;
-  fields?: Record<string, string>;
+  method: string;
+  headers?: Record<string, string>;
+  key?: string;
+  expires_at?: string;
 }
 
 export interface DistributorOnboardingSummary {

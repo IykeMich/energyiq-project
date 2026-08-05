@@ -8,7 +8,7 @@ import {
   type PricingTierDraft,
   type ProductDraftErrors,
 } from '@/ui/pages/product/mocks';
-import { CheckboxField, Field, SelectField, TextField } from './wizard-fields';
+import { CheckboxField, SelectField, TextField } from './wizard-fields';
 import { ProductTieredPricing } from './product-tiered-pricing';
 
 interface ProductPricingTabProps {
@@ -59,40 +59,36 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Price Type:">
-          <SelectField
-            value={draft.priceType}
-            onChange={(value) => onChange({ priceType: value })}
-            placeholder="Select price type"
-            options={PRICE_TYPE_OPTIONS}
-          />
-        </Field>
-        <Field label="Currency:">
-          <SelectField
-            value={draft.currency}
-            onChange={(value) => onChange({ currency: value })}
-            placeholder="Select currency"
-            options={CURRENCY_OPTIONS}
-          />
-        </Field>
-        <Field label="Cost Price:">
-          <TextField
-            type="number"
-            value={draft.costPrice}
-            onChange={(value) => onChange({ costPrice: value })}
-            placeholder="0.00"
-            error={errors?.costPrice}
-          />
-        </Field>
-        <Field label="Selling Price:">
-          <TextField
-            type="number"
-            value={draft.sellingPrice}
-            onChange={(value) => onChange({ sellingPrice: value })}
-            placeholder="0.00"
-            error={errors?.sellingPrice}
-          />
-        </Field>
+        <SelectField
+          label="Price Type:"
+          value={draft.priceType}
+          onChange={(value) => onChange({ priceType: value })}
+          placeholder="Select price type"
+          options={PRICE_TYPE_OPTIONS}
+        />
+        <SelectField
+          label="Currency:"
+          value={draft.currency}
+          onChange={(value) => onChange({ currency: value })}
+          placeholder="Select currency"
+          options={CURRENCY_OPTIONS}
+        />
+        <TextField
+          label="Cost Price:"
+          type="number"
+          value={draft.costPrice}
+          onChange={(value) => onChange({ costPrice: value })}
+          placeholder="0.00"
+          error={errors?.costPrice}
+        />
+        <TextField
+          label="Selling Price:"
+          type="number"
+          value={draft.sellingPrice}
+          onChange={(value) => onChange({ sellingPrice: value })}
+          placeholder="0.00"
+          error={errors?.sellingPrice}
+        />
       </div>
 
       <ProductTieredPricing
@@ -110,22 +106,20 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
         />
         {draft.taxEnabled && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Tax Type:">
-              <SelectField
-                value={draft.taxType}
-                onChange={(value) => onChange({ taxType: value })}
-                placeholder="Select tax type"
-                options={TAX_TYPE_OPTIONS}
-              />
-            </Field>
-            <Field label="Tax Rate (%):">
-              <TextField
-                type="number"
-                value={draft.taxRate}
-                onChange={(value) => onChange({ taxRate: value })}
-                placeholder="0"
-              />
-            </Field>
+            <SelectField
+              label="Tax Type:"
+              value={draft.taxType}
+              onChange={(value) => onChange({ taxType: value })}
+              placeholder="Select tax type"
+              options={TAX_TYPE_OPTIONS}
+            />
+            <TextField
+              label="Tax Rate (%):"
+              type="number"
+              value={draft.taxRate}
+              onChange={(value) => onChange({ taxRate: value })}
+              placeholder="0"
+            />
           </div>
         )}
       </div>

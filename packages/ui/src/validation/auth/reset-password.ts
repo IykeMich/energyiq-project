@@ -6,6 +6,10 @@ export const forgotPasswordSchema = z.object({
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
+export const forgotPasswordFormDefaultValues: ForgotPasswordFormData = {
+  email: '',
+};
+
 export const resetPasswordSchema = z
   .object({
     new_password: z.string().min(12, 'Password must be at least 12 characters'),
@@ -17,3 +21,8 @@ export const resetPasswordSchema = z
   });
 
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+export const resetPasswordFormDefaultValues: ResetPasswordFormData = {
+  new_password: '',
+  confirm_password: '',
+};

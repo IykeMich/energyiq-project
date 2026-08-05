@@ -95,16 +95,12 @@ export class AuthApiAdapter implements auth.AuthApi {
   }
 
   // ── Supplier onboarding documents (pre-OTP, registration_token-scoped) ──
-  // NOTE: the presign endpoint below is not in the current swagger spec —
-  // it's guessed by following the naming convention of the confirmed
-  // `.../presign` endpoints elsewhere (distributor onboarding, product
-  // images). Confirm with backend before relying on this in production.
 
   async presignRegistrationDocument(
     req: auth.PresignRegistrationDocumentRequest,
   ): Promise<auth.PresignUploadUrlResult> {
     return apiPost<auth.PresignUploadUrlResult>(
-      "v1/public/auth/onboarding-documents/presign",
+      "v1/public/auth/onboarding-documents/presigned-url",
       req,
     );
   }
@@ -201,7 +197,7 @@ export class AuthApiAdapter implements auth.AuthApi {
     req: auth.PresignUploadUrlRequest,
   ): Promise<auth.PresignUploadUrlResult> {
     return apiPost<auth.PresignUploadUrlResult>(
-      "v1/auth/distributor-onboarding/documents/presign",
+      "v1/auth/distributor-onboarding/documents/presigned-url",
       req,
     );
   }

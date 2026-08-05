@@ -4,7 +4,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
-import { resetPasswordSchema, type ResetPasswordFormData } from '../../validation/auth/reset-password';
+import {
+  resetPasswordSchema,
+  resetPasswordFormDefaultValues,
+  type ResetPasswordFormData,
+} from '../../validation/auth/reset-password';
 
 export function ResetPasswordForm() {
   const navigate = useNavigate();
@@ -21,7 +25,7 @@ export function ResetPasswordForm() {
     formState: { errors },
   } = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { new_password: '', confirm_password: '' },
+    defaultValues: resetPasswordFormDefaultValues,
   });
 
   useEffect(() => {

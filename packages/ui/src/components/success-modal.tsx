@@ -33,6 +33,8 @@ interface SuccessModalProps {
   tone?: 'success' | 'brand' | 'danger';
   /** Badge icon; defaults to a check mark. Pass e.g. `X` for a rejection. */
   icon?: LucideIcon;
+  /** Merged onto the underlying `Modal`'s popup, e.g. to re-center within a sidebar-offset content area. */
+  className?: string;
 }
 
 /** Concentric badge ring + icon classes per tone. */
@@ -76,11 +78,12 @@ export function SuccessModal({
   buttonLayout = 'row',
   tone = 'success',
   icon: Icon = CheckCircle2,
+  className,
 }: SuccessModalProps) {
   const badge = TONE_CLASSES[tone];
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} size="sm" showClose={false}>
+    <Modal open={open} onOpenChange={onOpenChange} size="sm" showClose={false} className={className}>
       <div className="flex flex-col items-center gap-2 -mt-4">
         <div className={`w-[68px] h-[68px] rounded-full ${badge.outer} flex items-center justify-center`}>
           <div className={`w-[55px] h-[55px] rounded-full ${badge.middle} flex items-center justify-center`}>

@@ -255,8 +255,8 @@ export function toWarehouseViewModel(source: warehouse.Warehouse): Warehouse {
   );
 
   return {
-    id: source.id ?? '',
-    name: source.name ?? '',
+    id: source.warehouse_id ?? '',
+    name: source.warehouse_name ?? '',
     location: source.location ?? '',
     fullLocation: source.location ?? '',
 
@@ -299,8 +299,8 @@ export function toTransferRecordViewModel(
   source: warehouse.StockTransfer,
   warehouses: warehouse.Warehouse[] = [],
 ): TransferRecord {
-  const fromWarehouse = warehouses.find((w) => w.id === source.from_warehouse_id);
-  const toWarehouse = warehouses.find((w) => w.id === source.to_warehouse_id);
+  const fromWarehouse = warehouses.find((w) => w.warehouse_id === source.from_warehouse_id);
+  const toWarehouse = warehouses.find((w) => w.warehouse_id === source.to_warehouse_id);
   const productName = productIdToName(source.product_id);
   const productCode = productIdToCode(source.product_id);
   const quantity = source.quantity ?? 0;
@@ -310,8 +310,8 @@ export function toTransferRecordViewModel(
     id: source.id ?? '',
     productCode,
     productName,
-    fromName: fromWarehouse?.name ?? source.from_warehouse_id ?? 'Unknown',
-    toName: toWarehouse?.name ?? source.to_warehouse_id ?? 'Unknown',
+    fromName: fromWarehouse?.warehouse_name ?? source.from_warehouse_id ?? 'Unknown',
+    toName: toWarehouse?.warehouse_name ?? source.to_warehouse_id ?? 'Unknown',
     quantity: `${quantity.toLocaleString()}L`,
     date: formatDateTime(date),
     dateValue: date.slice(0, 10),

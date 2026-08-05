@@ -60,12 +60,12 @@ export function WarehouseInventoryPage() {
         onSuccess: () => {
           setEditing(null);
           toast.success('Warehouse Updated Successfully', {
-            description: `${req.name} has been updated. The changes are now reflected across your inventory.`,
+            description: `${req.warehouse_name} has been updated. The changes are now reflected across your inventory.`,
           });
         },
         onError: () => {
           toast.error('Update Failed', {
-            description: `${req.name} was not updated due to a connection problem. Try again later.`,
+            description: `${req.warehouse_name} was not updated due to a connection problem. Try again later.`,
           });
         },
       },

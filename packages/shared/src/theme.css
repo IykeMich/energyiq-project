@@ -63,7 +63,7 @@
   --surface-canvas: oklch(1 0 0);
   --surface-card: rgba(0, 0, 0, 0.04);
   --surface-modal: #FFFFFF;
-  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-overlay: rgba(0, 0, 0, 0.65);
 
   /* Border weights — strong = visible separators, subtle = hairlines. */
   --border-strong: rgba(0, 0, 0, 0.25);
@@ -181,7 +181,7 @@ body {
   --surface-canvas: #121212;
   --surface-card: rgba(97, 97, 97, 0.1);
   --surface-modal: #1F1F1F;
-  --surface-overlay: rgba(0, 0, 0, 0.7);
+  --surface-overlay: rgba(0, 0, 0, 0.85);
 
   --border-strong: #9E9E9E;
   --border-subtle: rgba(97, 97, 97, 0.7);
@@ -204,6 +204,32 @@ body {
    still killing the white over-scroll bounce wherever the dark layouts mount. */
 .app-dark-canvas {
   background-color: var(--surface-canvas);
+}
+
+/* Browser autofill (Chrome/Safari/Edge) paints inputs with its own opaque white/yellow
+   background, ignoring our dark input styling. The long transition delay defers that
+   native repaint indefinitely so it never becomes visible, while the inset box-shadow
+   paints over it with a color matching our dark inputs' effective background. */
+.app-dark-canvas input:-webkit-autofill,
+.app-dark-canvas input:-webkit-autofill:hover,
+.app-dark-canvas input:-webkit-autofill:focus,
+.app-dark-canvas input:-webkit-autofill:active,
+.app-dark-canvas input:autofill,
+.app-dark-canvas select:-webkit-autofill,
+.app-dark-canvas select:-webkit-autofill:hover,
+.app-dark-canvas select:-webkit-autofill:focus,
+.app-dark-canvas select:-webkit-autofill:active,
+.app-dark-canvas select:autofill,
+.app-dark-canvas textarea:-webkit-autofill,
+.app-dark-canvas textarea:-webkit-autofill:hover,
+.app-dark-canvas textarea:-webkit-autofill:focus,
+.app-dark-canvas textarea:-webkit-autofill:active,
+.app-dark-canvas textarea:autofill {
+  -webkit-box-shadow: 0 0 0 1000px #1a1a1a inset !important;
+  box-shadow: 0 0 0 1000px #1a1a1a inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Gold active state for sidebar menu buttons — token-driven so tenant overrides via

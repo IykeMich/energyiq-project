@@ -57,8 +57,8 @@ export function StepReview({ draft, onChange }: StepReviewProps) {
     draft.measuringUnit;
 
   const firstAllocation = draft.warehouseAllocations[0];
-  const warehouse = warehousesQuery.data?.items?.find((option) => option.id === firstAllocation?.warehouseId);
-  const warehouseName = warehouse?.name ?? firstAllocation?.warehouseId ?? '';
+  const warehouse = warehousesQuery.data?.items?.find((option) => option.warehouse_id === firstAllocation?.warehouseId);
+  const warehouseName = warehouse?.warehouse_name ?? firstAllocation?.warehouseId ?? '';
   const availableCapacity =
     warehouse?.capacity !== undefined && warehouse?.stock_level_percentage !== undefined
       ? Math.round(warehouse.capacity * (1 - warehouse.stock_level_percentage / 100))

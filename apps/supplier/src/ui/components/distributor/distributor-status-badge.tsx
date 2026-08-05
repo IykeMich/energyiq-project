@@ -2,10 +2,10 @@ import { cn } from '@energyiq/shared';
 import type { DistributorStatus } from '@/ui/pages/distributor/mocks';
 
 const STATUS_STYLE: Record<DistributorStatus, { bg: string; text: string; dot: string; label: string }> = {
-  active:   { bg: 'bg-success/20', text: 'text-success', dot: 'bg-success', label: 'Active' },
-  pending:  { bg: 'bg-warning/20', text: 'text-warning', dot: 'bg-warning', label: 'Pending' },
-  cold:     { bg: 'bg-brand/20',   text: 'text-brand',   dot: 'bg-brand',   label: 'Cold' },
-  inactive: { bg: 'bg-danger/20',  text: 'text-danger',  dot: 'bg-danger',  label: 'Inactive' },
+  active:    { bg: 'bg-success/20', text: 'text-success', dot: 'bg-success', label: 'Active' },
+  pending:   { bg: 'bg-warning/20', text: 'text-warning', dot: 'bg-warning', label: 'Pending' },
+  suspended: { bg: 'bg-brand/20',   text: 'text-brand',   dot: 'bg-brand',   label: 'Suspended' },
+  inactive:  { bg: 'bg-danger/20',  text: 'text-danger',  dot: 'bg-danger',  label: 'Inactive' },
 };
 
 interface DistributorStatusBadgeProps {

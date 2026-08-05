@@ -11,9 +11,12 @@ import type {
 
 import { useAuth } from "../../hooks/use-auth";
 import { toast } from "@energyiq/ui";
+import { RegisterStepper } from "./register-stepper";
 import {
   distributorSchema,
   distributorBusinessProfileSchema,
+  distributorFormDefaultValues,
+  distributorBusinessProfileFormDefaultValues,
   type DistributorFormData,
   type DistributorBusinessProfileFormData,
 } from "../../validation/auth/register";
@@ -108,31 +111,13 @@ export function DistributorForm({
   const accountForm = useForm<DistributorFormData>({
     resolver: zodResolver(distributorSchema),
     mode: "onChange",
-    defaultValues: {
-      full_name: "",
-      email: "",
-      phone: "",
-      password: "",
-      confirm_password: "",
-      agree_terms: false,
-    },
+    defaultValues: distributorFormDefaultValues,
   });
 
   const businessProfileForm = useForm<DistributorBusinessProfileFormData>({
     resolver: zodResolver(distributorBusinessProfileSchema),
     mode: "onChange",
-    defaultValues: {
-      registered_business_name: "",
-      cac_number: "",
-      tin: "",
-      business_address: "",
-      city: "",
-      state: "",
-      country: "",
-      business_phone_number: "",
-      primary_contact_person: "",
-      operational_regions: [],
-    },
+    defaultValues: distributorBusinessProfileFormDefaultValues,
   });
 
   const operationalRegions =
@@ -205,8 +190,24 @@ export function DistributorForm({
     }
   });
 
-  const handleVerifyOtp = async () => {
-    const code = otp.join("");
+  const handleOtpPaste = (pastedDigits: string) => {
+    const nextOtp = Array(otp.length).fill("");
+    pastedDigits.split("").forEach((digit, index) => {
+      nextOtp[index] = digit;
+    });
+    setOtp(nextOtp);
+    setOtpError(false);
+
+    const nextIndex = Math.min(pastedDigits.length, otp.length - 1);
+    document.getElementById(`otp-${nextIndex}`)?.focus();
+
+    if (pastedDigits.length === otp.length) {
+      handleVerifyOtp(pastedDigits);
+    }
+  };
+
+  const handleVerifyOtp = async (otpOverride?: string) => {
+    const code = otpOverride ?? otp.join("");
     if (code.length !== 6) {
       setOtpError(true);
       return;
@@ -266,24 +267,11 @@ export function DistributorForm({
     });
     if (!presign) return null;
 
-    let uploadResponse: Response;
-    if (presign.fields && Object.keys(presign.fields).length > 0) {
-      const formData = new FormData();
-      Object.entries(presign.fields).forEach(([key, value]) =>
-        formData.append(key, value),
-      );
-      formData.append("file", file);
-      uploadResponse = await fetch(presign.upload_url, {
-        method: "POST",
-        body: formData,
-      });
-    } else {
-      uploadResponse = await fetch(presign.upload_url, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type || "application/octet-stream" },
-      });
-    }
+    const uploadResponse = await fetch(presign.upload_url, {
+      method: presign.method,
+      body: file,
+      headers: presign.headers,
+    });
 
     if (!uploadResponse.ok) {
       throw new Error(`Upload failed: ${uploadResponse.statusText}`);
@@ -453,32 +441,11 @@ export function DistributorForm({
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white">
-      {/* Stepper */}
-      <div className="flex justify-between max-w-3xl mx-auto mt-10 mb-12 px-4 relative">
-        <div className="absolute top-2 left-8 right-8 h-0.5 bg-[#333]" />
-
-        {steps.map((step, index) => {
-          const active = currentStep >= index + 1;
-          const done = currentStep > index + 1;
-
-          return (
-            <div key={step} className="flex flex-col items-center z-10 flex-1">
-              <div
-                className={`w-4 h-4 rounded-full border-2 ${
-                  done || active
-                    ? "bg-[#FBC02D] border-[#FBC02D]"
-                    : "border-gray-600 bg-[#121212]"
-                }`}
-              />
-              <span
-                className={`text-[10px] mt-2 ${active ? "text-white" : "text-gray-500"}`}
-              >
-                {step}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <RegisterStepper
+        steps={steps}
+        currentStep={currentStep}
+        className="max-w-3xl mx-auto mt-10 mb-12 px-4"
+      />
 
       <div className="max-w-2xl mx-auto bg-[#161616] p-10 rounded-3xl border border-[#262626]">
         <h2 className="text-xl font-semibold mb-6">{steps[currentStep - 1]}</h2>
@@ -640,6 +607,15 @@ export function DistributorForm({
                   onChange={(event) =>
                     handleOtpChange(event.target.value, index)
                   }
+                  onPaste={(event) => {
+                    event.preventDefault();
+                    const pastedDigits = event.clipboardData
+                      .getData("text")
+                      .replace(/\D/g, "")
+                      .slice(0, otp.length);
+                    if (pastedDigits) handleOtpPaste(pastedDigits);
+                  }}
+                  inputMode="numeric"
                   className={`w-12 h-12 text-center rounded-lg bg-transparent border text-white transition ${
                     otpError ? "border-red-500" : "border-[#404040]"
                   }`}
@@ -660,8 +636,8 @@ export function DistributorForm({
             <button
               type="button"
               className="tap-effect w-full h-12 rounded-full bg-[#FBC02D] text-black font-semibold disabled:opacity-40 hover:bg-[#FBC02D]/90"
-              onClick={handleVerifyOtp}
-              disabled={isLoading}
+              onClick={() => handleVerifyOtp()}
+              disabled={isLoading || !otp.every((digit) => digit.trim().length > 0)}
             >
               {isLoading ? "Verifying..." : "Verify Code"}
             </button>
@@ -875,7 +851,7 @@ export function DistributorForm({
                     }
                   }}
                   placeholder="Select regions you operate in"
-                  className="flex-1 bg-transparent h-10 outline-none text-white text-sm min-w-[140px]"
+                  className="flex-1 bg-transparent h-10 outline-none text-white text-sm min-w-35"
                 />
               </div>
               {businessProfileForm.formState.errors.operational_regions && (

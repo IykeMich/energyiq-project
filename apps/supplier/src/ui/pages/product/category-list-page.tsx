@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { ConfirmDialog } from '@energyiq/ui';
+import { ConfirmDialog, toast } from '@energyiq/ui';
 import type { product } from '@energyiq/domain';
 import {
   useProductCategoriesQuery,
@@ -74,16 +74,47 @@ export function CategoryListPage() {
     if (editing?.id) {
       updateCategory.mutate(
         { id: editing.id, req: data },
-        { onSuccess: () => setEditing(null) },
+        {
+          onSuccess: () => {
+            setEditing(null);
+            toast.success('Category updated', { description: `'${data.name}' has been saved.` });
+          },
+          onError: (error) => {
+            toast.error('Could not update category', {
+              description: (error as Error).message || 'Please try again.',
+            });
+          },
+        },
       );
     } else {
-      createCategory.mutate(data, { onSuccess: () => setAdding(false) });
+      createCategory.mutate(data, {
+        onSuccess: () => {
+          setAdding(false);
+          toast.success('Category created', { description: `'${data.name}' has been added.` });
+        },
+        onError: (error) => {
+          toast.error('Could not create category', {
+            description: (error as Error).message || 'Please try again.',
+          });
+        },
+      });
     }
   };
 
   const handleDeleteConfirmed = () => {
     if (!deleting?.id) return;
-    deleteCategory.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
+    const name = deleting.name;
+    deleteCategory.mutate(deleting.id, {
+      onSuccess: () => {
+        setDeleting(null);
+        toast.success('Category deleted', { description: `'${name}' has been removed.` });
+      },
+      onError: (error) => {
+        toast.error('Could not delete category', {
+          description: (error as Error).message || 'Please try again.',
+        });
+      },
+    });
   };
 
   return (
@@ -135,8 +166,8 @@ export function CategoryListPage() {
             Are you sure you want to delete <strong>'{deleting?.name}'</strong> Category?
           </>
         }
-        confirmLabel="Delete"
-        intent="danger"
+        confirmLabel="Confirm"
+        intent="primary"
         onConfirm={handleDeleteConfirmed}
       />
     </section>

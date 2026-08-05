@@ -49,6 +49,7 @@ export { useAuth } from './hooks/use-auth';
 // Auth forms (shared between supplier + distributor apps)
 export { LoginForm } from './forms/auth/login-form';
 export { RegisterForm } from './forms/auth/register-form';
+export { RegisterStepper } from './forms/auth/register-stepper';
 export { VerifyForm } from './forms/auth/verify-form';
 export { DistributorForm } from './forms/auth/distributor-form';
 export { ForgotPasswordForm } from './forms/auth/forgot-password-form';
@@ -58,5 +59,6 @@ export { AccountTypeSelect } from './forms/auth/account-type-select';
 // Validation schemas
 export * from './validation/auth/login';
 export * from './validation/auth/register';
+export * from './validation/auth/onboarding';
 export * from './validation/auth/verify';
 export * from './validation/auth/reset-password';

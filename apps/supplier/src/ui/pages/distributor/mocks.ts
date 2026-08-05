@@ -1,73 +1,70 @@
+import type { distributor } from '@energyiq/domain';
+
 export type DistributorTier = 'Bronze' | 'Silver' | 'Gold';
-export type DistributorStatus = 'active' | 'pending' | 'cold' | 'inactive';
+export type DistributorStatus = 'active' | 'pending' | 'suspended' | 'inactive';
 
 export interface Distributor {
   id: string;
   name: string;
   tier: DistributorTier;
-  totalOrders: number;
-  totalValueNGN: number;
-  lastOrder: string;
-  location: string;
+  /** Not returned by GET /v1/distributor/list or /read/{id} — render '—' until backend adds it. */
+  totalOrders?: number;
+  /** Not returned by the API — render '—' until backend adds it. */
+  totalValueNGN?: number;
+  /** Not returned by the API — render '—' until backend adds it. */
+  lastOrder?: string;
+  /** Derived from address.city/state when present; '—' otherwise. */
+  location?: string;
   status: DistributorStatus;
+}
+
+const TIER_VALUES: readonly DistributorTier[] = ['Bronze', 'Silver', 'Gold'];
+const STATUS_VALUES: readonly DistributorStatus[] = ['active', 'pending', 'suspended', 'inactive'];
+
+/** Normalizes the API's freeform `tier` string (e.g. "gold") into the UI's display casing, falling back to Bronze for unrecognized values. */
+export function normalizeTier(raw?: string): DistributorTier {
+  const match = TIER_VALUES.find((tier) => tier.toLowerCase() === raw?.toLowerCase());
+  return match ?? 'Bronze';
+}
+
+/** Normalizes the API's freeform `status` string into the UI's known set, falling back to inactive for unrecognized values. */
+export function normalizeStatus(raw?: string): DistributorStatus {
+  const match = STATUS_VALUES.find((status) => status === raw?.toLowerCase());
+  return match ?? 'inactive';
+}
+
+function formatLocation(address?: distributor.DistributorAddress | Record<string, unknown>): string | undefined {
+  if (!address || typeof address !== 'object') return undefined;
+  const city = 'city' in address ? (address.city as string | undefined) : undefined;
+  const state = 'state' in address ? (address.state as string | undefined) : undefined;
+  const parts = [city, state].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+/** Maps a distributor as returned by GET /v1/distributor/list or /read/{id} into the UI's table/detail row shape. */
+export function toDistributorRow(item: distributor.Distributor): Distributor {
+  return {
+    id: item.id ?? '',
+    name: item.name ?? '',
+    tier: normalizeTier(item.tier),
+    status: normalizeStatus(item.status),
+    location: formatLocation(item.address),
+  };
 }
 
 export interface DistributorSummary {
   total: number;
   activeThisMonth: number;
+  /** No backend concept of a "cold" tier/status exists yet — always 0 until product/backend define one. */
   coldTier: number;
   pendingApproval: number;
 }
-
-const sampleNames = [
-  'Stardvile Oil',
-  'PrimeFuel Distributors',
-  'Apex Energy Ltd',
-  'Bluewave Trading',
-  'NorthStar Petroleum',
-  'Zenith Logistics',
-  'GreenLine Distribution',
-];
-
-const sampleLocations = [
-  'Port Harcourt, Rivers',
-  'Ibadan, Oyo',
-  'Lagos Island, Lagos',
-  'Wuse, Abuja',
-  'Awka, Anambra',
-  'Kano, Kano',
-  'Lekki, Lagos',
-];
-
-const sampleDates = [
-  '2 days ago',
-  '12 Mar 2026',
-  '28 Feb 2026',
-  '04 Mar 2026',
-  '17 Feb 2026',
-  '21 Mar 2026',
-  '08 Feb 2026',
-];
-
-const tierByIndex: DistributorTier[] = ['Gold', 'Silver', 'Gold', 'Bronze', 'Silver', 'Gold', 'Bronze'];
-const statusByIndex: DistributorStatus[] = ['active', 'pending', 'active', 'cold', 'active', 'pending', 'inactive'];
-
-export const DISTRIBUTORS_MOCK: Distributor[] = Array.from({ length: 10 }, (_, i) => ({
-  id: `dist-${String(i + 1).padStart(3, '0')}`,
-  name: sampleNames[i % sampleNames.length],
-  tier: tierByIndex[i % tierByIndex.length],
-  totalOrders: 12 + (i % 6) * 3,
-  totalValueNGN: 14_500_000 + (i % 4) * 1_750_000,
-  lastOrder: sampleDates[i % sampleDates.length],
-  location: sampleLocations[i % sampleLocations.length],
-  status: statusByIndex[i % statusByIndex.length],
-}));
 
 export function buildDistributorSummary(rows: Distributor[]): DistributorSummary {
   return {
     total: rows.length,
     activeThisMonth: rows.filter((r) => r.status === 'active').length,
-    coldTier: rows.filter((r) => r.status === 'cold').length,
+    coldTier: 0,
     pendingApproval: rows.filter((r) => r.status === 'pending').length,
   };
 }
@@ -233,14 +230,30 @@ export interface DistributorDetail {
   tierHistory: DistributorTierHistoryItem[];
 }
 
+function formatMonthYear(iso?: string): string | undefined {
+  const date = iso ? new Date(iso) : undefined;
+  if (!date || Number.isNaN(date.getTime())) return undefined;
+  return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date);
+}
+
+/** Coarse Low/Medium/High bucketing of the API's 0-100 `risk_score` — no equivalent label exists on the backend. */
+function riskLabel(score?: number): string | undefined {
+  if (typeof score !== 'number') return undefined;
+  if (score < 30) return 'Low';
+  if (score < 70) return 'Medium';
+  return 'High';
+}
+
 /**
- * Detail payload for a single distributor row. Mock for now — each block below
- * maps to one tab in the details sheet and will be replaced by its own lazily
+ * Detail payload for a single distributor row. `full` (from GET /v1/distributor/read/{id})
+ * supplies the fields it actually has — email, phone, location, owner name, joined date,
+ * risk bucket. Everything else below has no backend source yet and stays mocked; each
+ * block maps to one tab in the details sheet and will be replaced by its own lazily
  * fetched query, so the tabs never load all at once.
  */
-export function buildDistributorDetail(_distributor: Distributor): DistributorDetail {
+export function buildDistributorDetail(_distributor: Distributor, full?: distributor.Distributor): DistributorDetail {
   return {
-    headerJoined: 'Apr 2023',
+    headerJoined: formatMonthYear(full?.activated_at ?? full?.created_at) ?? 'Apr 2023',
 
     // TODO(orval): replace with getDistributorInvite(distributor.id) — pending flow.
     pendingInvite: {
@@ -264,21 +277,28 @@ export function buildDistributorDetail(_distributor: Distributor): DistributorDe
       inviteSent: 'March 18, 2026',
     },
 
-    // TODO(orval): replace with getDistributorKyc(distributor.id).
+    // TODO(orval): replace with getDistributorKyc(distributor.id) — kycScore and
+    // documentUpload have no backend field yet; businessRisk is bucketed from
+    // the real risk_score.
     kyc: {
       kycScore: '82%',
-      businessRisk: 'Low',
+      businessRisk: riskLabel(full?.risk_score) ?? 'Low',
       documentUpload: '82%',
     },
 
-    // TODO(orval): replace with getDistributorOverview(distributor.id).
+    // Email/phone/location/joined come from GET /v1/distributor/read/{id}; contact person
+    // has no backend field yet (owner_name is the account owner, not necessarily the
+    // day-to-day contact) so it stays mocked.
     contact: {
-      email: 'i.okafor@okaforenergy.ng',
-      contact: 'Ifeoma Okereke',
-      phone: '+234 805 119 3347',
-      location: 'Enugu State',
-      joined: 'Jan 2025',
+      email: full?.email ?? 'i.okafor@okaforenergy.ng',
+      contact: full?.owner_name ?? 'Ifeoma Okereke',
+      phone: full?.phone ?? '+234 805 119 3347',
+      location: formatLocation(full?.address) ?? 'Enugu State',
+      joined: formatMonthYear(full?.created_at) ?? 'Jan 2025',
     },
+    // TODO(orval): replace with getDistributorPerformance(distributor.id) — only
+    // businessRisk above is sourced from the real risk_score; the rest has no
+    // backend field yet.
     performance: {
       trustScore: 94,
       paymentDiscipline: '97%',

@@ -60,6 +60,8 @@ export const TAX_TYPE_OPTIONS = ['VAT', 'GST', 'SalesTax', 'Withholding Tax', 'C
 // the live GET /v1/warehouses endpoint (see hooks/use-warehouses.ts,
 // product-warehouse-tab.tsx) — there is no UI-only fallback list for it.
 export const STORAGE_LOCATION_OPTIONS = ['Tank-A1', 'Tank-A2', 'Tank-B1', 'Tank-B2', 'Bay-1', 'Bay-2'] as const;
+export const CREDIT_TERM_OPTIONS = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'Cash on Delivery', 'Advance Payment'] as const;
+export const RETURN_REASON_OPTIONS = ['Damaged Item', 'Wrong Item Received', 'Quality Issues', 'Late Delivery'] as const;
 
 export interface WarehouseAssignTarget {
   id: string;

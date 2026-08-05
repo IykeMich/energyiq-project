@@ -37,6 +37,10 @@ export function DistributorApprovalReview({
 
   const closeSuccess = () => setSuccess((state) => ({ ...state, open: false }));
 
+  // TODO(orval): wire to the real approve/reject distributor endpoint once backend
+  // adds one — no such endpoint exists in energyiq-swagger.json today (only a public
+  // self-activation endpoint the distributor calls on themself, and an untyped generic
+  // maker-checker POST /v1/approval/approve/{id}). This stays local-only until then.
   const handleConfirm = () => {
     if (!pendingAction) return;
     const approved = pendingAction === 'approve';

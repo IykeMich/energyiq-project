@@ -7,7 +7,7 @@ import {
   type EditWarehouseProduct,
   type Warehouse,
 } from '@/ui/pages/inventory/mocks';
-import { Field, SelectField, TextField } from '@/ui/components/product/wizard-fields';
+import { SelectField, TextField } from '@/ui/components/product/wizard-fields';
 import { useEmployeeQuery, useEmployeesQuery } from '@/hooks/use-employees';
 
 type Tab = 'basic' | 'product';
@@ -91,7 +91,7 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
     }));
 
     const payload: warehouse.WarehouseUpdateRequest = {
-      name,
+      warehouse_name: name,
       location,
       manager_id: manager || undefined,
       status: status as warehouse.WarehouseStatus,
@@ -120,18 +120,22 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
 
       {tab === 'basic' ? (
         <div className="flex flex-col gap-5">
-          <Field label="Warehouse Name:">
-              <TextField value={name} onChange={setName} placeholder="Enter warehouse name" />
-            </Field>
-          <Field label="Location:">
-            <TextField value={location} onChange={setLocation} placeholder="Enter location" />
-          </Field>
-          <Field label="Warehouse Manager:">
-            <SelectField value={manager} onChange={setManager} options={managerOptions} placeholder="Select manager" />
-          </Field>
-          <Field label="Status:">
-            <SelectField value={status} onChange={setStatus} options={WAREHOUSE_STATUS_OPTIONS} placeholder="Select status" />
-          </Field>
+          <TextField label="Warehouse Name:" value={name} onChange={setName} placeholder="Enter warehouse name" />
+          <TextField label="Location:" value={location} onChange={setLocation} placeholder="Enter location" />
+          <SelectField
+            label="Warehouse Manager:"
+            value={manager}
+            onChange={setManager}
+            options={managerOptions}
+            placeholder="Select manager"
+          />
+          <SelectField
+            label="Status:"
+            value={status}
+            onChange={setStatus}
+            options={WAREHOUSE_STATUS_OPTIONS}
+            placeholder="Select status"
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-6">
@@ -148,44 +152,39 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Stock Quantity:">
-                  <TextField
-                    value={product.stockQuantity}
-                    onChange={(value) => updateProduct(product.id, { stockQuantity: value })}
-                    placeholder="e.g. 3,000L"
-                  />
-                </Field>
-                <Field label="Price Per Unit (#):">
-                  <TextField
-                    type="number"
-                    value={product.pricePerUnit}
-                    onChange={(value) => updateProduct(product.id, { pricePerUnit: value })}
-                    placeholder="0"
-                  />
-                </Field>
-                <Field label="Max Stock:">
-                  <TextField
-                    type="number"
-                    value={product.maxStock}
-                    onChange={(value) => updateProduct(product.id, { maxStock: value })}
-                    placeholder="e.g. 5000"
-                  />
-                </Field>
-                <Field label="Reorder Point:">
-                  <TextField
-                    type="number"
-                    value={product.reorderPoint}
-                    onChange={(value) => updateProduct(product.id, { reorderPoint: value })}
-                    placeholder="e.g. 500"
-                  />
-                </Field>
-                <Field label="Storage Location:">
-                  <TextField
-                    value={product.storageLocation}
-                    onChange={(value) => updateProduct(product.id, { storageLocation: value })}
-                    placeholder="e.g. Bay A-3"
-                  />
-                </Field>
+                <TextField
+                  label="Stock Quantity:"
+                  value={product.stockQuantity}
+                  onChange={(value) => updateProduct(product.id, { stockQuantity: value })}
+                  placeholder="e.g. 3,000L"
+                />
+                <TextField
+                  label="Price Per Unit (#):"
+                  type="number"
+                  value={product.pricePerUnit}
+                  onChange={(value) => updateProduct(product.id, { pricePerUnit: value })}
+                  placeholder="0"
+                />
+                <TextField
+                  label="Max Stock:"
+                  type="number"
+                  value={product.maxStock}
+                  onChange={(value) => updateProduct(product.id, { maxStock: value })}
+                  placeholder="e.g. 5000"
+                />
+                <TextField
+                  label="Reorder Point:"
+                  type="number"
+                  value={product.reorderPoint}
+                  onChange={(value) => updateProduct(product.id, { reorderPoint: value })}
+                  placeholder="e.g. 500"
+                />
+                <TextField
+                  label="Storage Location:"
+                  value={product.storageLocation}
+                  onChange={(value) => updateProduct(product.id, { storageLocation: value })}
+                  placeholder="e.g. Bay A-3"
+                />
               </div>
             </div>
           ))}

@@ -52,6 +52,8 @@ export function buildSupplierSummary(overrides: Partial<SupplierSummary> = {}): 
     company_name: 'MegaEnergy Ltd',
     status: 'active',
     kyc_status: 'pending',
+    name: 'Emily Franklin',
+    email: 'emily@megaenergy.com',
     ...overrides,
   };
 }

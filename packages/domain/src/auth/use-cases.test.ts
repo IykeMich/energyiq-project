@@ -142,6 +142,8 @@ describe("AuthUseCases", () => {
           company_name: "MegaEnergy",
           status: "active",
           kyc_status: "pending",
+          name: "Emily Franklin",
+          email: "emily@mega.example",
         },
       };
       vi.mocked(mockApi.complete).mockResolvedValue(result);

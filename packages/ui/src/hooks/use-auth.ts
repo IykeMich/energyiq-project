@@ -41,6 +41,7 @@ import type {
   RegistrationDocumentRequest,
   CreateInvitationRequest,
 } from "@energyiq/domain/auth";
+import type { shared } from "@energyiq/domain";
 
 // ════════════════════════════════════════════════════════════════
 // useAuth — hook that bridges React components to Redux auth slice.
@@ -54,7 +55,16 @@ export function useAuth() {
   const handleInitiate = useCallback(
     async (req: InitiateRequest) => {
       const result = await dispatch(initiateThunk(req));
-      return result.meta.requestStatus === "fulfilled";
+      // isFieldValidationError lets the caller skip its generic failure
+      // toast when useServerValidationErrors is already handling this
+      // rejection (setError + its own toast) via state.fieldErrors.
+      const isFieldValidationError =
+        initiateThunk.rejected.match(result) &&
+        Boolean((result.payload as shared.ErrorPayload | undefined)?.fields?.length);
+      return {
+        success: result.meta.requestStatus === "fulfilled",
+        isFieldValidationError,
+      };
     },
     [dispatch],
   );
@@ -269,6 +279,7 @@ export function useAuth() {
     isAuthenticated: auth.isAuthenticated,
     isLoading: auth.isLoading,
     error: auth.error,
+    fieldErrors: auth.fieldErrors,
     registrationToken: auth.registrationToken,
     accountNumber: auth.accountNumber,
     slug: auth.slug,

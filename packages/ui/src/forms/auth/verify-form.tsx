@@ -4,7 +4,11 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@energyiq/shared';
 import { useAuth } from '../../hooks/use-auth';
-import { verifySchema, type VerifyFormData } from '../../validation/auth/verify';
+import {
+  verifySchema,
+  verifyFormDefaultValues,
+  type VerifyFormData,
+} from '../../validation/auth/verify';
 
 const OTP_LENGTH = 6;
 const cellClass =
@@ -100,7 +104,7 @@ export function VerifyForm() {
     formState: { errors },
   } = useForm<VerifyFormData>({
     resolver: zodResolver(verifySchema),
-    defaultValues: { otp: '' },
+    defaultValues: verifyFormDefaultValues,
   });
 
   const otpValue = watch('otp');

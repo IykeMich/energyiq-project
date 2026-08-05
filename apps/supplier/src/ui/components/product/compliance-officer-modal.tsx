@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '@energyiq/ui';
 import { COMPLIANCE_OFFICERS } from '@/ui/pages/product/mocks';
-import { Field, SelectField } from './wizard-fields';
+import { SelectField, TextAreaField } from './wizard-fields';
 
 interface ComplianceOfficerModalProps {
   open: boolean;
@@ -30,25 +30,24 @@ export function ComplianceOfficerModal({
     <Modal open={open} onOpenChange={onOpenChange} title="Assign To Compliance Team" size="lg">
       <p className="text-sm text-foreground mb-5">Select an officer for the review product</p>
 
-      <Field label="Select Officer:" required>
-        <SelectField
-          value={officer}
-          onChange={setOfficer}
-          placeholder="Choose an officer"
-          options={COMPLIANCE_OFFICERS}
-        />
-      </Field>
+      <SelectField
+        label="Select Officer:"
+        required
+        value={officer}
+        onChange={setOfficer}
+        placeholder="Choose an officer"
+        options={COMPLIANCE_OFFICERS}
+      />
 
       <div className="mt-4">
-        <Field label="Note:">
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Review this details and get back to me."
-            rows={5}
-            className="bg-surface-card border border-border-strong rounded-[24px] p-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand resize-none w-full"
-          />
-        </Field>
+        <TextAreaField
+          label="Note:"
+          value={note}
+          onChange={setNote}
+          placeholder="Review this details and get back to me."
+          rows={5}
+          className="bg-surface-card w-full"
+        />
       </div>
 
       <div className="flex justify-end mt-6">

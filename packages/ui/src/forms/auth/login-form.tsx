@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Eye, EyeOff } from "lucide-react";
@@ -7,11 +7,17 @@ import { cn } from "@energyiq/shared";
 import { useAuth } from "../../hooks/use-auth";
 import { store } from "@energyiq/store";
 import { toast } from "@energyiq/ui";
-import { loginSchema, type LoginFormData } from "../../validation/auth/login";
+import {
+  loginSchema,
+  loginFormDefaultValues,
+  type LoginFormData,
+} from "../../validation/auth/login";
 import type { LoginResult } from "@energyiq/domain/auth";
+import { AuthInput } from "./auth-input";
+
 
 const inputBaseClass =
-  "w-full h-[56px] rounded-full bg-[#FFFFFF1A] px-6 text-white placeholder:text-gray-500 " +
+  "w-full h-[56px] rounded-full bg-[#6161611A] px-6 text-white placeholder:text-gray-500 " +
   "focus:outline-none focus:ring-2 focus:ring-[#FBC02D]/40 transition-colors";
 
 const OTP_LENGTH = 6;
@@ -26,6 +32,7 @@ export function LoginForm() {
     error,
     clearError,
   } = useAuth();
+  const {pathname} = useLocation();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showMfa, setShowMfa] = useState(false);
@@ -43,10 +50,13 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", mfaCode: "", rememberMe: true },
+    defaultValues: loginFormDefaultValues,
   });
 
   const rememberMe = watch("rememberMe");
+  const email = watch("email");
+  const password = watch("password");
+  const isCredentialsFilled = Boolean(email?.trim()) && Boolean(password?.trim());
 
   const handleOtpChange = (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return;
@@ -220,7 +230,7 @@ export function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="w-full flex flex-col gap-6"
+      className="w-full flex flex-col gap-6 px-2"
     >
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
@@ -229,39 +239,27 @@ export function LoginForm() {
       )}
 
       {/* Email */}
-      <div className="flex flex-col gap-2">
-        <label htmlFor="email" className="text-sm font-normal text-white">
-          Work Email Address
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          {...register("email")}
-          className={cn(inputBaseClass, errors.email && "ring-2 ring-red-500")}
-        />
-        {errors.email && (
-          <p className="text-red-500 text-xs ml-6">{errors.email.message}</p>
-        )}
-      </div>
+      <AuthInput
+        label="Email Address"
+        id="email"
+        type="email"
+        autoComplete="email"
+        {...register("email")}
+        error={errors.email}
+        className={cn(inputBaseClass, errors.email && "ring-2 ring-red-500")}
+        placeholder="e.g: VtZlT@example.com"
+      />
 
       {/* Password */}
-      <div className="flex flex-col gap-2">
-        <label htmlFor="password" className="text-sm font-normal text-white">
-          Password
-        </label>
-        <div className="relative">
-          <input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            {...register("password")}
-            className={cn(
-              inputBaseClass,
-              "pr-14",
-              errors.password && "ring-2 ring-red-500",
-            )}
-          />
+      <AuthInput
+        label="Password"
+        id="password"
+        type={showPassword ? "text" : "password"}
+        autoComplete="current-password"
+        {...register("password")}
+        error={errors.password}
+        className={cn(inputBaseClass, errors.password && "ring-2 ring-red-500")}
+        endAdornment={
           <button
             type="button"
             aria-label={showPassword ? "Hide password" : "Show password"}
@@ -274,11 +272,8 @@ export function LoginForm() {
               <EyeOff className="size-5" />
             )}
           </button>
-        </div>
-        {errors.password && (
-          <p className="text-red-500 text-xs ml-6">{errors.password.message}</p>
-        )}
-      </div>
+        }
+      />
 
       {/* MFA Code */}
       {(showMfa || isMfaError) && (
@@ -318,7 +313,7 @@ export function LoginForm() {
       )}
 
       {/* Stay signed in / Forgot password */}
-      <div className="flex items-center justify-between flex-wrap gap-3 px-2">
+      <div className="flex items-center justify-between flex-wrap gap-3 px-2 mx-2">
         <label
           htmlFor="rememberMe"
           className="inline-flex items-center gap-2 cursor-pointer select-none"
@@ -328,7 +323,7 @@ export function LoginForm() {
               id="rememberMe"
               type="checkbox"
               {...register("rememberMe")}
-              className="peer appearance-none w-4 h-4 rounded-lg bg-[#FBC02D] cursor-pointer"
+              className="peer appearance-none w-4 h-4 rounded-xs border border-[#FBC02D] checked:bg-[#FBC02D] cursor-pointer"
             />
             {rememberMe && (
               <Check
@@ -351,22 +346,25 @@ export function LoginForm() {
       {/* Submit */}
       <button
         type="submit"
-        disabled={isLoading}
-        className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        disabled={isLoading || !isCredentialsFilled}
+        className="tap-effect w-full h-14 rounded-full bg-[#FBC02D] hover:bg-[#FBC02D]/90 text-[#121212] text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-[#FBC02D33]"
       >
-        {isLoading ? "Signing in..." : "Sign In"}
+        {isLoading ? "Signing in..." : "Log In"}
       </button>
 
       {/* Sign up link */}
-      <p className="text-center text-sm text-white">
-        Don&apos;t have an account?{" "}
-        <Link
-          to="/register"
-          className="text-[#FBC02D] font-medium hover:underline"
-        >
-          Sign Up
-        </Link>
-      </p>
+      {/* ToDo: Do not show this link if it is a distributor user, that is, if the pathname is `/distributor/register` */}
+      {pathname !== "/distributor/login" && (
+        <p className="text-center text-sm text-white">
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/register"
+            className="text-[#FBC02D] font-medium hover:underline"
+          >
+            Sign Up
+          </Link>
+        </p>
+      )}
     </form>
   );
 }

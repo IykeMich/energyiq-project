@@ -1,6 +1,15 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { auth } from "@energyiq/domain";
+import {
+  createSlice,
+  createAsyncThunk,
+  isPending,
+  isFulfilled,
+  isRejected,
+} from "@reduxjs/toolkit";
+import type { auth, shared } from "@energyiq/domain";
+import { shared as sharedNS } from "@energyiq/domain";
 import { authUseCases } from "../config";
+
+const { toErrorPayload } = sharedNS;
 
 // ════════════════════════════════════════════════════════════════
 // State
@@ -12,6 +21,12 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  // Per-field validation messages from the last rejected thunk (see
+  // shared.ErrorPayload) — null unless the server returned EIQ-2000
+  // with a `data.errors` array. Forms map these onto their own fields
+  // via useServerValidationErrors so the affected inputs show the
+  // server's message, not just the generic banner/toast.
+  fieldErrors: shared.ErrorFieldMessage[] | null;
   registrationToken: string | null;
   accountNumber: string | null;
   slug: string | null;
@@ -30,6 +45,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  fieldErrors: null,
   registrationToken: null,
   accountNumber: null,
   slug: null,
@@ -52,7 +68,7 @@ export const initiate = createAsyncThunk(
     try {
       return await authUseCases().initiate(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -70,7 +86,7 @@ export const complete = createAsyncThunk(
         otp_code: otpCode,
       });
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -81,7 +97,7 @@ export const login = createAsyncThunk(
     try {
       return await authUseCases().login(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -96,7 +112,7 @@ export const resendOtp = createAsyncThunk(
     try {
       return await authUseCases().resendOtp(token);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -107,7 +123,7 @@ export const createSupplierOnboardingDocument = createAsyncThunk(
     try {
       return await authUseCases().createOnboardingDocument(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -118,7 +134,7 @@ export const listSupplierOnboardingDocuments = createAsyncThunk(
     try {
       return await authUseCases().listOnboardingDocuments();
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -130,7 +146,7 @@ export const deleteSupplierOnboardingDocument = createAsyncThunk(
       await authUseCases().deleteOnboardingDocument(id);
       return id;
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -141,7 +157,7 @@ export const presignRegistrationDocument = createAsyncThunk(
     try {
       return await authUseCases().presignRegistrationDocument(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -152,7 +168,7 @@ export const createRegistrationDocument = createAsyncThunk(
     try {
       return await authUseCases().createRegistrationDocument(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -163,7 +179,7 @@ export const resetPassword = createAsyncThunk(
     try {
       await authUseCases().resetPassword(email);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -174,7 +190,7 @@ export const resetPasswordVerify = createAsyncThunk(
     try {
       await authUseCases().resetPasswordVerify(token);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -185,7 +201,7 @@ export const resetPasswordConfirm = createAsyncThunk(
     try {
       await authUseCases().resetPasswordConfirm(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -198,7 +214,7 @@ export const distributorRegister = createAsyncThunk(
     try {
       return await authUseCases().distributorRegister(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -209,7 +225,7 @@ export const distributorVerifyOtp = createAsyncThunk(
     try {
       return await authUseCases().distributorVerifyOtp(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -220,7 +236,7 @@ export const saveDistributorBusinessProfile = createAsyncThunk(
     try {
       return await authUseCases().saveDistributorBusinessProfile(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -231,7 +247,7 @@ export const getDistributorOnboarding = createAsyncThunk(
     try {
       return await authUseCases().getDistributorOnboarding();
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -242,7 +258,7 @@ export const listDocumentTypes = createAsyncThunk(
     try {
       return await authUseCases().listDocumentTypes();
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -253,7 +269,7 @@ export const presignDistributorDocument = createAsyncThunk(
     try {
       return await authUseCases().presignDistributorDocument(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -267,7 +283,7 @@ export const createDistributorOnboardingDocument = createAsyncThunk(
     try {
       return await authUseCases().createDistributorOnboardingDocument(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -278,7 +294,7 @@ export const listDistributorOnboardingDocuments = createAsyncThunk(
     try {
       return await authUseCases().listDistributorOnboardingDocuments();
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -289,7 +305,7 @@ export const deleteDistributorOnboardingDocument = createAsyncThunk(
     try {
       await authUseCases().deleteDistributorOnboardingDocument(id);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -300,7 +316,7 @@ export const submitDistributorOnboarding = createAsyncThunk(
     try {
       return await authUseCases().submitDistributorOnboarding();
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -311,7 +327,7 @@ export const activateDistributor = createAsyncThunk(
     try {
       return await authUseCases().activateDistributor(id);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -335,7 +351,7 @@ export const createInvitation = createAsyncThunk(
     try {
       return await authUseCases().createInvitation(req);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -346,7 +362,7 @@ export const verifyInvitation = createAsyncThunk(
     try {
       return await authUseCases().verifyInvitation(token);
     } catch (err) {
-      return rejectWithValue((err as Error).message);
+      return rejectWithValue(toErrorPayload(err));
     }
   },
 );
@@ -382,6 +398,7 @@ export const authSlice = createSlice({
     },
     clearError(state) {
       state.error = null;
+      state.fieldErrors = null;
     },
     hydrate(state) {
       const s = authUseCases().getState();
@@ -406,7 +423,7 @@ export const authSlice = createSlice({
       })
       .addCase(initiate.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -422,8 +439,8 @@ export const authSlice = createSlice({
         state.nextAction = "dashboard";
         state.user = {
           id: action.payload.supplier.id,
-          name: "",
-          email: "",
+          name: action.payload.supplier.name,
+          email: action.payload.supplier.email,
           role: "owner",
           entity_type: "supplier",
           entity_id: action.payload.supplier.id,
@@ -434,7 +451,7 @@ export const authSlice = createSlice({
       })
       .addCase(complete.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -448,7 +465,7 @@ export const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -461,7 +478,7 @@ export const authSlice = createSlice({
       })
       .addCase(resendOtp.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -474,7 +491,7 @@ export const authSlice = createSlice({
       })
       .addCase(resetPassword.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -487,7 +504,7 @@ export const authSlice = createSlice({
       })
       .addCase(resetPasswordVerify.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -500,7 +517,7 @@ export const authSlice = createSlice({
       })
       .addCase(resetPasswordConfirm.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -518,7 +535,7 @@ export const authSlice = createSlice({
       })
       .addCase(distributorRegister.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -535,7 +552,7 @@ export const authSlice = createSlice({
       })
       .addCase(distributorVerifyOtp.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -549,7 +566,7 @@ export const authSlice = createSlice({
       })
       .addCase(saveDistributorBusinessProfile.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -562,7 +579,7 @@ export const authSlice = createSlice({
       })
       .addCase(getDistributorOnboarding.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -576,7 +593,7 @@ export const authSlice = createSlice({
       })
       .addCase(listDocumentTypes.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -589,7 +606,7 @@ export const authSlice = createSlice({
       })
       .addCase(presignDistributorDocument.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -604,7 +621,7 @@ export const authSlice = createSlice({
         createDistributorOnboardingDocument.rejected,
         (state, action) => {
           state.isLoading = false;
-          state.error = action.payload as string;
+          state.error = (action.payload as shared.ErrorPayload).message;
         },
       );
 
@@ -618,7 +635,7 @@ export const authSlice = createSlice({
       })
       .addCase(listDistributorOnboardingDocuments.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -633,7 +650,7 @@ export const authSlice = createSlice({
         deleteDistributorOnboardingDocument.rejected,
         (state, action) => {
           state.isLoading = false;
-          state.error = action.payload as string;
+          state.error = (action.payload as shared.ErrorPayload).message;
         },
       );
 
@@ -649,7 +666,7 @@ export const authSlice = createSlice({
       })
       .addCase(submitDistributorOnboarding.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -663,7 +680,7 @@ export const authSlice = createSlice({
       })
       .addCase(activateDistributor.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -676,7 +693,7 @@ export const authSlice = createSlice({
       })
       .addCase(createInvitation.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
       });
 
     builder
@@ -690,7 +707,24 @@ export const authSlice = createSlice({
       })
       .addCase(verifyInvitation.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = (action.payload as shared.ErrorPayload).message;
+      });
+
+    // Uniform per-field validation state for every thunk in this slice —
+    // set from the payload on rejection, cleared on any new attempt/success.
+    builder
+      .addMatcher(isRejected, (state, action) => {
+        if (!action.type.startsWith("auth/")) return;
+        state.fieldErrors =
+          (action.payload as shared.ErrorPayload | undefined)?.fields ?? null;
+      })
+      .addMatcher(isPending, (state, action) => {
+        if (!action.type.startsWith("auth/")) return;
+        state.fieldErrors = null;
+      })
+      .addMatcher(isFulfilled, (state, action) => {
+        if (!action.type.startsWith("auth/")) return;
+        state.fieldErrors = null;
       });
   },
 });

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '@energyiq/ui';
 import type { product } from '@energyiq/domain';
-import { Field, TextField, ToggleSwitch } from './wizard-fields';
+import { FormActionButton, TextField, ToggleSwitch } from './wizard-fields';
 
 interface CategoryFormModalProps {
   open: boolean;
@@ -33,45 +33,42 @@ export function CategoryFormModal({ open, onOpenChange, initial, onSave, saving 
       onOpenChange={onOpenChange}
       title={initial ? `Edit ${initial.name}` : 'Add Category'}
       size="md"
+      className="bg-[#121212]"
     >
       <div className="flex flex-col gap-5">
-        <Field label="Category">
-          <TextField
-            value={form.name}
-            onChange={(v) => setForm((p) => ({ ...p, name: v }))}
-            placeholder="e.g. Fuel"
-          />
-        </Field>
-        <Field label="No of Products">
-          <TextField
-            value={''}
-            onChange={(v) => setForm((p) => ({ ...p, noOfProducts: v }))}
-            placeholder="e.g. 10"
-          />
-        </Field>
-        <Field label="Description:">
-          <TextField
-            value={form.description ?? ''}
-            onChange={(v) => setForm((p) => ({ ...p, description: v }))}
-            placeholder="Short summary"
-          />
-        </Field>
-        <Field label="Status:">
-          <ToggleSwitch
-            checked={form.status === 'active'}
-            onChange={(next) => setForm((p) => ({ ...p, status: next ? 'active' : 'inactive' }))}
-          />
-        </Field>
+        <TextField
+          label="Category:"
+          value={form.name}
+          onChange={(v) => setForm((p) => ({ ...p, name: v }))}
+          placeholder="e.g. Fuel"
+        />
+        <TextField
+          label="No of Products"
+          value={''}
+          onChange={(v) => setForm((p) => ({ ...p, noOfProducts: v }))}
+          placeholder="e.g. 10"
+          disabled
+        />
+        <TextField
+          label="Description:"
+          value={form.description ?? ''}
+          onChange={(v) => setForm((p) => ({ ...p, description: v }))}
+          placeholder="Short summary"
+        />
+        <ToggleSwitch
+          label="Status:"
+          checked={form.status === 'active'}
+          onChange={(next) => setForm((p) => ({ ...p, status: next ? 'active' : 'inactive' }))}
+          className="border-0! outline-0! ring-0! focus:ring-0! focus:outline-0!"
+        />
 
-        <div className="flex justify-end mt-2">
-          <button
-            type="button"
-            disabled={!canSave || saving}
-            onClick={() => onSave(form)}
-            className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : initial ? 'Save Changes' : 'Add'}
-          </button>
+        <div className="flex justify-end gap-3 mt-2">
+          <FormActionButton variant="cancel" onClick={() => onOpenChange(false)}>
+            Cancel
+          </FormActionButton>
+          <FormActionButton variant="forward" disabled={!canSave || saving} onClick={() => onSave(form)}>
+            {saving ? 'Saving...' : initial ? 'Save Changes' : 'Add Category'}
+          </FormActionButton>
         </div>
       </div>
     </Modal>

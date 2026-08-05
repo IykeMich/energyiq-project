@@ -5,3 +5,7 @@ export const verifySchema = z.object({
 });
 
 export type VerifyFormData = z.infer<typeof verifySchema>;
+
+export const verifyFormDefaultValues: VerifyFormData = {
+  otp: '',
+};

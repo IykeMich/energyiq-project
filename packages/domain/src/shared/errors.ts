@@ -11,10 +11,15 @@ export class DomainError extends Error {
   }
 }
 
-export class ValidationError extends DomainError {
-  fields: Array<{ field: string; message: string }>;
+export interface ErrorFieldMessage {
+  field: string;
+  message: string;
+}
 
-  constructor(message: string, fields: Array<{ field: string; message: string }>) {
+export class ValidationError extends DomainError {
+  fields: ErrorFieldMessage[];
+
+  constructor(message: string, fields: ErrorFieldMessage[]) {
     super('EIQ-2000', message, fields);
     this.name = 'ValidationError';
     this.fields = fields;
@@ -33,4 +38,24 @@ export class NetworkError extends DomainError {
     super('NETWORK', 'Unable to connect. Please check your internet connection.');
     this.name = 'NetworkError';
   }
+}
+
+// ── Thunk error payload ────────────────────────────────────────────
+// The one shape every Redux thunk's rejectWithValue(...) carries, so
+// every slice surfaces both the display message and (when present)
+// per-field validation errors the same way.
+
+export interface ErrorPayload {
+  message: string;
+  fields: ErrorFieldMessage[] | null;
+}
+
+export function toErrorPayload(err: unknown): ErrorPayload {
+  if (err instanceof ValidationError) {
+    return { message: err.message, fields: err.fields };
+  }
+  if (err instanceof Error) {
+    return { message: err.message, fields: null };
+  }
+  return { message: 'An unexpected error occurred', fields: null };
 }

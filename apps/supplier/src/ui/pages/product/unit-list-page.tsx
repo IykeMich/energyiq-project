@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { ConfirmDialog } from '@energyiq/ui';
+import { ConfirmDialog, toast } from '@energyiq/ui';
 import type { product } from '@energyiq/domain';
 import {
   useProductUnitsQuery,
@@ -60,15 +60,49 @@ export function UnitListPage() {
 
   const handleSave = (data: product.ProductUnitUpsertRequest) => {
     if (editing?.id) {
-      updateUnit.mutate({ id: editing.id, req: data }, { onSuccess: () => setEditing(null) });
+      updateUnit.mutate(
+        { id: editing.id, req: data },
+        {
+          onSuccess: () => {
+            setEditing(null);
+            toast.success('Unit updated', { description: `'${data.unit_name}' has been saved.` });
+          },
+          onError: (error) => {
+            toast.error('Could not update unit', {
+              description: (error as Error).message || 'Please try again.',
+            });
+          },
+        },
+      );
     } else {
-      createUnit.mutate(data, { onSuccess: () => setAdding(false) });
+      createUnit.mutate(data, {
+        onSuccess: () => {
+          setAdding(false);
+          toast.success('Unit created', { description: `'${data.unit_name}' has been added.` });
+        },
+        onError: (error) => {
+          toast.error('Could not create unit', {
+            description: (error as Error).message || 'Please try again.',
+          });
+        },
+      });
     }
   };
 
   const handleDeleteConfirmed = () => {
     if (!deleting?.id) return;
-    deleteUnit.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
+    const name = deleting.unit_name;
+    deleteUnit.mutate(deleting.id, {
+      onSuccess: () => {
+        setDeleting(null);
+        toast.success('Unit deleted', { description: `'${name}' has been removed.` });
+      },
+      onError: (error) => {
+        toast.error('Could not delete unit', {
+          description: (error as Error).message || 'Please try again.',
+        });
+      },
+    });
   };
 
   return (
@@ -120,7 +154,7 @@ export function UnitListPage() {
             Are you sure you want to delete <strong>'{deleting?.unit_name}'</strong> Unit?
           </>
         }
-        confirmLabel="Delete"
+        confirmLabel="Delete Unit"
         intent="danger"
         onConfirm={handleDeleteConfirmed}
       />

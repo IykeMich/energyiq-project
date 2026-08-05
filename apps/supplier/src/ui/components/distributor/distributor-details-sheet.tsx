@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Sheet, SheetContent } from '@energyiq/ui';
+import { useDistributorQuery } from '@/hooks/use-distributor';
 import { buildDistributorDetail, type Distributor } from '@/ui/pages/distributor/mocks';
 import { DistributorDetailsHeader } from './distributor-details-header';
 import {
@@ -59,9 +60,11 @@ interface DistributorDetailsBodyProps {
 
 /** Inner content, keyed by distributor id so tab/revoke state resets per selection. */
 function DistributorDetailsBody({ distributor, onClose }: DistributorDetailsBodyProps) {
+  const fullQuery = useDistributorQuery(distributor.id);
+
   // TODO(orval): each tab below fetches its own query (enabled when active) so the
   // sheet never loads every nested resource at once.
-  const detail = buildDistributorDetail(distributor);
+  const detail = buildDistributorDetail(distributor, fullQuery.data);
   const isActive = distributor.status === 'active';
   const [activeTab, setActiveTab] = useState<DistributorDetailTab>('invite');
 

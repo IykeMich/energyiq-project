@@ -48,6 +48,8 @@ interface DefaultTableProps<RowData extends object> {
   header?: ReactNode;
   /** Extra classes for the card wrapping `header` + the table, excluding pagination. */
   cardClassName?: string;
+  /** Noun used in the pagination footer, e.g. "Showing 1 to 10 of 20 {entityLabel}". Defaults to "Entries". */
+  entityLabel?: string;
 }
 
 const ALIGNMENT_CLASS: Record<ColumnAlignment, string> = {
@@ -94,6 +96,7 @@ export function DefaultTable<RowData extends object>({
   className,
   header,
   cardClassName = 'bg-surface-card rounded-[18px] p-6 px-6!',
+  entityLabel = 'Entries',
 }: DefaultTableProps<RowData>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [sort, setSort] = useState<SortState<RowData> | null>(null);
@@ -262,7 +265,7 @@ export function DefaultTable<RowData extends object>({
         <div className="flex flex-col items-center justify-between gap-4 px-1 sm:flex-row">
           <p className="text-sm font-medium text-[#FAFAFA]">
             Showing {startIndex + 1} to {Math.min(endIndex, sortedData.length)} of{' '}
-            {sortedData.length} Entries
+            {sortedData.length} {entityLabel}
           </p>
 
           <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '@energyiq/ui';
-import { Field, TextField, FormActionButton } from '@/ui/components/product/wizard-fields';
+import { TextField, FormActionButton } from '@/ui/components/product/wizard-fields';
 
 export interface DocumentCategoryModalTarget {
   id?: string;
@@ -41,9 +41,7 @@ export function KycDocumentCategoryModal({
       size="sm"
     >
       <div className="flex flex-col gap-6">
-        <Field label="Category Name:" required>
-          <TextField value={name} onChange={setName} placeholder="e.g. Legal, Financial, Identity" />
-        </Field>
+        <TextField label="Category Name:" required value={name} onChange={setName} placeholder="e.g. Legal, Financial, Identity" />
 
         <div className="flex items-center justify-end gap-3">
           <FormActionButton variant="cancel" onClick={() => onOpenChange(false)}>

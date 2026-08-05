@@ -1,46 +1,5 @@
 import { z } from "zod";
 
-export const registerSchema = z
-  .object({
-    company_name: z.string().min(2, "Company name is required"),
-
-    company_email: z
-      .string()
-      .email("Invalid email")
-      .optional()
-      .or(z.literal("")),
-
-    business_type: z.string().min(1, "Business type is required"),
-
-    registration_number: z.string().min(1, "Registration number is required"),
-
-    first_name: z.string().min(1, "First name is required"),
-
-    last_name: z.string().min(1, "Last name is required"),
-
-    account_email: z.string().email("Invalid email address"),
-
-    admin_phone: z.string().min(7, "Phone number is required"),
-
-    password: z.string().min(12, "Password must be at least 12 characters"),
-
-    confirm_password: z.string().min(1, "Confirm password is required"),
-
-    accepted_terms: z.boolean().refine((value) => value === true, {
-      message: "You must accept the terms and privacy policy",
-    }),
-
-    accepted_privacy_policy: z.boolean().refine((value) => value === true, {
-      message: "You must accept the privacy policy",
-    }),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: "Passwords do not match",
-    path: ["confirm_password"],
-  });
-
-export type RegisterFormData = z.infer<typeof registerSchema>;
-
 export const distributorSchema = z
   .object({
     full_name: z.string().min(2, "Full name is required"),
@@ -68,6 +27,15 @@ export const distributorSchema = z
 
 export type DistributorFormData = z.infer<typeof distributorSchema>;
 
+export const distributorFormDefaultValues: DistributorFormData = {
+  full_name: "",
+  email: "",
+  phone: "",
+  password: "",
+  confirm_password: "",
+  agree_terms: false,
+};
+
 export const distributorBusinessProfileSchema = z.object({
   registered_business_name: z.string().min(2, "Business name is required"),
   cac_number: z.string().min(1, "CAC number is required"),
@@ -88,3 +56,16 @@ export const distributorBusinessProfileSchema = z.object({
 export type DistributorBusinessProfileFormData = z.infer<
   typeof distributorBusinessProfileSchema
 >;
+
+export const distributorBusinessProfileFormDefaultValues: DistributorBusinessProfileFormData = {
+  registered_business_name: "",
+  cac_number: "",
+  tin: "",
+  business_address: "",
+  city: "",
+  state: "",
+  country: "",
+  business_phone_number: "",
+  primary_contact_person: "",
+  operational_regions: [],
+};
