@@ -1,21 +1,21 @@
-import { SlidersHorizontal } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@energyiq/ui';
+import { DropdownMenu, DropdownMenuTrigger } from '@energyiq/ui';
 import type {
   KycDocumentFilter,
   KycDocumentFilterSelection,
 } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import {
+  FilterBarContainer,
+  FilterMenuContent,
+  FilterMenuItem,
+  FilterTrigger,
+} from '@/ui/components/table/table-filter-bar';
 
 interface KycDocumentsFilterChipProps extends KycDocumentFilter {
   selected: string | null;
   onSelect: (value: string | null) => void;
 }
 
-/** A single pill-style filter dropdown. Shows its category label until an option is picked. */
+/** A single filter dropdown. Shows its category label until an option is picked. */
 function KycDocumentsFilterChip({
   label,
   options,
@@ -26,26 +26,20 @@ function KycDocumentsFilterChip({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="tap-effect inline-flex items-center gap-2 rounded-full border border-[#27272A] bg-[#FFFFFF0A] px-4 py-1.5 text-xs font-medium text-gray-200"
-        >
-          {selectedLabel ?? label}
-          <span className="h-1.5 w-1.5 rounded-full bg-[#FBC02D]" aria-hidden="true" />
-        </button>
+        <FilterTrigger label={selectedLabel ?? label} isActive={selected !== null} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[180px]">
+      <FilterMenuContent>
         {options.map((option) => (
-          <DropdownMenuItem
+          <FilterMenuItem
             key={option.value}
+            isSelected={option.value === selected}
             // Re-selecting the active option clears the filter.
-            onSelect={() => onSelect(option.value === selected ? null : option.value)}
-            className={option.value === selected ? 'text-[#FBC02D]' : undefined}
+            onClick={() => onSelect(option.value === selected ? null : option.value)}
           >
             {option.label}
-          </DropdownMenuItem>
+          </FilterMenuItem>
         ))}
-      </DropdownMenuContent>
+      </FilterMenuContent>
     </DropdownMenu>
   );
 }
@@ -56,14 +50,10 @@ interface KycDocumentsFilterBarProps {
   onChange: (filterId: string, value: string | null) => void;
 }
 
-/** "Filter By" chip row above the Document Lists table — filters sent to `GET /v1/document/overview`. */
+/** "Filter By" bar above the Document Lists table — filters sent to `GET /v1/document/overview`. */
 export function KycDocumentsFilterBar({ filters, selection, onChange }: KycDocumentsFilterBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <span className="inline-flex items-center gap-2 text-sm text-gray-300">
-        <SlidersHorizontal className="h-4 w-4 text-gray-400" aria-hidden="true" />
-        Filter By:
-      </span>
+    <FilterBarContainer>
       {filters.map((filter) => (
         <KycDocumentsFilterChip
           key={filter.id}
@@ -72,6 +62,6 @@ export function KycDocumentsFilterBar({ filters, selection, onChange }: KycDocum
           onSelect={(value) => onChange(filter.id, value)}
         />
       ))}
-    </div>
+    </FilterBarContainer>
   );
 }

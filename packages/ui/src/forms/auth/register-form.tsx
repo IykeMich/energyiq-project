@@ -1,106 +1,170 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "@energyiq/ui";
 import {
+  companySetupSchema,
+  companySetupFormDefaultValues,
+  type CompanySetupFormData,
   adminAccountSchema,
   adminAccountFormDefaultValues,
-  organizationDetailsSchema,
-  organizationDetailsFormDefaultValues,
-  supplierDetailsSchema,
-  supplierDetailsFormDefaultValues,
+  type AdminAccountFormData,
 } from "../../validation/auth/onboarding";
-import { registrationDocumentFields, type RegistrationDocumentKey } from "../../hooks/use-registration-documents";
+import { useAuth } from "../../hooks/use-auth";
+import { useOnboardingDocuments } from "../../hooks/use-onboarding-documents";
 import { OnboardingStepper } from "./onboarding-stepper";
+import { RegisterCompanyStep } from "./register-company-step";
 import { RegisterAdminAccountStep } from "./register-admin-account-step";
 import { RegisterOtpStep } from "./register-otp-step";
-import { RegisterOrganizationStep } from "./register-organization-step";
-import { RegisterSupplierDetailsStep } from "./register-supplier-details-step";
 import { RegisterDocumentStep } from "./register-document-step";
-import { RegisterReviewStep } from "./register-review-step";
 
 // Step labels shown under the stepper dots.
-const stepLabels = [
-  "Administrator Account",
-  "OTP Verification",
-  "Organization Details",
-  "Role-Specific Information",
-  "Document Upload",
-  "Review & Submit",
-];
+const stepLabels = ["Company Setup", "Account Setup", "OTP Verification", "Document Upload"];
 
 // Eyebrow/heading/subtitle shown above the stepper for each step.
 const stepHeadings: Record<number, { heading: string; subtitle: string }> = {
   1: {
+    heading: "Company setup",
+    subtitle: "Tell us about the business itself.",
+  },
+  2: {
     heading: "Administrator account",
     subtitle: "This person will be the primary admin for your organization.",
   },
-  2: {
-    heading: "OTP Verification",
-    subtitle: "This person will be the primary admin for your organization.",
-  },
   3: {
-    heading: "Organization Details",
-    subtitle: "Tell us about the business itself.",
+    heading: "OTP Verification",
+    subtitle: "Enter the code we sent to confirm your email.",
   },
   4: {
-    heading: "Supplier details",
-    subtitle: "A few details specific to suppliers on the platform.",
-  },
-  5: {
     heading: "Documents Upload",
     subtitle: "Upload the following documents for kyc verification.",
   },
-  6: {
-    heading: "Review & Submit",
-    subtitle: "Check everything before submitting your application for review.",
-  },
 };
 
-// TODO(orval): The backend's `initiate`/`complete` thunks expect company info
-// bundled with account info in a single call, and `complete(otp)` reads the
-// registration token that only exists after `initiate` succeeds. This design
-// collects Organization Details *after* OTP verification, so steps 1, 2 and 4
-// (and the document upload in step 5) can't call real endpoints yet — every
-// step here is local client-side state until the backend supports this order.
+// A server field name of "email" is ambiguous between CompanyInfo.email and
+// AccountInfo.email — mapped to the account step's field, per the same
+// precedent documented for register-form's other flows.
+const companyFieldMap: Partial<Record<string, keyof CompanySetupFormData>> = {
+  name: "company_name",
+  business_type: "business_type",
+  registration_number: "registration_number",
+};
+const accountFieldMap: Partial<Record<string, keyof AdminAccountFormData>> = {
+  email: "account_email",
+  phone: "admin_phone",
+  first_name: "first_name",
+  last_name: "last_name",
+  password: "password",
+  confirm_password: "confirm_password",
+  accepted_terms: "accepted_terms",
+  accepted_privacy_policy: "accepted_privacy_policy",
+};
+
 export function RegisterForm() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
 
+  const {
+    initiate,
+    complete,
+    resendOtp,
+    presignOnboardingDocument,
+    createSupplierOnboardingDocument,
+    error,
+    fieldErrors,
+    isLoading,
+    slug,
+    clearError,
+  } = useAuth();
+
+  const companyForm = useForm({
+    resolver: zodResolver(companySetupSchema),
+    mode: "onChange",
+    defaultValues: companySetupFormDefaultValues,
+  });
   const adminForm = useForm({
     resolver: zodResolver(adminAccountSchema),
     mode: "onChange",
     defaultValues: adminAccountFormDefaultValues,
-  });
-  const organizationForm = useForm({
-    resolver: zodResolver(organizationDetailsSchema),
-    mode: "onChange",
-    defaultValues: organizationDetailsFormDefaultValues,
-  });
-  const supplierForm = useForm({
-    resolver: zodResolver(supplierDetailsSchema),
-    mode: "onChange",
-    defaultValues: supplierDetailsFormDefaultValues,
   });
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
 
-  const [documents, setDocuments] = useState<Record<RegistrationDocumentKey, File | null>>({
-    cac: null,
-    tax: null,
-    directorId: null,
-    utilityBill: null,
+  const documentUpload = useOnboardingDocuments({
+    presignOnboardingDocument,
+    createSupplierOnboardingDocument,
+    clearError,
+    onSuccess: () => navigate(`/${slug}/dashboard`),
   });
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const goToStep = (step: number) => setCurrentStep(step);
 
-  const handleAdminAccountNext = async () => {
-    const isValid = await adminForm.trigger();
+  // Routes EIQ-2000 per-field errors from `initiate` onto whichever form
+  // owns that field, and jumps back to step 1 if a company field was hit.
+  useEffect(() => {
+    if (!fieldErrors?.length) return;
+
+    let touchedCompany = false;
+    fieldErrors.forEach(({ field, message }) => {
+      const companyField = companyFieldMap[field];
+      const accountField = accountFieldMap[field];
+      if (companyField) {
+        companyForm.setError(companyField, { type: "server", message });
+        touchedCompany = true;
+      } else if (accountField) {
+        adminForm.setError(accountField, { type: "server", message });
+      }
+    });
+
+    if (touchedCompany) goToStep(1);
+
+    toast.error(error ?? "Please correct the highlighted fields", {
+      description: fieldErrors.map((fieldError) => fieldError.message).join(" "),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fieldErrors]);
+
+  const handleCompanyNext = async () => {
+    const isValid = await companyForm.trigger();
     if (isValid) goToStep(2);
+  };
+
+  const handleCreateAccount = async () => {
+    const isValid = await adminForm.trigger();
+    if (!isValid) return;
+
+    const company = companyForm.getValues();
+    const account = adminForm.getValues();
+
+    const result = await initiate({
+      company: {
+        name: company.company_name,
+        business_type: company.business_type,
+        registration_number: company.registration_number,
+        email: company.company_email || undefined,
+      },
+      account: {
+        first_name: account.first_name,
+        last_name: account.last_name,
+        email: account.account_email,
+        phone: account.admin_phone,
+        password: account.password,
+        confirm_password: account.confirm_password,
+        accepted_terms: account.accepted_terms,
+        accepted_privacy_policy: account.accepted_privacy_policy,
+      },
+    });
+
+    if (result.success) {
+      goToStep(3);
+    } else if (!result.isFieldValidationError) {
+      toast.error("Registration failed", {
+        description: error ?? "Please try again.",
+      });
+    }
   };
 
   const handleOtpChange = (value: string, index: number) => {
@@ -126,75 +190,33 @@ export function RegisterForm() {
     if (pastedDigits.length === otp.length) handleOtpSubmit(pastedDigits);
   };
 
-  // TODO(orval): call the real `complete(otpCode)` thunk once `initiate` runs
-  // earlier in the flow and a registration token is available. For now any
-  // fully-entered 6-digit code advances the flow.
-  const handleOtpSubmit = (otpOverride?: string) => {
+  const handleOtpSubmit = async (otpOverride?: string) => {
     const code = otpOverride ?? otp.join("");
     if (code.length !== 6) {
       setOtpError(true);
       return;
     }
-    goToStep(3);
-  };
 
-  const handleResendOtp = () => {
-    setOtpResent(true);
-    toast.success("OTP resent", { description: "A new code has been sent to your email." });
-  };
-
-  const handleOrganizationNext = async () => {
-    const isValid = await organizationForm.trigger();
-    if (isValid) goToStep(4);
-  };
-
-  const handleToggleCategory = (category: string) => {
-    const current = supplierForm.getValues("product_categories");
-    const next = current.includes(category)
-      ? current.filter((selected) => selected !== category)
-      : [...current, category];
-    supplierForm.setValue("product_categories", next, { shouldValidate: true });
-  };
-
-  const handleSupplierDetailsNext = async () => {
-    const isValid = await supplierForm.trigger();
-    if (isValid) goToStep(5);
-  };
-
-  const handleDocumentFileChange = (key: RegistrationDocumentKey, file: File | null) => {
-    setDocuments((prev) => ({ ...prev, [key]: file }));
-  };
-
-  const hasRequiredDocuments = registrationDocumentFields
-    .filter((field) => field.required)
-    .every((field) => documents[field.key]);
-  const uploadedDocumentCount = Object.values(documents).filter(Boolean).length;
-
-  // TODO(orval): once a registration token exists, upload each selected file
-  // via presignRegistrationDocument/createRegistrationDocument here instead
-  // of just advancing the step.
-  const handleDocumentsNext = () => {
-    if (!hasRequiredDocuments) {
-      toast.error("Missing required documents", {
-        description: "Please upload all required KYC documents.",
-      });
-      return;
+    clearError();
+    const success = await complete(code);
+    if (success) {
+      goToStep(4);
+    } else {
+      setOtpError(true);
     }
-    goToStep(6);
   };
 
-  const handleCancelSubmission = () => navigate("/login");
-
-  // TODO(orval): call the real "submit supplier onboarding for review"
-  // endpoint once it exists; this currently only simulates success.
-  const handleSubmitApplication = async () => {
-    setIsSubmittingReview(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setIsSubmittingReview(false);
-    toast.success("Application submitted", {
-      description: "Your organization is now pending review.",
-    });
-    navigate("/login");
+  const handleResendOtp = async () => {
+    clearError();
+    const success = await resendOtp();
+    if (success) {
+      setOtpResent(true);
+      toast.success("OTP resent", { description: "A new code has been sent to your email." });
+    } else {
+      toast.error("Failed to resend code", {
+        description: error ?? "Please try again later.",
+      });
+    }
   };
 
   const { heading, subtitle } = stepHeadings[currentStep];
@@ -211,23 +233,33 @@ export function RegisterForm() {
 
       <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
         {currentStep === 1 && (
+          <RegisterCompanyStep
+            register={companyForm.register}
+            control={companyForm.control}
+            watch={companyForm.watch}
+            errors={companyForm.formState.errors}
+            onNext={handleCompanyNext}
+          />
+        )}
+
+        {currentStep === 2 && (
           <RegisterAdminAccountStep
             register={adminForm.register}
             watch={adminForm.watch}
             setValue={adminForm.setValue}
             errors={adminForm.formState.errors}
-            onNext={handleAdminAccountNext}
+            onNext={handleCreateAccount}
           />
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <RegisterOtpStep
             otp={otp}
             otpError={otpError}
             otpResent={otpResent}
             accountEmail={adminForm.watch("account_email")}
-            error={null}
-            isLoading={false}
+            error={error}
+            isLoading={isLoading}
             onOtpChange={handleOtpChange}
             onOtpPaste={handleOtpPaste}
             onResend={handleResendOtp}
@@ -235,49 +267,16 @@ export function RegisterForm() {
           />
         )}
 
-        {currentStep === 3 && (
-          <RegisterOrganizationStep
-            register={organizationForm.register}
-            control={organizationForm.control}
-            errors={organizationForm.formState.errors}
-            onNext={handleOrganizationNext}
-          />
-        )}
-
         {currentStep === 4 && (
-          <RegisterSupplierDetailsStep
-            register={supplierForm.register}
-            control={supplierForm.control}
-            watch={supplierForm.watch}
-            errors={supplierForm.formState.errors}
-            onToggleCategory={handleToggleCategory}
-            onNext={handleSupplierDetailsNext}
-          />
-        )}
-
-        {currentStep === 5 && (
           <RegisterDocumentStep
-            documents={documents}
-            documentFields={registrationDocumentFields}
-            uploadedCount={uploadedDocumentCount}
-            isUploading={false}
-            isLoading={false}
-            error={null}
-            onFileChange={handleDocumentFileChange}
-            onSubmit={handleDocumentsNext}
-          />
-        )}
-
-        {currentStep === 6 && (
-          <RegisterReviewStep
-            adminData={adminForm.getValues()}
-            organizationData={organizationForm.getValues()}
-            supplierData={supplierForm.getValues()}
-            uploadedDocumentCount={uploadedDocumentCount}
-            totalDocumentCount={registrationDocumentFields.length}
-            isLoading={isSubmittingReview}
-            onCancel={handleCancelSubmission}
-            onSubmit={handleSubmitApplication}
+            documents={documentUpload.documents}
+            documentFields={documentUpload.documentFields}
+            uploadedCount={documentUpload.uploadedCount}
+            isUploading={documentUpload.isUploading}
+            isLoading={isLoading}
+            error={error}
+            onFileChange={documentUpload.handleFileChange}
+            onSubmit={documentUpload.handleDocumentSubmit}
           />
         )}
       </form>

@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Calendar, ChevronDown, Filter } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,7 +31,7 @@ function OrdersFilterChip({ id, label, options, selected, onSelect }: OrdersFilt
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="tap-effect flex items-center gap-1.5 rounded-[14px] border-[1.5px] border-[#616161B2] px-3 py-1 text-xs text-white"
+          className="tap-effect flex items-center gap-1.5 rounded-[14px] border-[1.5px] border-[#616161B2] px-3 py-1 text-[10px] text-white"
         >
           {LeadingIcon && <LeadingIcon className="h-3.5 w-3.5 text-[#FBC02D]" aria-hidden="true" />}
           {selected ?? label}
@@ -57,17 +57,19 @@ function OrdersFilterChip({ id, label, options, selected, onSelect }: OrdersFilt
 interface OrdersFilterChipsProps {
   selection: OrderFilterSelection;
   onChange: (filterId: string, option: string | null) => void;
+  /** Distributor names for the "Distributor" chip — sourced from the real distributor list. */
+  distributorOptions: string[];
 }
 
 /** "Filter By:" label followed by the category dropdown chips. */
-export function OrdersFilterChips({ selection, onChange }: OrdersFilterChipsProps) {
+export function OrdersFilterChips({ selection, onChange, distributorOptions }: OrdersFilterChipsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 self-start rounded-[10px] bg-[#6161611A] px-4 py-2">
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#616161B2]">
-        <SlidersHorizontal className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+        <Filter className="h-3.5 w-3.5 text-white" aria-hidden="true" />
       </span>
       <span className="text-xs text-white">Filter By:</span>
-      {ORDER_FILTERS.map((filter) => (
+      {orderedFilters(distributorOptions).map((filter) => (
         <OrdersFilterChip
           key={filter.id}
           {...filter}
@@ -77,4 +79,14 @@ export function OrdersFilterChips({ selection, onChange }: OrdersFilterChipsProp
       ))}
     </div>
   );
+}
+
+/** Static Date/Payment Status filters plus the dynamic Distributor filter, in the design's on-screen order. */
+function orderedFilters(distributorOptions: string[]): OrderFilter[] {
+  const byId = new Map(ORDER_FILTERS.map((filter) => [filter.id, filter]));
+  return [
+    byId.get('date')!,
+    { id: 'distributor', label: 'Distributor', options: distributorOptions },
+    byId.get('payment')!,
+  ];
 }

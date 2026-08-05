@@ -26,6 +26,8 @@ import {
   deleteDistributorOnboardingDocument as deleteDistributorOnboardingDocumentThunk,
   presignRegistrationDocument as presignRegistrationDocumentThunk,
   createRegistrationDocument as createRegistrationDocumentThunk,
+  presignOnboardingDocument as presignOnboardingDocumentThunk,
+  createSupplierOnboardingDocument as createSupplierOnboardingDocumentThunk,
 } from "@energyiq/store";
 import type {
   InitiateRequest,
@@ -39,6 +41,7 @@ import type {
   PresignUploadUrlRequest,
   PresignRegistrationDocumentRequest,
   RegistrationDocumentRequest,
+  OnboardingDocumentRequest,
   CreateInvitationRequest,
 } from "@energyiq/domain/auth";
 import type { shared } from "@energyiq/domain";
@@ -272,6 +275,28 @@ export function useAuth() {
     [dispatch],
   );
 
+  const handlePresignOnboardingDocument = useCallback(
+    async (req: PresignUploadUrlRequest) => {
+      const result = await dispatch(presignOnboardingDocumentThunk(req));
+      if (presignOnboardingDocumentThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
+
+  const handleCreateSupplierOnboardingDocument = useCallback(
+    async (req: OnboardingDocumentRequest) => {
+      const result = await dispatch(createSupplierOnboardingDocumentThunk(req));
+      if (createSupplierOnboardingDocumentThunk.fulfilled.match(result)) {
+        return result.payload;
+      }
+      return null;
+    },
+    [dispatch],
+  );
+
   return {
     // State
     user: auth.user,
@@ -319,5 +344,7 @@ export function useAuth() {
     verifyInvitation: handleVerifyInvitation,
     presignRegistrationDocument: handlePresignRegistrationDocument,
     createRegistrationDocument: handleCreateRegistrationDocument,
+    presignOnboardingDocument: handlePresignOnboardingDocument,
+    createSupplierOnboardingDocument: handleCreateSupplierOnboardingDocument,
   };
 }

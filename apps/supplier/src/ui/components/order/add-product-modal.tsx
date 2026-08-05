@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@energyiq/ui';
-import { ADDABLE_PRODUCTS, type OrderLineItem } from '@/ui/pages/order/mocks';
+import { ADDABLE_PRODUCTS, type OrderLineItem } from './order-detail-mapper';
 
 const NGN = new Intl.NumberFormat('en-NG');
 

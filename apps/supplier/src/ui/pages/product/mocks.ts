@@ -156,6 +156,8 @@ export interface ProductDraftErrors {
   costPrice?: string;
   sellingPrice?: string;
   warehouseId?: string;
+  pricingTiers?: string;
+  variants?: string;
 }
 
 /**
@@ -165,6 +167,9 @@ export interface ProductDraftErrors {
  * the API. Cost Price is validated too since the UI already marks it
  * required (step-1 pricing tab) even though the backend treats it as optional.
  * Warehouse Location is validated since the warehouse tab marks it required.
+ * Pricing tiers and variants are validated per the backend's tiered/variant
+ * requirements (see ProductCreateRequest description) since submitting either
+ * empty/incomplete otherwise only surfaces as an unlabeled 400.
  */
 export function validateProductDraft(draft: NewProductDraft): ProductDraftErrors {
   const errors: ProductDraftErrors = {};
@@ -180,13 +185,43 @@ export function validateProductDraft(draft: NewProductDraft): ProductDraftErrors
   if (!draft.warehouseAllocations.some((allocation) => allocation.warehouseId)) {
     errors.warehouseId = 'Warehouse location is required.';
   }
+  if (draft.priceType === 'Tiered') {
+    if (draft.pricingTiers.length === 0) {
+      errors.pricingTiers = 'Add at least one pricing tier.';
+    } else if (
+      draft.pricingTiers.some(
+        (tier) =>
+          !tier.tier ||
+          !tier.minQuantity.trim() ||
+          !tier.maxQuantity.trim() ||
+          !(Number(tier.unitPrice) > 0),
+      )
+    ) {
+      errors.pricingTiers = 'Each pricing tier needs a tier, min/max quantity, and a unit price greater than 0.';
+    }
+  }
+  if (draft.type === 'Product with Variant') {
+    if (draft.variants.length === 0) {
+      errors.variants = 'Add at least one variant.';
+    } else if (
+      draft.variants.some(
+        (variant) =>
+          !variant.name.trim() ||
+          !variant.displayName.trim() ||
+          !(Number(variant.costPrice) > 0) ||
+          !(Number(variant.sellingPrice) > 0),
+      )
+    ) {
+      errors.variants = 'Each variant needs a name, display name, and cost/selling prices greater than 0.';
+    }
+  }
   return errors;
 }
 
 /** Which Product Details sub-tab each validated field belongs to, so "Next" can gate one tab at a time. */
 export const PRODUCT_DETAILS_TAB_FIELDS = {
-  basic: ['name', 'category', 'measuringUnit'],
-  pricing: ['costPrice', 'sellingPrice'],
+  basic: ['name', 'category', 'measuringUnit', 'variants'],
+  pricing: ['costPrice', 'sellingPrice', 'pricingTiers'],
   warehouse: ['warehouseId'],
 } as const satisfies Record<string, (keyof ProductDraftErrors)[]>;
 

@@ -8,6 +8,7 @@ import {
   warehouse,
   audit,
   tier,
+  approval,
 } from '@energyiq/domain';
 
 import {
@@ -20,6 +21,7 @@ import {
   WarehouseApiAdapter,
   AuditApiAdapter,
   TierApiAdapter,
+  ApprovalApiAdapter,
   configureClient,
   configureEnv,
   configureFetcher,
@@ -50,6 +52,7 @@ const productApi = new ProductApiAdapter();
 const warehouseApi = new WarehouseApiAdapter();
 const distributorApi = new DistributorApiAdapter();
 const tierApi = new TierApiAdapter();
+const approvalApi = new ApprovalApiAdapter();
 
 // Domain use cases
 export const authUseCases = new auth.AuthUseCases(authApi, tokenStorage, userStorage);
@@ -61,6 +64,7 @@ export const orderUseCases = new order.OrderUseCases(orderApi);
 export const productUseCases = new product.ProductUseCases(productApi);
 export const warehouseUseCases = new warehouse.WarehouseUseCases(warehouseApi);
 export const tierUseCases = new tier.TierUseCases(tierApi);
+export const approvalUseCases = new approval.ApprovalUseCases(approvalApi);
 
 // Wire token getter + refresh into both HTTP clients (manual + Orval).
 configureClient(

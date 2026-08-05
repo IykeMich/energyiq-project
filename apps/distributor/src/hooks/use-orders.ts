@@ -83,10 +83,10 @@ export function useDispatchOrderMutation() {
   });
 }
 
-export function useReceiveOrderMutation() {
+export function useDeliverOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => orderUseCases.receiveOrder(id),
+    mutationFn: (id: string) => orderUseCases.deliverOrder(id),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY, refetchType: 'all' }),
   });

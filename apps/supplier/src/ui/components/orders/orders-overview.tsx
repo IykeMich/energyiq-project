@@ -14,14 +14,19 @@ import {
   mapOrderStatsToTabs,
   dateFilterToRange,
   ORDER_STATUS_TAB_DEFS,
+  PAYMENT_STATUS_LABEL,
   type OrderRow,
+  type PaymentStatus,
 } from './orders-mocks';
 
+const PAYMENT_STATUS_BY_LABEL = Object.fromEntries(
+  Object.entries(PAYMENT_STATUS_LABEL).map(([status, label]) => [label, status as PaymentStatus]),
+);
+
 /**
- * Supplier Orders page. Wired to GET /v1/order/list + /v1/order/list/stats, with
- * distributor names resolved from GET /v1/distributor/list. Search still filters
- * client-side (id / distributor name); the status tab and date filter are sent to
- * the API as real query params so pagination/counts stay accurate.
+ * Supplier Orders page. Wired to GET /v1/order/list + /v1/order/list/stats. Search
+ * still filters client-side (id / distributor name); the status tab, date, and payment
+ * filters are sent to the API as real query params so pagination/counts stay accurate.
  */
 export function OrdersOverview() {
   const navigate = useNavigate();
@@ -30,16 +35,18 @@ export function OrdersOverview() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [filters, setFilters] = useState<OrderFilterSelection>({});
-  
+
   const setFilter = (filterId: string, option: string | null) => {
     setFilters((previous) => ({ ...previous, [filterId]: option }));
   };
 
   const activeStatus = ORDER_STATUS_TAB_DEFS.find((tab) => tab.label === activeTab)?.status;
   const { date_from, date_to } = dateFilterToRange(filters.date);
+  const paymentStatus = filters.payment ? PAYMENT_STATUS_BY_LABEL[filters.payment] : undefined;
 
   const { data: listResult, isLoading } = useOrdersQuery({
     status: activeStatus,
+    payment_status: paymentStatus,
     date_from,
     date_to,
   });
@@ -48,32 +55,23 @@ export function OrdersOverview() {
   const { data: distributorsResult } = useDistributorsQuery({ limit: 100 });
 
   const tabs = useMemo(() => mapOrderStatsToTabs(stats), [stats]);
-  const distributorNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of distributorsResult?.items ?? []) {
-      if (item.id) map.set(item.id, item.name ?? item.id);
-    }
-    return map;
-  }, [distributorsResult]);
-  const rows = useMemo(
-    () =>
-      (listResult?.items ?? []).map((order) => {
-        const row = mapOrderToRow(order);
-        const resolvedName = order.distributor_id && distributorNameById.get(order.distributor_id);
-        return resolvedName ? { ...row, distributor: resolvedName } : row;
-      }),
-    [listResult, distributorNameById],
+  const distributorNames = useMemo(
+    () => (distributorsResult?.items ?? []).map((item) => item.name).filter((name): name is string => Boolean(name)),
+    [distributorsResult],
   );
+  const rows = useMemo(() => (listResult?.items ?? []).map(mapOrderToRow), [listResult]);
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) return rows;
-    return rows.filter(
-      (order) =>
+    return rows.filter((order) => {
+      const matchesQuery =
+        !normalizedQuery ||
         order.id.toLowerCase().includes(normalizedQuery) ||
-        order.distributor.toLowerCase().includes(normalizedQuery),
-    );
-  }, [rows, searchQuery]);
+        order.distributor.toLowerCase().includes(normalizedQuery);
+      const matchesDistributor = !filters.distributor || order.distributor === filters.distributor;
+      return matchesQuery && matchesDistributor;
+    });
+  }, [rows, searchQuery, filters.distributor]);
 
   const handleCancel = async (order: OrderRow) => {
     try {
@@ -97,7 +95,11 @@ export function OrdersOverview() {
       {/* Table card: status tabs, filter chips, then the orders table. */}
       <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
         <OrdersStatusTabs tabs={tabs} activeLabel={activeTab} onChange={setActiveTab} />
-        <OrdersFilterChips selection={filters} onChange={setFilter} />
+        <OrdersFilterChips
+          selection={filters}
+          onChange={setFilter}
+          distributorOptions={distributorNames}
+        />
         <OrdersTable
           orders={filteredOrders}
           isLoading={isLoading}

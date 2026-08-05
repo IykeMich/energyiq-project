@@ -3,7 +3,7 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, toast } from '@energyiq/ui';
 import { useOrderQuery, useDispatchOrderMutation } from '@/hooks/use-orders';
-import { toOrderDispatch } from '@/ui/pages/order/mocks';
+import { toOrderDispatch } from './order-detail-mapper';
 import { OrderProgressStepper } from './order-progress-stepper';
 import { OrderSummaryCard } from './order-summary-card';
 import { OrderDeliveryDetailsCard } from './order-delivery-details-card';
@@ -12,13 +12,6 @@ import { ConfirmDeliveryCard } from './confirm-delivery-card';
 import { OrderDispatchedSuccess } from './order-dispatched-success';
 
 type DispatchStage = 'assign' | 'review' | 'success';
-
-// Last-completed stepper index per stage: Order Approved → Preparing Goods → Dispatched.
-const STAGE_ACTIVE_INDEX: Record<DispatchStage, number> = {
-  assign: 0,
-  review: 1,
-  success: 3,
-};
 
 interface OrderDispatchFlowProps {
   orderId: string;
@@ -146,7 +139,7 @@ export function OrderDispatchFlow({ orderId }: OrderDispatchFlowProps) {
         )}
       </header>
 
-      <OrderProgressStepper activeIndex={STAGE_ACTIVE_INDEX[stage]} />
+      <OrderProgressStepper steps={dispatch.timeline} />
 
       {stage === 'success' ? (
         <OrderDispatchedSuccess

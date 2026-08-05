@@ -1,11 +1,11 @@
-import { ChevronDown, SlidersHorizontal } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@energyiq/ui';
+import { DropdownMenu, DropdownMenuTrigger } from '@energyiq/ui';
 import type { WarehouseStatus } from '@/ui/pages/inventory/mocks';
+import {
+  FilterBarContainer,
+  FilterMenuContent,
+  FilterMenuItem,
+  FilterTrigger,
+} from '@/ui/components/table/table-filter-bar';
 
 export type WarehouseStatusFilter = 'all' | WarehouseStatus;
 
@@ -20,36 +20,28 @@ interface WarehouseFilterBarProps {
   onStatusChange: (status: WarehouseStatusFilter) => void;
 }
 
-/** "Filter By: Status" chip row for the Warehouse Inventory page (controlled). */
+/** "Filter By: Status" bar for the Warehouse Inventory page (controlled). */
 export function WarehouseFilterBar({ status, onStatusChange }: WarehouseFilterBarProps) {
   const activeLabel = STATUS_ITEMS.find((item) => item.value === status)?.label ?? 'Status';
 
   return (
-    <div className="flex flex-wrap items-center gap-3 self-start">
-      <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-        <span className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center">
-          <SlidersHorizontal className="w-3.5 h-3.5 text-foreground" />
-        </span>
-        Filter By:
-      </div>
+    <FilterBarContainer>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="h-8 px-4 rounded-full bg-brand text-brand-foreground text-xs font-semibold flex items-center gap-2"
-          >
-            {activeLabel}
-            <ChevronDown className="w-3 h-3" />
-          </button>
+          <FilterTrigger label={activeLabel} isActive={status !== 'all'} />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-36 rounded-[14px]">
+        <FilterMenuContent>
           {STATUS_ITEMS.map((item) => (
-            <DropdownMenuItem key={item.value} onClick={() => onStatusChange(item.value)}>
+            <FilterMenuItem
+              key={item.value}
+              isSelected={item.value === status}
+              onClick={() => onStatusChange(item.value)}
+            >
               {item.label}
-            </DropdownMenuItem>
+            </FilterMenuItem>
           ))}
-        </DropdownMenuContent>
+        </FilterMenuContent>
       </DropdownMenu>
-    </div>
+    </FilterBarContainer>
   );
 }

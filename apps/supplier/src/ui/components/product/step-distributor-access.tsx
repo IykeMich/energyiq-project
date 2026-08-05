@@ -18,8 +18,13 @@ interface OptionDef<T extends string> {
   countPill?: string;
   /** Outlined action button (e.g. "Select Tier") shown on the tier/selected cards. */
   actionLabel?: string;
+  /** True when the backend doesn't support this option yet (see distributor_visibility enum in the swagger). */
+  disabled?: boolean;
 }
 
+// Backend's distributor_visibility enum currently only accepts "all_distributors" —
+// tier/selected are shown as upcoming options but must not be selectable, since
+// sending anything else 400s.
 const VISIBILITY_OPTIONS: OptionDef<VisibilityOption>[] = [
   {
     value: 'all',
@@ -33,14 +38,16 @@ const VISIBILITY_OPTIONS: OptionDef<VisibilityOption>[] = [
     title: 'Tier-Based Access',
     description:
       'Limit visibility to distributors based on their tier level (Bronze, Silver, Gold). Useful for exclusive products or tiered pricing strategies.',
-    actionLabel: 'Select Tier',
+    actionLabel: 'Coming Soon',
+    disabled: true,
   },
   {
     value: 'selected',
     title: 'Selected Distributors',
     description:
       'Hand-pick the exact distributors who can see and order this product. Best for pilots, regional exclusives, or strategic accounts.',
-    actionLabel: 'Manual Selection',
+    actionLabel: 'Coming Soon',
+    disabled: true,
   },
 ];
 
@@ -98,14 +105,21 @@ interface RadioCardProps<T extends string> {
 }
 
 function RadioCard<T extends string>({ option, selected, onSelect }: RadioCardProps<T>) {
+  const disabled = option.disabled;
   return (
     <button
       type="button"
-      onClick={onSelect}
+      onClick={disabled ? undefined : onSelect}
+      disabled={disabled}
       aria-pressed={selected}
+      aria-disabled={disabled}
       className={cn(
         'text-left rounded-[20px] p-5 border transition-colors flex flex-col gap-2',
-        selected ? 'border-brand bg-brand/5' : 'border-border-subtle bg-surface-card hover:bg-foreground/5',
+        disabled
+          ? 'border-border-subtle bg-surface-card opacity-50 cursor-not-allowed'
+          : selected
+            ? 'border-brand bg-brand/5'
+            : 'border-border-subtle bg-surface-card hover:bg-foreground/5',
       )}
     >
       <div className="flex items-start gap-3">
@@ -129,7 +143,7 @@ function RadioCard<T extends string>({ option, selected, onSelect }: RadioCardPr
             <span
               className={cn(
                 'self-start rounded-full border px-4 py-1.5 text-xs font-semibold',
-                selected ? 'border-brand text-brand' : 'border-border-strong text-foreground',
+                disabled ? 'border-border-strong text-muted-foreground' : selected ? 'border-brand text-brand' : 'border-border-strong text-foreground',
               )}
             >
               {option.actionLabel}

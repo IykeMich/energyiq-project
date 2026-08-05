@@ -6,7 +6,7 @@ import type {
   OrderLineItem,
   OrderTimelineEvent,
   PaymentStatus,
-} from '@/ui/pages/order/mocks';
+} from './order-detail-mapper';
 
 const NGN = new Intl.NumberFormat('en-NG');
 

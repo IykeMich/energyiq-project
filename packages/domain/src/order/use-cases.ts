@@ -51,8 +51,8 @@ export class OrderUseCases {
     return this.api.dispatchOrder(id, req);
   }
 
-  async receiveOrder(id: string): Promise<Order> {
-    return this.api.receiveOrder(id);
+  async deliverOrder(id: string): Promise<Order> {
+    return this.api.deliverOrder(id);
   }
 
   async listOrders(params?: OrderListParams): Promise<OrderListResult> {

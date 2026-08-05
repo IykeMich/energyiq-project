@@ -97,12 +97,15 @@ export function ProductBasicInfoTab({ draft, onChange, errors }: ProductBasicInf
       </div>
 
       {showVariants && (
-        <ProductVariantEditor
-          variants={draft.variants}
-          onAdd={addVariant}
-          onRemove={removeVariant}
-          onChange={updateVariant}
-        />
+        <div className="flex flex-col gap-2">
+          <ProductVariantEditor
+            variants={draft.variants}
+            onAdd={addVariant}
+            onRemove={removeVariant}
+            onChange={updateVariant}
+          />
+          {errors?.variants && <p className="text-xs text-danger">{errors.variants}</p>}
+        </div>
       )}
 
       <div className="border-t border-dashed border-border-subtle pt-5">

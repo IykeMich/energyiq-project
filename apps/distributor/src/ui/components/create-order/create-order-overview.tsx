@@ -73,24 +73,28 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
     isLoading: isLoadingOrder,
   } = useOrderQuery(orderId ?? '', { enabled: isEditMode && Boolean(orderId) });
   const { data: productsData } = useProductsQuery();
-  const orderReference = existingOrder?.order_number ?? orderId ?? ORDER_REFERENCE;
+  const orderReference = existingOrder?.supplier_order_reference ?? orderId ?? ORDER_REFERENCE;
 
   const productCatalog = useMemo<CreateOrderProductOption[]>(
     () => [
       ...PRODUCT_CATALOG,
-      ...(productsData?.items ?? []).map((product) => ({
-        id: product.id ?? '',
-        name: product.name ?? '',
-        shortLabel: product.name ?? '',
-        code: product.sku ?? '',
-        unit: product.unit ?? '',
-        unitAbbrev: product.unit ?? '',
-        unitPrice: Number(product.base_price ?? 0),
-        moq: Number(product.moq ?? 1),
-        goldDiscount: Boolean(product.gold_discount),
-        available: true,
-        supplier_id: product.supplier_id,
-      })),
+      ...(productsData?.items ?? []).map((product) => {
+        const goldTier = product.tier_pricing?.find((tier) => tier.tier === 'gold');
+        return {
+          id: product.id ?? '',
+          name: product.name ?? '',
+          shortLabel: product.name ?? '',
+          code: product.sku ?? '',
+          unit: product.unit ?? '',
+          unitAbbrev: product.unit ?? '',
+          unitPrice: Number(product.base_price ?? 0),
+          // No dedicated MOQ field on Product — derive from tier pricing's min_quantity.
+          moq: Number(product.tier_pricing?.[0]?.min_quantity ?? 1),
+          goldDiscount: Boolean(goldTier),
+          available: true,
+          supplier_id: product.supplier_id,
+        };
+      }),
     ],
     [productsData],
   );
@@ -109,18 +113,18 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   useEffect(() => {
     if (!existingOrder) return;
 
-    setLineItems(toLineItems(existingOrder.items, productCatalog));
+    setLineItems(toLineItems(existingOrder.supplier_order_items, productCatalog));
 
-    if (existingOrder.supplier_id) {
-      setSupplierId(existingOrder.supplier_id);
+    if (existingOrder.supplier_distributor_id) {
+      setSupplierId(existingOrder.supplier_distributor_id);
     }
 
-    const date = existingOrder.submitted_at || existingOrder.created_at;
+    const date = existingOrder.supplier_order_requested_on || existingOrder.supplier_order_date;
     if (date) {
       setDeliveryDate(date.slice(0, 10));
     }
 
-    const parsed = parseOrderNotes(existingOrder.notes);
+    const parsed = parseOrderNotes(existingOrder.supplier_order_notes);
     if (parsed.deliveryMethodId) {
       setDeliveryMethodId(parsed.deliveryMethodId);
     }
@@ -128,11 +132,8 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
       setContact((previous) => ({ ...previous, ...parsed.contact }));
     }
 
-    if (existingOrder.shipping_address && typeof existingOrder.shipping_address === 'object') {
-      const address = existingOrder.shipping_address as Record<string, unknown>;
-      if (address.address) {
-        setContact((previous) => ({ ...previous, address: String(address.address) }));
-      }
+    if (existingOrder.supplier_delivery_address) {
+      setContact((previous) => ({ ...previous, address: existingOrder.supplier_delivery_address! }));
     }
   }, [existingOrder]);
 
@@ -279,8 +280,8 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
             highlight: {
               label: 'Order Reference:',
               value:
-                successOrder?.order_number ??
-                createMutation.data?.order_number ??
+                successOrder?.supplier_order_reference ??
+                createMutation.data?.supplier_order_reference ??
                 SUBMITTED_ORDER_REFERENCE,
             },
             primaryAction: { label: 'Track Order', onClick: goToOrders },
@@ -380,66 +381,44 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
 }
 
 function toLineItems(
-  items?: order.Order['items'],
+  items?: order.OrderLineItem[],
   catalog: CreateOrderProductOption[] = PRODUCT_CATALOG,
 ): CreateOrderLineItem[] {
   if (!items) return [];
 
-  if (Array.isArray(items)) {
-    return items
-      .map((item) => {
-        const record = item as Record<string, unknown>;
+  return items
+    .map((item) => {
+      const productId = item.product_id ?? '';
+      const quantity = item.supplier_quantity ?? 0;
 
-        const productId = (record.product_id as string) ?? '';
-        const quantity = Number(record.quantity ?? 0);
+      if (!productId) return null;
 
-        if (!productId || Number.isNaN(quantity)) return null;
+      const catalogProduct = catalog.find((product) => product.id === productId);
 
-        const catalogProduct = catalog.find((product) => product.id === productId);
+      const name = item.supplier_product_name || catalogProduct?.name || 'Unknown Product';
+      const shortLabel = catalogProduct?.shortLabel || name;
+      const code = item.supplier_product_code || catalogProduct?.code || '';
+      const unit = item.supplier_unit_label || catalogProduct?.unit || '';
+      const unitAbbrev = catalogProduct?.unitAbbrev || unit;
+      const unitPrice = item.supplier_unit_price ?? catalogProduct?.unitPrice ?? 0;
+      const moq = catalogProduct?.moq ?? 1;
+      const goldDiscount = Boolean(catalogProduct?.goldDiscount ?? false);
 
-        const name = (record.name as string) || catalogProduct?.name || 'Unknown Product';
-        const shortLabel = (record.shortLabel as string) || catalogProduct?.shortLabel || name;
-        const code = (record.sku as string) || catalogProduct?.code || '';
-        const unit = (record.unit as string) || catalogProduct?.unit || '';
-        const unitAbbrev = (record.unitAbbrev as string) || catalogProduct?.unitAbbrev || unit;
-        const unitPrice = Number(record.unit_price ?? record.unitPrice ?? catalogProduct?.unitPrice ?? 0);
-        const moq = Number(record.moq ?? catalogProduct?.moq ?? 1);
-        const goldDiscount = Boolean(record.gold_discount ?? catalogProduct?.goldDiscount ?? false);
-
-        return {
-          productId,
-          name,
-          shortLabel,
-          code,
-          unit,
-          unitAbbrev,
-          unitPrice,
-          moq,
-          goldDiscount,
-          available: true,
-          quantity,
-        };
-      })
-      .filter((item): item is CreateOrderLineItem => item !== null);
-  }
-
-  return Object.entries(items).map(([productId, quantity]) => {
-    const catalogProduct = catalog.find((product) => product.id === productId);
-
-    return {
-      productId,
-      name: catalogProduct?.name ?? 'Unknown Product',
-      shortLabel: catalogProduct?.shortLabel ?? catalogProduct?.name ?? 'Unknown Product',
-      code: catalogProduct?.code ?? '',
-      unit: catalogProduct?.unit ?? '',
-      unitAbbrev: catalogProduct?.unitAbbrev ?? catalogProduct?.unit ?? '',
-      unitPrice: catalogProduct?.unitPrice ?? 0,
-      moq: catalogProduct?.moq ?? 1,
-      goldDiscount: catalogProduct?.goldDiscount ?? false,
-      available: catalogProduct?.available ?? true,
-      quantity: Number(quantity) || 0,
-    };
-  });
+      return {
+        productId,
+        name,
+        shortLabel,
+        code,
+        unit,
+        unitAbbrev,
+        unitPrice,
+        moq,
+        goldDiscount,
+        available: true,
+        quantity,
+      };
+    })
+    .filter((item): item is CreateOrderLineItem => item !== null);
 }
 
 interface ParsedOrderNotes {

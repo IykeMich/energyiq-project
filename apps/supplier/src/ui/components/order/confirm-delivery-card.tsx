@@ -1,5 +1,5 @@
 import { ClipboardCheck } from 'lucide-react';
-import type { DispatchedQuantity } from '@/ui/pages/order/mocks';
+import type { DispatchedQuantity } from './order-detail-mapper';
 import type { DispatchAssignmentValues } from './dispatch-assignment-form';
 
 interface ConfirmDeliveryCardProps {

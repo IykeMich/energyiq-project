@@ -139,12 +139,11 @@ export const listSupplierOnboardingDocuments = createAsyncThunk(
   },
 );
 
-export const deleteSupplierOnboardingDocument = createAsyncThunk(
-  "auth/deleteSupplierOnboardingDocument",
-  async (id: string, { rejectWithValue }) => {
+export const presignOnboardingDocument = createAsyncThunk(
+  "auth/presignOnboardingDocument",
+  async (req: auth.PresignUploadUrlRequest, { rejectWithValue }) => {
     try {
-      await authUseCases().deleteOnboardingDocument(id);
-      return id;
+      return await authUseCases().presignOnboardingDocument(req);
     } catch (err) {
       return rejectWithValue(toErrorPayload(err));
     }
@@ -477,6 +476,50 @@ export const authSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(resendOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as shared.ErrorPayload).message;
+      });
+
+    builder
+      .addCase(presignOnboardingDocument.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(presignOnboardingDocument.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(presignOnboardingDocument.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as shared.ErrorPayload).message;
+      });
+
+    builder
+      .addCase(createSupplierOnboardingDocument.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createSupplierOnboardingDocument.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.supplierOnboardingDocuments = [
+          ...(state.supplierOnboardingDocuments ?? []),
+          action.payload,
+        ];
+      })
+      .addCase(createSupplierOnboardingDocument.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as shared.ErrorPayload).message;
+      });
+
+    builder
+      .addCase(listSupplierOnboardingDocuments.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(listSupplierOnboardingDocuments.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.supplierOnboardingDocuments = action.payload;
+      })
+      .addCase(listSupplierOnboardingDocuments.rejected, (state, action) => {
         state.isLoading = false;
         state.error = (action.payload as shared.ErrorPayload).message;
       });

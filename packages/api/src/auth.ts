@@ -90,8 +90,13 @@ export class AuthApiAdapter implements auth.AuthApi {
     return apiGet<auth.OnboardingDocument[]>("v1/auth/onboarding-documents");
   }
 
-  async deleteOnboardingDocument(id: string): Promise<void> {
-    await apiDelete(`v1/auth/onboarding-documents/${id}`);
+  async presignOnboardingDocument(
+    req: auth.PresignUploadUrlRequest,
+  ): Promise<auth.PresignUploadUrlResult> {
+    return apiPost<auth.PresignUploadUrlResult>(
+      "v1/auth/onboarding-documents/presigned-url",
+      req,
+    );
   }
 
   // ── Supplier onboarding documents (pre-OTP, registration_token-scoped) ──

@@ -1,21 +1,37 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog, LoadingOverlay, toast } from '@energyiq/ui';
+import { displayTimeOnly } from '@energyiq/shared';
 import {
   useOrderQuery,
   useApproveOrderMutation,
   useRejectOrderMutation,
   useCancelOrderMutation,
   useUpdateOrderMutation,
+  useDeliverOrderMutation,
 } from '@/hooks/use-orders';
-import { toOrderDetail, toOrderDetailStage, type OrderLineItem } from './mocks';
+import { toOrderDetail, toOrderDetailStage, type OrderLineItem } from '@/ui/components/order/order-detail-mapper';
 import { OrderInfoCard } from '@/ui/components/order/order-info-card';
 import { OrderDistributorCard } from '@/ui/components/order/order-distributor-card';
 import { RejectOrderModal } from '@/ui/components/order/reject-order-modal';
 import { ModifyOrderModal } from '@/ui/components/order/modify-order-modal';
+import {
+  ORDER_STATUS_COLOR,
+  ORDER_STATUS_ICON,
+  ORDER_STATUS_LABEL,
+  toOrderStatus,
+} from '@/ui/components/orders/orders-mocks';
 
-type OpenModal = null | 'reject' | 'modify' | 'confirmApprove' | 'confirmReject' | 'confirmModify' | 'confirmCancel';
+type OpenModal =
+  | null
+  | 'reject'
+  | 'modify'
+  | 'confirmApprove'
+  | 'confirmReject'
+  | 'confirmModify'
+  | 'confirmCancel'
+  | 'confirmDeliver';
 
 export function OrderDetailPage() {
   const navigate = useNavigate();
@@ -27,20 +43,31 @@ export function OrderDetailPage() {
   const { data: order, isLoading, error } = useOrderQuery(id);
 
   const detail = useMemo(() => (order ? toOrderDetail(order) : null), [order]);
-  const stage = useMemo(() => toOrderDetailStage(order?.status), [order?.status]);
+  const stage = useMemo(
+    () => toOrderDetailStage(order?.supplier_order_status_code),
+    [order?.supplier_order_status_code],
+  );
+  const orderStatus = toOrderStatus(order?.supplier_order_status_code);
+  const StatusIcon = ORDER_STATUS_ICON[orderStatus];
 
   const approveMutation = useApproveOrderMutation();
   const rejectMutation = useRejectOrderMutation();
   const cancelMutation = useCancelOrderMutation();
   const updateMutation = useUpdateOrderMutation();
+  const deliverMutation = useDeliverOrderMutation();
 
   const isProcessing =
     approveMutation.isPending ||
     rejectMutation.isPending ||
     cancelMutation.isPending ||
-    updateMutation.isPending;
+    updateMutation.isPending ||
+    deliverMutation.isPending;
 
-  const actionsDisabled = stage === 'rejected';
+  const canApprove = order?.supplier_can_approve ?? false;
+  const canReject = order?.supplier_can_reject ?? false;
+  const canCancel = order?.supplier_can_cancel ?? false;
+  const canModify = order?.supplier_can_modify ?? false;
+  const canDeliver = order?.supplier_can_deliver ?? false;
 
   if (isLoading) {
     return <LoadingOverlay message="Loading order details..." />;
@@ -56,7 +83,7 @@ export function OrderDetailPage() {
         <button
           type="button"
           onClick={() => navigate(`/${slug}/orders`)}
-          className="self-start mt-2 h-10 px-5 rounded-full bg-brand text-brand-foreground font-semibold text-sm"
+          className="tap-effect self-start mt-2 h-10 px-5 rounded-full bg-brand text-brand-foreground font-semibold text-sm hover:bg-brand/90"
         >
           Back to Orders
         </button>
@@ -74,7 +101,7 @@ export function OrderDetailPage() {
         <button
           type="button"
           onClick={() => navigate(`/${slug}/orders`)}
-          className="self-start mt-2 h-10 px-5 rounded-full bg-brand text-brand-foreground font-semibold text-sm"
+          className="tap-effect self-start mt-2 h-10 px-5 rounded-full bg-brand text-brand-foreground font-semibold text-sm hover:bg-brand/90"
         >
           Back to Orders
         </button>
@@ -143,6 +170,17 @@ export function OrderDetailPage() {
     });
   };
 
+  const handleDeliverConfirmed = () => {
+    setModal(null);
+    deliverMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success('Order marked delivered', {
+          description: `Order '${id}' has been marked as delivered.`,
+        });
+      },
+    });
+  };
+
   const handleRejectClick = () => {
     if (stage === 'awaiting_delivery') {
       toast.error('This order cannot be rejected at its current stage');
@@ -159,29 +197,28 @@ export function OrderDetailPage() {
             type="button"
             onClick={() => navigate(`/${slug}/orders`)}
             aria-label="Back to orders"
-            className="w-7.75 h-7.75 rounded-full bg-brand text-brand-foreground flex items-center justify-center"
+            className="tap-effect w-7.75 h-7.75 rounded-full bg-brand text-brand-foreground flex items-center justify-center hover:bg-brand/90"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h1 className="text-2xl font-semibold text-foreground">Order Details</h1>
         </div>
-        {stage === 'rejected' ? (
-          <span className="inline-flex items-center gap-2 rounded-full bg-danger/20 text-danger px-4 py-2 text-sm font-semibold">
-            <Send className="w-4 h-4" />
-            Order Rejected
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-2 rounded-full bg-success/20 text-success px-4 py-2 text-sm font-semibold">
-            <Send className="w-4 h-4" />
-            {stage === 'awaiting_delivery' ? 'Awaiting Delivery' : 'Awaiting Approval'}
-          </span>
-        )}
+        <span
+          className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold"
+          style={{
+            color: ORDER_STATUS_COLOR[orderStatus],
+            backgroundColor: `${ORDER_STATUS_COLOR[orderStatus]}33`,
+          }}
+        >
+          <StatusIcon className="h-4 w-4" aria-hidden="true" />
+          {order?.supplier_order_status || ORDER_STATUS_LABEL[orderStatus]}
+        </span>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
         <OrderInfoCard
           orderId={detail.summary.id}
-          purchaseDate={`${detail.summary.date} | 09:45`}
+          purchaseDate={`${detail.summary.date} | ${displayTimeOnly(order?.supplier_order_placed_at ?? order?.supplier_order_date)}`}
           amountNGN={detail.summary.amountNGN}
           payment={{ method: detail.payment.method, status: detail.summary.payment }}
           delivery={detail.delivery}
@@ -199,11 +236,11 @@ export function OrderDetailPage() {
                 <button
                   type="button"
                   onClick={() => setModal('modify')}
-                  disabled={actionsDisabled}
+                  disabled={!canModify}
                   className={
-                    actionsDisabled
+                    !canModify
                       ? 'h-13.25 rounded-[28px] border border-border-strong text-muted-foreground font-semibold cursor-not-allowed'
-                      : 'h-13.25 rounded-[28px] border border-brand text-brand font-semibold'
+                      : 'tap-effect h-13.25 rounded-[28px] border border-brand text-brand font-semibold hover:bg-brand/10'
                   }
                 >
                   Modify Order
@@ -211,11 +248,11 @@ export function OrderDetailPage() {
                 <button
                   type="button"
                   onClick={handleRejectClick}
-                  disabled={actionsDisabled}
+                  disabled={!canReject}
                   className={
-                    actionsDisabled
+                    !canReject
                       ? 'h-13.25 rounded-[28px] border border-border-strong text-muted-foreground font-semibold cursor-not-allowed'
-                      : 'h-13.25 rounded-[28px] border border-danger text-danger font-semibold'
+                      : 'tap-effect h-13.25 rounded-[28px] border border-danger text-danger font-semibold hover:bg-danger/10'
                   }
                 >
                   Reject Order
@@ -224,23 +261,32 @@ export function OrderDetailPage() {
               <button
                 type="button"
                 onClick={() => setModal('confirmApprove')}
-                disabled={actionsDisabled}
+                disabled={!canApprove}
                 className={
-                  actionsDisabled
+                  !canApprove
                     ? 'h-13.25 rounded-[28px] bg-foreground/10 text-muted-foreground font-semibold cursor-not-allowed'
-                    : 'h-13.25 rounded-[28px] bg-brand text-brand-foreground font-semibold'
+                    : 'tap-effect h-13.25 rounded-[28px] bg-brand text-brand-foreground font-semibold hover:bg-brand/90'
                 }
               >
                 Approve Order
               </button>
+              {canDeliver && (
+                <button
+                  type="button"
+                  onClick={() => setModal('confirmDeliver')}
+                  className="tap-effect h-13.25 rounded-[28px] bg-brand text-brand-foreground font-semibold hover:bg-brand/90"
+                >
+                  Mark Delivered
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setModal('confirmCancel')}
-                disabled={actionsDisabled}
+                disabled={!canCancel}
                 className={
-                  actionsDisabled
+                  !canCancel
                     ? 'h-13.25 rounded-[28px] bg-foreground/10 text-muted-foreground font-semibold cursor-not-allowed'
-                    : 'h-13.25 rounded-[28px] border border-border-strong text-foreground font-semibold'
+                    : 'tap-effect h-13.25 rounded-[28px] border border-border-strong text-foreground font-semibold hover:bg-muted'
                 }
               >
                 Cancel Order
@@ -305,6 +351,16 @@ export function OrderDetailPage() {
         confirmLabel="Cancel Order"
         intent="danger"
         onConfirm={handleCancelConfirmed}
+      />
+
+      <ConfirmDialog
+        open={modal === 'confirmDeliver'}
+        onOpenChange={(o) => !o && setModal(null)}
+        title={`Confirm Delivery - ${detail.summary.id}`}
+        message="Are you sure you want to mark this order as delivered? The distributor will be notified immediately."
+        confirmLabel="Mark Delivered"
+        intent="primary"
+        onConfirm={handleDeliverConfirmed}
       />
 
       {isProcessing && <LoadingOverlay message="Saving changes..." />}

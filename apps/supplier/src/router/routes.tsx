@@ -13,6 +13,8 @@ import { CreateWarehousePage } from '@/ui/pages/inventory/create-warehouse-page'
 import { ProductListPage } from '@/ui/pages/product/product-list-page';
 import { AddProductPage } from '@/ui/pages/product/add-product-page';
 import { CategoryListPage } from '@/ui/pages/product/category-list-page';
+import { ProductAuthorizationQueuePage } from '@/ui/pages/product/product-authorization-queue-page';
+import { ProductAuthorizationReviewPage } from '@/ui/pages/product/product-authorization-review-page';
 import { EmployeeListPage } from '@/ui/pages/employees/employee-list-page';
 import { UnitListPage } from '@/ui/pages/product/unit-list-page';
 import { DistributorListPage } from '@/ui/pages/distributor/distributor-list-page';
@@ -119,6 +121,8 @@ export const router = createBrowserRouter([
               },
               { path: '/:slug/kyc-documents/categories', element: <KycDocumentCategoriesPage /> },
               { path: '/:slug/products', element: <ProductListPage /> },
+              { path: '/:slug/products/authorization', element: <ProductAuthorizationQueuePage /> },
+              { path: '/:slug/products/authorization/:id', element: <ProductAuthorizationReviewPage /> },
               { path: '/:slug/products/new', element: <AddProductPage /> },
               { path: '/:slug/products/:id/edit', element: <AddProductPage /> },
               { path: '/:slug/products/categories', element: <CategoryListPage /> },

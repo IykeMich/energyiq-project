@@ -6,27 +6,27 @@ import type { OrderRow, OrderStatus } from './orders-mocks';
  */
 export function toOrderRow(source: order.Order): OrderRow {
   return {
-    id: source.id ?? source.order_number ?? '',
-    orderNumber: source.order_number ?? source.id ?? '',
-    date: formatDate(source.created_at),
+    id: source.supplier_order_id ?? source.supplier_order_reference ?? '',
+    orderNumber: source.supplier_order_reference ?? source.supplier_order_id ?? '',
+    date: formatDate(source.supplier_order_date),
     supplier: 'Supplier', // Backend does not expose supplier name on the list item yet.
-    items: countItems(source.items),
-    amount: source.total ?? 0,
-    status: toOrderStatus(source.status),
+    items: source.supplier_order_items_count ?? 0,
+    amount: source.supplier_order_amount ?? 0,
+    status: toOrderStatus(source.supplier_order_status_code),
     payment: 'Pending', // Payment status not exposed by backend order endpoints yet.
   };
 }
 
 export function toOrderStatus(status?: string): OrderStatus {
-  switch (status?.toLowerCase()) {
+  switch (status) {
     case 'approved':
       return 'Approved';
     case 'dispatched':
       return 'Dispatched';
-    case 'submitted':
-    case 'draft':
+    case 'pending':
+    case 'awaiting_approval':
       return 'Pending';
-    case 'received':
+    case 'delivered':
     case 'completed':
       return 'Delivered';
     case 'rejected':
@@ -41,7 +41,7 @@ export function toOrderStatus(status?: string): OrderStatus {
 export function toBackendStatus(label: string): order.OrderStatus | undefined {
   switch (label) {
     case 'Pending':
-      return 'submitted';
+      return 'pending';
     case 'Approved':
       return 'approved';
     case 'Rejected':
@@ -49,16 +49,10 @@ export function toBackendStatus(label: string): order.OrderStatus | undefined {
     case 'Dispatched':
       return 'dispatched';
     case 'Delivered':
-      return 'received';
+      return 'delivered';
     default:
       return undefined;
   }
-}
-
-function countItems(items?: order.Order['items']): number {
-  if (!items || typeof items !== 'object') return 0;
-  if (Array.isArray(items)) return items.length;
-  return Object.keys(items).length;
 }
 
 function formatDate(value?: string): string {

@@ -184,8 +184,10 @@ export class AuthUseCases {
     return this.api.listOnboardingDocuments();
   }
 
-  async deleteOnboardingDocument(id: string): Promise<void> {
-    return this.api.deleteOnboardingDocument(id);
+  async presignOnboardingDocument(
+    req: PresignUploadUrlRequest,
+  ): Promise<PresignUploadUrlResult> {
+    return this.api.presignOnboardingDocument(req);
   }
 
   async presignRegistrationDocument(

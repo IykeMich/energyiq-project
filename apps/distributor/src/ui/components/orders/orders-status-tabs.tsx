@@ -15,10 +15,10 @@ interface OrderStatusTab {
 function buildTabs(stats?: order.OrderStats): OrderStatusTab[] {
   return [
     { label: 'All', count: stats?.total ?? 0 },
-    { label: 'Pending', count: (stats?.submitted ?? 0) + (stats?.draft ?? 0) },
+    { label: 'Pending', count: (stats?.pending ?? 0) + (stats?.awaiting_approval ?? 0) },
     { label: 'Approved', count: stats?.approved ?? 0 },
     { label: 'Rejected', count: stats?.rejected ?? 0 },
-    { label: 'Delivered', count: (stats?.received ?? 0) + (stats?.completed ?? 0) },
+    { label: 'Delivered', count: (stats?.delivered ?? 0) + (stats?.completed ?? 0) },
     { label: 'Dispatched', count: stats?.dispatched ?? 0 },
     { label: 'Cancelled', count: stats?.cancelled ?? 0 },
   ];

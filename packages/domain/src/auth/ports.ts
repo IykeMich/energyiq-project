@@ -59,7 +59,9 @@ export interface AuthApi {
     req: OnboardingDocumentRequest,
   ): Promise<OnboardingDocument>;
   listOnboardingDocuments(): Promise<OnboardingDocument[]>;
-  deleteOnboardingDocument(id: string): Promise<void>;
+  presignOnboardingDocument(
+    req: PresignUploadUrlRequest,
+  ): Promise<PresignUploadUrlResult>;
 
   // Supplier onboarding documents (pre-OTP, registration_token-scoped)
   presignRegistrationDocument(

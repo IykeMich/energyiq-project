@@ -7,4 +7,5 @@ export * as warehouse from './warehouse';
 export * as complaint from './complaint';
 export * as audit from './audit';
 export * as tier from './tier';
+export * as approval from './approval';
 export * as shared from './shared';

@@ -13,18 +13,18 @@ const TEAL = '#008080';
  * order detail UI. Fields not yet exposed by the backend are defaulted.
  */
 export function toOrderDetailData(source: order.Order): OrderDetailData {
-  const statusBadge = toStatusBadge(source.status);
-  const items = toLineItems(source.items);
+  const statusBadge = toStatusBadge(source.supplier_order_status_code);
+  const items = toLineItems(source.supplier_order_items);
   const timeline = buildTimeline(source);
 
   return {
-    orderId: source.order_number ?? source.id ?? '',
+    orderId: source.supplier_order_reference ?? source.supplier_order_id ?? '',
     status: statusBadge,
     info: {
-      orderId: source.id ?? source.order_number ?? '',
-      purchaseDate: formatDateTime(source.created_at),
+      orderId: source.supplier_order_id ?? source.supplier_order_reference ?? '',
+      purchaseDate: formatDateTime(source.supplier_order_date),
       paymentStatus: { label: 'Pending', color: WARNING },
-      amount: formatCurrency(source.total ?? 0),
+      amount: formatCurrency(source.supplier_order_amount ?? 0),
       paymentMethod: 'Card',
       deliveryStatus: statusBadge,
       estimatedDeliveryDate: 'N/A',
@@ -35,72 +35,70 @@ export function toOrderDetailData(source: order.Order): OrderDetailData {
       { label: 'Name:', value: 'Supplier' },
       { label: 'Email Address:', value: '-' },
       { label: 'Phone Number:', value: '-' },
-      { label: 'Order Note:', value: source.notes || 'N/A' },
+      { label: 'Order Note:', value: source.supplier_order_notes || 'N/A' },
       { label: 'Depot Location:', value: '-' },
     ],
     payment: [
-      { label: 'Subtotal:', value: formatCurrency(source.subtotal ?? 0) },
-      { label: 'Discount:', value: formatCurrency(source.discount ?? 0) },
+      { label: 'Subtotal:', value: formatCurrency(source.supplier_order_subtotal ?? 0) },
+      { label: 'Discount:', value: formatCurrency(source.supplier_order_discount ?? 0) },
       { label: 'Shipping Fee:', value: '₦0' },
       { label: 'Tax:', value: '₦0' },
     ],
-    total: { label: 'Total:', value: formatCurrency(source.total ?? 0) },
+    total: { label: 'Total:', value: formatCurrency(source.supplier_order_amount ?? 0) },
     help: { supportEmail: 'support@energyiq.com', emergencyLine: '+2348001234567' },
   };
 }
 
 function toStatusBadge(status?: string): OrderDetailBadge {
-  switch (status?.toLowerCase()) {
+  switch (status) {
     case 'approved':
       return { label: 'Approved', color: SUCCESS };
     case 'rejected':
       return { label: 'Rejected', color: DANGER };
     case 'dispatched':
       return { label: 'Dispatched', color: INFO };
-    case 'received':
+    case 'delivered':
     case 'completed':
       return { label: 'Delivered', color: TEAL };
     case 'cancelled':
       return { label: 'Cancelled', color: DANGER };
-    case 'submitted':
+    case 'pending':
+    case 'awaiting_approval':
     default:
       return { label: 'Awaiting Approval', color: WARNING };
   }
 }
 
-function toLineItems(items?: order.Order['items']): OrderLineItem[] {
+function toLineItems(items?: order.OrderLineItem[]): OrderLineItem[] {
   if (!items) return [];
-  if (Array.isArray(items)) {
-    return items.map((item, index) => {
-      const product = item as Record<string, unknown>;
-      return {
-        name: (product.name as string) || `Product ${index + 1}`,
-        unitPrice: formatCurrency((product.unit_price as number) ?? 0),
-        amount: formatCurrency((product.amount as number) ?? 0),
-      };
-    });
-  }
-  return Object.entries(items).map(([key, value]) => ({
-    name: key,
-    unitPrice: '-',
-    amount: String(value),
+  return items.map((item, index) => ({
+    name: item.supplier_product_name || `Product ${index + 1}`,
+    unitPrice: formatCurrency(item.supplier_unit_price ?? 0),
+    amount: formatCurrency(item.supplier_sub_total ?? 0),
   }));
 }
 
 function buildTimeline(source: order.Order): OrderTimelineStep[] {
-  const steps: { label: string; date?: string; Icon: LucideIcon }[] = [
-    { label: 'Order submitted by distributor', date: source.submitted_at ?? source.created_at, Icon: Check },
-    { label: 'Supplier approval', date: source.approved_at, Icon: Check },
-    { label: 'Payment Verification', Icon: RefreshCcw },
-    { label: 'Dispatch', date: source.dispatched_at, Icon: Boxes },
-    { label: 'Delivery', date: source.received_at, Icon: Home },
-  ];
+  const iconForStep = (code?: string): LucideIcon => {
+    switch (code) {
+      case 'dispatched':
+        return Boxes;
+      case 'delivered':
+      case 'completed':
+        return Home;
+      case 'awaiting_payment':
+      case 'paid':
+        return RefreshCcw;
+      default:
+        return Check;
+    }
+  };
 
-  return steps.map((step) => ({
-    label: step.label,
-    detail: step.date ? formatDateTime(step.date) : 'Pending',
-    done: Boolean(step.date),
-    Icon: step.Icon,
+  return (source.supplier_order_timeline ?? []).map((step) => ({
+    label: step.supplier_order_timeline_step_label ?? '',
+    detail: step.supplier_order_timeline_step_state === 'completed' ? 'Completed' : 'Pending',
+    done: step.supplier_order_timeline_step_state === 'completed',
+    Icon: iconForStep(step.supplier_order_timeline_step_code),
   }));
 }
 
@@ -130,13 +128,12 @@ export function getAvailableActions(status?: string): {
   canReceive: boolean;
   canModify: boolean;
 } {
-  const normalized = status?.toLowerCase();
   return {
-    canApprove: normalized === 'submitted',
-    canReject: normalized === 'submitted',
-    canCancel: normalized !== 'cancelled' && normalized !== 'completed' && normalized !== 'received',
-    canDispatch: normalized === 'approved',
-    canReceive: normalized === 'dispatched',
-    canModify: normalized === 'submitted' || normalized === 'draft',
+    canApprove: status === 'pending' || status === 'awaiting_approval',
+    canReject: status === 'pending' || status === 'awaiting_approval',
+    canCancel: status !== 'cancelled' && status !== 'completed' && status !== 'delivered',
+    canDispatch: status === 'approved',
+    canReceive: status === 'dispatched',
+    canModify: status === 'pending' || status === 'awaiting_approval',
   };
 }

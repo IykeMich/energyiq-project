@@ -1,6 +1,6 @@
 import { ClipboardList } from 'lucide-react';
 import { cn } from '@energyiq/shared';
-import type { OrderDispatchSummary } from '@/ui/pages/order/mocks';
+import type { OrderDispatchSummary } from './order-detail-mapper';
 
 const NGN = new Intl.NumberFormat('en-NG');
 

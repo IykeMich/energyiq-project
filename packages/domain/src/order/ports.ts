@@ -23,7 +23,7 @@ export interface OrderApi {
   rejectOrder(id: string, req: OrderRejectRequest): Promise<Order>;
   cancelOrder(id: string): Promise<Order>;
   dispatchOrder(id: string, req: OrderDispatchRequest): Promise<Order>;
-  receiveOrder(id: string): Promise<Order>;
+  deliverOrder(id: string): Promise<Order>;
   listOrders(params?: OrderListParams): Promise<OrderListResult>;
   getOrderStats(params?: OrderStatsParams): Promise<OrderStats>;
 }

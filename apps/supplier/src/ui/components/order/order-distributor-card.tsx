@@ -2,7 +2,7 @@ import type {
   OrderDistributorInfo,
   OrderPaymentBreakdown,
   OrderShippingInfo,
-} from '@/ui/pages/order/mocks';
+} from './order-detail-mapper';
 
 const NGN = new Intl.NumberFormat('en-NG');
 

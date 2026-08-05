@@ -1,5 +1,5 @@
 import { MapPin } from 'lucide-react';
-import type { OrderDispatchDelivery } from '@/ui/pages/order/mocks';
+import type { OrderDispatchDelivery } from './order-detail-mapper';
 
 interface OrderDeliveryDetailsCardProps {
   delivery: OrderDispatchDelivery;
@@ -16,7 +16,6 @@ export function OrderDeliveryDetailsCard({ delivery }: OrderDeliveryDetailsCardP
       <dl className="flex flex-col gap-4 text-sm text-foreground">
         <Row label="Recipient:" value={delivery.recipient} />
         <Row label="Address:" value={delivery.address} />
-        <Row label="City:" value={delivery.city} />
         <Row label="Phone Number:" value={delivery.phone} />
       </dl>
     </section>

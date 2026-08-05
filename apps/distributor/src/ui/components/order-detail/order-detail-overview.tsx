@@ -7,7 +7,7 @@ import {
   useRejectOrderMutation,
   useCancelOrderMutation,
   useDispatchOrderMutation,
-  useReceiveOrderMutation,
+  useDeliverOrderMutation,
 } from '@/hooks/use-orders';
 import { OrdersSearchBar } from '../orders/orders-search-bar';
 import { OrderDetailHeader } from './order-detail-header';
@@ -40,7 +40,7 @@ export function OrderDetailOverview({ data, orderId }: OrderDetailOverviewProps)
   const rejectMutation = useRejectOrderMutation();
   const cancelMutation = useCancelOrderMutation();
   const dispatchMutation = useDispatchOrderMutation();
-  const receiveMutation = useReceiveOrderMutation();
+  const deliverMutation = useDeliverOrderMutation();
 
   const goToOrders = () => navigate(`/${slug}/orders`);
   const closeModal = () => setModal(null);
@@ -133,7 +133,7 @@ export function OrderDetailOverview({ data, orderId }: OrderDetailOverviewProps)
   };
 
   const handleReceive = () => {
-    receiveMutation.mutate(orderId, {
+    deliverMutation.mutate(orderId, {
       onSuccess: () =>
         runMutation(
           () => {},

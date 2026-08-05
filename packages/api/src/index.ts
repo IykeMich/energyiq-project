@@ -11,5 +11,6 @@ export { OrderApiAdapter } from './order';
 export { ProductApiAdapter } from './product';
 export { WarehouseApiAdapter } from './warehouse';
 export { TierApiAdapter } from './tier';
+export { ApprovalApiAdapter } from './approval';
 
 // Orval-generated hooks live in ./generated — apps import from '@energyiq/api/generated'.

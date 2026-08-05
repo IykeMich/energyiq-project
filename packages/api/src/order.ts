@@ -35,8 +35,8 @@ export class OrderApiAdapter implements order.OrderApi {
     return apiPost<order.Order>(`v1/order/dispatch/${id}`, req);
   }
 
-  async receiveOrder(id: string): Promise<order.Order> {
-    return apiPost<order.Order>(`v1/order/receive/${id}`);
+  async deliverOrder(id: string): Promise<order.Order> {
+    return apiPost<order.Order>(`v1/order/deliver/${id}`);
   }
 
   async listOrders(params?: order.OrderListParams): Promise<order.OrderListResult> {

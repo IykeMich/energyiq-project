@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import type { OrderDispatchSuccess, DispatchedQuantity } from '@/ui/pages/order/mocks';
+import type { OrderDispatchSuccess, DispatchedQuantity } from './order-detail-mapper';
 
 const NGN = new Intl.NumberFormat('en-NG');
 

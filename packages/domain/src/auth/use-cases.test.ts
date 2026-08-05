@@ -23,7 +23,7 @@ const mockApi: AuthApi = {
   resetPasswordResend: vi.fn(),
   createOnboardingDocument: vi.fn(),
   listOnboardingDocuments: vi.fn(),
-  deleteOnboardingDocument: vi.fn(),
+  presignOnboardingDocument: vi.fn(),
   presignRegistrationDocument: vi.fn(),
   createRegistrationDocument: vi.fn(),
   listRegistrationDocuments: vi.fn(),

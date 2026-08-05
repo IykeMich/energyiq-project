@@ -1,5 +1,5 @@
 import { cn } from '@energyiq/shared';
-import type { OrderStatus, PaymentStatus } from '@/ui/pages/order/mocks';
+import type { OrderStatus, PaymentStatus } from './order-detail-mapper';
 
 type AnyStatus = OrderStatus | PaymentStatus;
 

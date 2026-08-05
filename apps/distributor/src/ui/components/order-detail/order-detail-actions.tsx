@@ -38,7 +38,7 @@ export function OrderDetailActions({
             type="button"
             variant="outline"
             onClick={onModify}
-            className="h-[44px] rounded-full border-brand bg-transparent text-sm font-medium text-brand hover:bg-brand/10"
+            className="h-[40px] rounded-full border-brand bg-transparent text-sm font-medium text-brand hover:bg-brand/10"
           >
             Modify Order
           </Button>
@@ -48,7 +48,7 @@ export function OrderDetailActions({
             type="button"
             variant="outline"
             onClick={onReject}
-            className="h-[44px] rounded-full border-brand bg-transparent text-sm font-medium text-brand hover:bg-brand/10"
+            className="h-[40px] rounded-full border-brand bg-transparent text-sm font-medium text-brand hover:bg-brand/10"
           >
             Reject Order
           </Button>
@@ -58,7 +58,7 @@ export function OrderDetailActions({
             type="button"
             variant="outline"
             onClick={onCancel}
-            className="h-[44px] rounded-full border-danger bg-transparent text-sm font-medium text-danger hover:bg-danger/10"
+            className="h-[40px] rounded-full border-danger bg-transparent text-sm font-medium text-danger hover:bg-danger/10"
           >
             Cancel Order
           </Button>
@@ -68,7 +68,7 @@ export function OrderDetailActions({
             type="button"
             variant="outline"
             onClick={onDispatch}
-            className="h-[44px] rounded-full border-brand bg-transparent text-sm font-medium text-brand hover:bg-brand/10"
+            className="h-[40px] rounded-full border-brand bg-transparent text-sm font-medium text-brand hover:bg-brand/10"
           >
             Dispatch
           </Button>

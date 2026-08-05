@@ -2,9 +2,10 @@
 // Product domain entities — pure TypeScript, zero framework imports
 // ════════════════════════════════════════════════════════════════
 
-export type ProductStatus = 'draft' | 'pending_review' | 'active' | 'paused' | 'retired';
-/** Values PATCH /v1/product/status/{id} actually accepts — narrower than the ProductStatus read-model above. */
-export type ProductStatusUpdateValue = 'draft' | 'active' | 'inactive' | 'scheduled';
+/** Matches the literal status enum on ProductResponse/ProductStats/StatusUpdateRequest in swagger. */
+export type ProductStatus = 'draft' | 'active' | 'inactive' | 'scheduled';
+/** Values PATCH /v1/product/status/{id} accepts — same set as ProductStatus above. */
+export type ProductStatusUpdateValue = ProductStatus;
 export type ProductType = 'single_product' | 'product_with_variants';
 export type PriceType = 'tiered' | 'untiered';
 export type ApprovalWorkflow = 'auto-approve' | 'scheduled';
@@ -53,12 +54,14 @@ export interface Product {
   name?: string;
   description?: string;
   category_id?: string;
+  category_name?: string;
   unit?: string;
   currency?: Currency | string;
   base_price?: number | string;
   cost_price?: number;
   packaging_type?: string;
   status?: ProductStatus | string;
+  status_label?: string;
   product_type?: ProductType | string;
   price_type?: PriceType | string;
   approval_workflow?: ApprovalWorkflow | string;
@@ -71,10 +74,15 @@ export interface Product {
   supplier_id?: string;
   warehouse_id?: string;
   warehouse_ids?: string[];
+  /** Available actions the caller may take on this product, e.g. ["edit", "delete"]. */
+  available_actions?: string[];
+  stock_level_label?: string;
+  stock_level_percentage?: number;
+  total_max_stock?: number;
+  total_stock_quantity?: number;
+  version?: number;
   created_at?: string;
   updated_at?: string;
-  moq:number;
-  gold_discount:boolean;
 }
 
 export interface ProductUpsertRequest {
@@ -122,10 +130,9 @@ export interface ProductListResult {
 export interface ProductStats {
   total?: number;
   draft?: number;
-  pending_review?: number;
   active?: number;
-  paused?: number;
-  retired?: number;
+  inactive?: number;
+  scheduled?: number;
 }
 
 export interface ProductStatusUpdateRequest {

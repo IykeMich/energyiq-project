@@ -226,7 +226,10 @@ export function ProductWizard({ mode, productId, onCancel, onGoHome, onViewProdu
           : undefined;
 
       const req = toUpsertRequest(draft, {
-        status: draft.automationOption === 'save-draft' ? 'draft' : 'active',
+        status:
+          draft.automationOption === 'save-draft' || draft.automationOption === 'submit-review'
+            ? 'draft'
+            : 'active',
         approvalWorkflow: draft.automationOption === 'schedule' ? 'scheduled' : 'auto-approve',
         activationAt,
       });
@@ -240,8 +243,9 @@ export function ProductWizard({ mode, productId, onCancel, onGoHome, onViewProdu
       // Known gap, intentionally not fabricated: "Submit for Review" has no real
       // transition yet — PATCH /v1/product/status/{id} only accepts
       // draft/active/inactive/scheduled, not 'pending_review'. The product is
-      // saved as a draft above; there's no backend call left to make until a
-      // real review-submission endpoint exists.
+      // saved as a draft above (status: 'draft'), matching the success modal's
+      // "not visible to distributors yet" messaging; there's no backend call
+      // left to make until a real review-submission endpoint exists.
 
       setIsProcessing(false);
       setSuccessOpen(true);

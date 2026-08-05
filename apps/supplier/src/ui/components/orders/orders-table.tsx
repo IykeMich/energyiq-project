@@ -3,7 +3,14 @@ import { Pencil, XCircle } from 'lucide-react';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
 import { OrdersStatusBadge } from './orders-status-badge';
-import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL } from './orders-mocks';
+import {
+  ORDER_STATUS_COLOR,
+  ORDER_STATUS_ICON,
+  ORDER_STATUS_LABEL,
+  PAYMENT_STATUS_COLOR,
+  PAYMENT_STATUS_ICON,
+  PAYMENT_STATUS_LABEL,
+} from './orders-mocks';
 import type { OrderRow } from './orders-mocks';
 
 interface OrderRowActionsProps {
@@ -54,7 +61,22 @@ function buildColumns(
       header: 'Status',
       accessor: 'status',
       render: (_value, row) => (
-        <OrdersStatusBadge label={ORDER_STATUS_LABEL[row.status]} color={ORDER_STATUS_COLOR[row.status]} />
+        <OrdersStatusBadge
+          label={ORDER_STATUS_LABEL[row.status]}
+          color={ORDER_STATUS_COLOR[row.status]}
+          icon={ORDER_STATUS_ICON[row.status]}
+        />
+      ),
+    },
+    {
+      header: 'Payment',
+      accessor: 'payment',
+      render: (_value, row) => (
+        <OrdersStatusBadge
+          label={PAYMENT_STATUS_LABEL[row.payment]}
+          color={PAYMENT_STATUS_COLOR[row.payment]}
+          icon={PAYMENT_STATUS_ICON[row.payment]}
+        />
       ),
     },
     {

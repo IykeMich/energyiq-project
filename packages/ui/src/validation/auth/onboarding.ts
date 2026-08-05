@@ -1,6 +1,32 @@
 import { z } from "zod";
+import { BusinessTypeLabels, type BusinessType } from "@energyiq/domain/auth";
 
-// ── Step 1: Administrator Account ──────────────────────────────
+// ── Step 1: Company Setup ───────────────────────────────────────
+
+const businessTypeValues = Object.keys(BusinessTypeLabels) as [
+  BusinessType,
+  ...BusinessType[],
+];
+
+export const companySetupSchema = z.object({
+  company_name: z.string().min(2, "Company name is required"),
+  business_type: z.enum(businessTypeValues, {
+    errorMap: () => ({ message: "Select a business type" }),
+  }),
+  registration_number: z.string().min(1, "Registration number is required"),
+  company_email: z.string().email("Invalid email address").optional().or(z.literal("")),
+});
+
+export type CompanySetupFormData = z.infer<typeof companySetupSchema>;
+
+export const companySetupFormDefaultValues: CompanySetupFormData = {
+  company_name: "",
+  business_type: "" as CompanySetupFormData["business_type"],
+  registration_number: "",
+  company_email: "",
+};
+
+// ── Step 2: Administrator Account ──────────────────────────────
 
 export const adminAccountSchema = z
   .object({
@@ -35,67 +61,3 @@ export const adminAccountFormDefaultValues: AdminAccountFormData = {
   accepted_privacy_policy: false,
 };
 
-// ── Step 3: Organization Details ───────────────────────────────
-
-export const organizationDetailsSchema = z.object({
-  registered_business_name: z.string().min(2, "Registered business name is required"),
-  trading_name: z.string().min(1, "Trading name is required"),
-  business_registration_number: z.string().min(1, "Business registration number is required"),
-  business_type: z.string().min(1, "Business type is required"),
-  industry: z.string().min(1, "Industry is required"),
-  business_email: z.string().email("Invalid email address"),
-  business_phone_number: z.string().min(7, "Business phone number is required"),
-  website: z.string().optional().or(z.literal("")),
-  country: z.string().min(1, "Country is required"),
-  state: z.string().min(1, "State is required"),
-  city: z.string().min(1, "City is required"),
-  office_address: z.string().min(2, "Office address is required"),
-});
-
-export type OrganizationDetailsFormData = z.infer<typeof organizationDetailsSchema>;
-
-export const organizationDetailsFormDefaultValues: OrganizationDetailsFormData = {
-  registered_business_name: "",
-  trading_name: "",
-  business_registration_number: "",
-  business_type: "",
-  industry: "",
-  business_email: "",
-  business_phone_number: "",
-  website: "",
-  country: "",
-  state: "",
-  city: "",
-  office_address: "",
-};
-
-// ── Step 4: Role-Specific Information (Supplier details) ───────
-
-export const orderApprovalPreferenceOptions = [
-  { value: "manual", label: "Manual Approval" },
-  { value: "automatic", label: "Automatic Approval" },
-] as const;
-
-export const supplierDetailsSchema = z.object({
-  product_categories: z.array(z.string()).min(1, "Select at least one product category"),
-  warehouse_locations: z.string().min(1, "Warehouse locations are required"),
-  delivery_coverage: z.string().min(1, "Delivery coverage is required"),
-  minimum_order_requirement: z.string().min(1, "Minimum order requirement is required"),
-  settlement_information: z.string().min(1, "Settlement information is required"),
-  tax_information: z.string().min(1, "Tax information is required"),
-  return_policy: z.string().min(1, "Return policy is required"),
-  order_approval_preference: z.enum(["manual", "automatic"]),
-});
-
-export type SupplierDetailsFormData = z.infer<typeof supplierDetailsSchema>;
-
-export const supplierDetailsFormDefaultValues: SupplierDetailsFormData = {
-  product_categories: [],
-  warehouse_locations: "",
-  delivery_coverage: "",
-  minimum_order_requirement: "",
-  settlement_information: "",
-  tax_information: "",
-  return_policy: "",
-  order_approval_preference: "manual",
-};

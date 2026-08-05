@@ -36,7 +36,6 @@ export function WarehouseInventoryPage() {
   const [statusFilter, setStatusFilter] = useState<WarehouseStatusFilter>('all');
   const [editing, setEditing] = useState<Warehouse | null>(null);
   const [deleting, setDeleting] = useState<Warehouse | null>(null);
-  console.log(editing);
 
   const rows = useMemo<Warehouse[]>(() => {
     return (listResult?.items ?? []).map(toWarehouseViewModel);
@@ -113,17 +112,14 @@ export function WarehouseInventoryPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex h-100 items-center justify-center rounded-[18px] bg-surface-card">
-          <p className="text-muted-foreground">Loading warehouses…</p>
-        </div>
-      ) : error ? (
+      {error ? (
         <div className="flex h-100 items-center justify-center rounded-[18px] bg-surface-card">
           <p className="text-danger">Failed to load warehouses. Please try again.</p>
         </div>
       ) : (
         <WarehouseListTable
           rows={visibleRows}
+          isLoading={isLoading}
           onEdit={setEditing}
           onDelete={setDeleting}
           onTransferHistory={() => navigate(`/${slug}/inventory/transfer-history`)}

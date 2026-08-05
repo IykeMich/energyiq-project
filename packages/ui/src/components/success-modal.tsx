@@ -81,6 +81,8 @@ export function SuccessModal({
   className,
 }: SuccessModalProps) {
   const badge = TONE_CLASSES[tone];
+  const actionCount = [primaryAction, secondaryAction].filter(Boolean).length;
+
 
   return (
     <Modal open={open} onOpenChange={onOpenChange} size="sm" showClose={false} className={className}>
@@ -128,6 +130,8 @@ export function SuccessModal({
           className={
             buttonLayout === 'stack'
               ? 'flex flex-col gap-3 mt-6'
+              : actionCount === 1
+                ? 'flex justify-center mt-6'
               : 'grid grid-cols-2 gap-3 mt-6'
           }
         >
@@ -135,7 +139,7 @@ export function SuccessModal({
             <button
               type="button"
               onClick={primaryAction.onClick}
-              className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold"
+              className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-4"
             >
               {primaryAction.label}
             </button>

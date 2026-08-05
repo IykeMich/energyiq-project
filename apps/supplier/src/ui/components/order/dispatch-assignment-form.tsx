@@ -1,5 +1,5 @@
 import { Truck } from 'lucide-react';
-import type { OrderDispatchAssignment } from '@/ui/pages/order/mocks';
+import type { OrderDispatchAssignment } from './order-detail-mapper';
 
 export interface DispatchAssignmentValues extends OrderDispatchAssignment {
   dispatchNote: string;

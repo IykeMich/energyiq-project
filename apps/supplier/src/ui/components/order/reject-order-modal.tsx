@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@energyiq/ui';
-import { REJECT_REASONS, type OrderDetail } from '@/ui/pages/order/mocks';
+import { REJECT_REASONS, type OrderDetail } from './order-detail-mapper';
 
 const NGN = new Intl.NumberFormat('en-NG');
 

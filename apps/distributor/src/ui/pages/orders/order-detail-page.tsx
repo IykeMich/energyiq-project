@@ -23,5 +23,5 @@ export function OrderDetailPage() {
     );
   }
 
-  return <OrderDetailOverview data={toOrderDetailData(order)} orderId={order.id ?? id} />;
+  return <OrderDetailOverview data={toOrderDetailData(order)} orderId={order.supplier_order_id ?? id} />;
 }

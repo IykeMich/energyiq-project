@@ -91,12 +91,15 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
         />
       </div>
 
-      <ProductTieredPricing
-        tiers={draft.pricingTiers}
-        onAdd={addTier}
-        onRemove={removeTier}
-        onChange={updateTier}
-      />
+      <div className="flex flex-col gap-2">
+        <ProductTieredPricing
+          tiers={draft.pricingTiers}
+          onAdd={addTier}
+          onRemove={removeTier}
+          onChange={updateTier}
+        />
+        {errors?.pricingTiers && <p className="text-xs text-danger">{errors.pricingTiers}</p>}
+      </div>
 
       <div className="border-t border-dashed border-border-subtle pt-5 flex flex-col gap-4">
         <CheckboxField
