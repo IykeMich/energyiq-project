@@ -33,3 +33,6 @@ dist-ssr
 
 claude.md
 .orval-input/
+
+# Ad-hoc visual verification scripts (see CLAUDE.md rule 10) — not app code
+/screenshot*.mjs
