@@ -15,6 +15,10 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query';
 
+import type {
+  ErrorResponse
+} from '../schemas';
+
 import { fetcher } from '../../fetcher';
 
 
@@ -24,19 +28,55 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Public endpoint used by the web apps to theme the login screen.
+
+**Frontend usage:**
+Call this operation when opening the **Get public branding by slug** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get public branding by slug
  */
-export type getV1PublicBrandingSlugResponse200 = {
-  data: void
-  status: 200
+export type getV1PublicBrandingSlugResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type getV1PublicBrandingSlugResponseSuccess = (getV1PublicBrandingSlugResponse200) & {
+export type getV1PublicBrandingSlugResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1PublicBrandingSlugResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1PublicBrandingSlugResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type getV1PublicBrandingSlugResponseError = (getV1PublicBrandingSlugResponse400 | getV1PublicBrandingSlugResponse404 | getV1PublicBrandingSlugResponse429 | getV1PublicBrandingSlugResponse500) & {
   headers: Headers;
 };
-;
 
-export type getV1PublicBrandingSlugResponse = (getV1PublicBrandingSlugResponseSuccess)
+export type getV1PublicBrandingSlugResponse = (getV1PublicBrandingSlugResponseError)
 
 export const getGetV1PublicBrandingSlugUrl = (slug: string,) => {
 
@@ -68,7 +108,7 @@ export const getGetV1PublicBrandingSlugQueryKey = (slug: string,) => {
     }
 
 
-export const getGetV1PublicBrandingSlugQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError = unknown>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1PublicBrandingSlugQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError = ErrorResponse>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -87,14 +127,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1PublicBrandingSlugQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PublicBrandingSlug>>>
-export type GetV1PublicBrandingSlugQueryError = unknown
+export type GetV1PublicBrandingSlugQueryError = ErrorResponse
 
 
 /**
  * @summary Get public branding by slug
  */
 
-export function useGetV1PublicBrandingSlug<TData = Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError = unknown>(
+export function useGetV1PublicBrandingSlug<TData = Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError = ErrorResponse>(
  slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicBrandingSlug>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

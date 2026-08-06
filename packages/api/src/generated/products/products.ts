@@ -20,20 +20,20 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CloneProductRequest,
+  EmptyResponse,
+  ErrorResponse,
   GetV1ProductListParams,
   GetV1ProductPriceIdParams,
-  HttpCloneProductRequest,
-  HttpProductEnvelope,
-  HttpProductImagePresignRequest,
-  HttpProductImagePresignResponse,
-  HttpProductListResponse,
-  HttpProductPriceCalculationResponse,
-  HttpProductStatsResponse,
-  HttpStatusUpdateRequest,
-  InternalProductAdaptersHttpCreateRequest,
-  InternalProductAdaptersHttpUpdateRequest,
-  ResponseEmptyResponse,
-  ResponseErrorResponse
+  ProductCreateRequest,
+  ProductEnvelope,
+  ProductImagePresignRequest,
+  ProductImagePresignResponse,
+  ProductListResponse,
+  ProductPriceCalculationResponse,
+  ProductStatsResponse,
+  ProductUpdateRequest,
+  StatusUpdateRequest
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -44,20 +44,70 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Creates a new draft product by copying configuration, image metadata, category, pricing, compliance, and trading rules from an existing product while requiring a new unique SKU. Prerequisite: source product must exist and new SKU must not already be used by the supplier. Inventory is not copied; allocate warehouses explicitly after clone or during creation.
+ * Creates a new draft product by copying configuration, image metadata, category, pricing, compliance, and trading rules from an existing product while requiring a new unique SKU.
+
+**Prerequisites:** source product must exist and new SKU must not already be used by the supplier. Inventory is not copied; allocate warehouses explicitly after clone or during creation.
+
+**Frontend usage:**
+Call this operation from the **Clone product** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Original Product ID; Original Product ID
+- `sku` — string; minimum length 2; maximum length 50
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Clone product
  */
 export type postV1ProductCloneIdResponse200 = {
-  data: HttpProductEnvelope
+  data: ProductEnvelope
   status: 200
+}
+
+export type postV1ProductCloneIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1ProductCloneIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1ProductCloneIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ProductCloneIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ProductCloneIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1ProductCloneIdResponseSuccess = (postV1ProductCloneIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1ProductCloneIdResponse = (postV1ProductCloneIdResponseSuccess)
+export type postV1ProductCloneIdResponseError = (postV1ProductCloneIdResponse400 | postV1ProductCloneIdResponse401 | postV1ProductCloneIdResponse403 | postV1ProductCloneIdResponse429 | postV1ProductCloneIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1ProductCloneIdUrl = (id: string,) => {
 
@@ -68,24 +118,24 @@ export const getPostV1ProductCloneIdUrl = (id: string,) => {
 }
 
 export const postV1ProductCloneId = async (id: string,
-    httpCloneProductRequest: HttpCloneProductRequest, options?: RequestInit): Promise<postV1ProductCloneIdResponse> => {
+    cloneProductRequest: CloneProductRequest, options?: RequestInit): Promise<postV1ProductCloneIdResponseSuccess> => {
 
-  return fetcher<postV1ProductCloneIdResponse>(getPostV1ProductCloneIdUrl(id),
+  return fetcher<postV1ProductCloneIdResponseSuccess>(getPostV1ProductCloneIdUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpCloneProductRequest,)
+      cloneProductRequest,)
   }
 );}
 
 
 
 
-export const getPostV1ProductCloneIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCloneId>>, TError,{id: string;data: HttpCloneProductRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCloneId>>, TError,{id: string;data: HttpCloneProductRequest}, TContext> => {
+export const getPostV1ProductCloneIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCloneId>>, TError,{id: string;data: CloneProductRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCloneId>>, TError,{id: string;data: CloneProductRequest}, TContext> => {
 
 const mutationKey = ['postV1ProductCloneId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -97,7 +147,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductCloneId>>, {id: string;data: HttpCloneProductRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductCloneId>>, {id: string;data: CloneProductRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1ProductCloneId(id,data,requestOptions)
@@ -111,71 +161,135 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1ProductCloneIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ProductCloneId>>>
-    export type PostV1ProductCloneIdMutationBody = HttpCloneProductRequest
-    export type PostV1ProductCloneIdMutationError = unknown
+    export type PostV1ProductCloneIdMutationBody = CloneProductRequest
+    export type PostV1ProductCloneIdMutationError = ErrorResponse
 
     /**
  * @summary Clone product
  */
-export const usePostV1ProductCloneId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCloneId>>, TError,{id: string;data: HttpCloneProductRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1ProductCloneId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCloneId>>, TError,{id: string;data: CloneProductRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ProductCloneId>>,
         TError,
-        {id: string;data: HttpCloneProductRequest},
+        {id: string;data: CloneProductRequest},
         TContext
       > => {
       return useMutation(getPostV1ProductCloneIdMutationOptions(options));
     }
     /**
  * Creates a supplier-scoped product in draft, active, or scheduled state.
-Prerequisites: category_id and unit must reference active records owned by the authenticated supplier. Image files must already be uploaded using the product presign endpoint.
+
+**Prerequisites:** category_id and unit must reference active records owned by the authenticated supplier. Image files must already be uploaded using the product presign endpoint.
 Visibility and workflow: distributor_visibility currently accepts all_distributors only. approval_workflow accepts auto-approve or scheduled; scheduled requires a future activation_at and creates the product with scheduled status.
 Pricing: untiered products require positive cost_price and base_price. Tiered products require non-overlapping tier_pricing entries with tier, min_quantity, max_quantity, and positive unit_price.
 Product types: single_product accepts no variants. product_with_variants requires product_variants containing unique SKU/display values and positive cost and selling prices.
-Enum values: status is draft or active; product_type is single_product or product_with_variants; price_type is tiered or untiered; tax type supports VAT, GST, SalesTax, or None.
-Edge cases: inactive categories or units, duplicate SKU, invalid image ownership, past activation dates, duplicate warehouse allocations, and quantities above max_stock return client errors.
-Expected outcome: the product, images, variants, pricing, tax configuration, and warehouse inventory allocations are persisted atomically. Any failed step rolls back the complete operation, and retrieval responses include allocated warehouse IDs.
+
+**Enum values:** status is draft or active; product_type is single_product or product_with_variants; price_type is tiered or untiered; tax type supports VAT, GST, SalesTax, or None.
+
+**Edge cases:** inactive categories or units, duplicate SKU, invalid image ownership, past activation dates, duplicate warehouse+storage rows, and quantities above max_stock return client errors. The same warehouse may appear more than once only when each entry uses a distinct storage location/reference.
+
+**Expected outcomes:** the product, images, variants, pricing, tax configuration, and any optional warehouse inventory allocations are persisted atomically. Any failed step rolls back the complete operation.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create product** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `approval_workflow` — string; allowed: `auto-approve`, `scheduled`
+- `base_price` — number
+- `category_id` — string
+- `currency` — string
+- `distributor_visibility` — string; allowed: `all_distributors`
+- `name` — string; minimum length 2; maximum length 255
+- `price_type` — string; allowed: `tiered`, `untiered`
+- `product_type` — string; allowed: `single_product`, `product_with_variants`
+- `sku` — string; minimum length 2; maximum length 50
+- `unit` — string; maximum length 20
+
+**Optional inputs:**
+- `access_rules.geographic_availability` — array; minimum items 1
+- `access_rules.restrict_to_specific_distributors` — boolean
+- `access_rules.selected_distributor_ids` — array
+- `access_rules.visible_tiers` — array; allowed: `bronze`, `silver`, `gold`; minimum items 1
+- `activation_at` — string
+- `compliance.certification_expiry_date` — string
+- `compliance.documents[].name` — string; minimum length 1; maximum length 255
+- `compliance.documents[].url` — string; maximum length 1000
+- `compliance.regulatory_reference_code` — string; minimum length 3; maximum length 255
+- `compliance.required_certifications` — array; minimum items 1
+- `compliance.safety_information` — string; minimum length 3; maximum length 5000
+- `cost_price` — number
+- `description` — string
+- `images[].alt_text` — string; maximum length 160
+- `images[].is_primary` — boolean
+- `images[].key` — string; maximum length 500
+- `images[].sort_order` — integer; minimum 0
+- `images[].url` — string; maximum length 1000
+- `packaging_type` — string
+- `pricing_config.promotional_pricing.enabled` — boolean
+- `pricing_config.promotional_pricing.promo_price` — number
+- `pricing_config.promotional_pricing.valid_from` — string
+- `pricing_config.promotional_pricing.valid_to` — string
+- `pricing_config.tier_discounts[].discount_percent` — number; minimum 0; maximum 100
+- `pricing_config.tier_discounts[].tier` — string; allowed: `bronze`, `silver`, `gold`
+- `product_variants[].cost_price` — number
+- `product_variants[].display_name` — string; minimum length 2; maximum length 255
+- `product_variants[].selling_price` — number
+- `product_variants[].sku` — string; minimum length 2; maximum length 50
+- `status` — string; allowed: `draft`, `active`
+- `tax_configuration.tax_rate` — number; minimum 0
+- `tax_configuration.tax_type` — string; allowed: `VAT`, `GST`, `SalesTax`, `None`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
  * @summary Create product
  */
 export type postV1ProductCreateResponse201 = {
-  data: HttpProductEnvelope
+  data: ProductEnvelope
   status: 201
 }
 
 export type postV1ProductCreateResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1ProductCreateResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
 export type postV1ProductCreateResponse403 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 403
 }
 
 export type postV1ProductCreateResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
 }
 
 export type postV1ProductCreateResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1ProductCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ProductCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1ProductCreateResponseSuccess = (postV1ProductCreateResponse201) & {
   headers: Headers;
 };
-export type postV1ProductCreateResponseError = (postV1ProductCreateResponse400 | postV1ProductCreateResponse401 | postV1ProductCreateResponse403 | postV1ProductCreateResponse404 | postV1ProductCreateResponse409) & {
+export type postV1ProductCreateResponseError = (postV1ProductCreateResponse400 | postV1ProductCreateResponse401 | postV1ProductCreateResponse403 | postV1ProductCreateResponse404 | postV1ProductCreateResponse409 | postV1ProductCreateResponse429 | postV1ProductCreateResponse500) & {
   headers: Headers;
 };
-
-export type postV1ProductCreateResponse = (postV1ProductCreateResponseSuccess | postV1ProductCreateResponseError)
 
 export const getPostV1ProductCreateUrl = () => {
 
@@ -185,24 +299,24 @@ export const getPostV1ProductCreateUrl = () => {
   return `/v1/product/create`
 }
 
-export const postV1ProductCreate = async (internalProductAdaptersHttpCreateRequest: InternalProductAdaptersHttpCreateRequest, options?: RequestInit): Promise<postV1ProductCreateResponse> => {
+export const postV1ProductCreate = async (productCreateRequest: ProductCreateRequest, options?: RequestInit): Promise<postV1ProductCreateResponseSuccess> => {
 
-  return fetcher<postV1ProductCreateResponse>(getPostV1ProductCreateUrl(),
+  return fetcher<postV1ProductCreateResponseSuccess>(getPostV1ProductCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalProductAdaptersHttpCreateRequest,)
+      productCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1ProductCreateMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCreate>>, TError,{data: InternalProductAdaptersHttpCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCreate>>, TError,{data: InternalProductAdaptersHttpCreateRequest}, TContext> => {
+export const getPostV1ProductCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCreate>>, TError,{data: ProductCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCreate>>, TError,{data: ProductCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1ProductCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -214,7 +328,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductCreate>>, {data: InternalProductAdaptersHttpCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductCreate>>, {data: ProductCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1ProductCreate(data,requestOptions)
@@ -228,37 +342,81 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1ProductCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ProductCreate>>>
-    export type PostV1ProductCreateMutationBody = InternalProductAdaptersHttpCreateRequest
-    export type PostV1ProductCreateMutationError = ResponseErrorResponse
+    export type PostV1ProductCreateMutationBody = ProductCreateRequest
+    export type PostV1ProductCreateMutationError = ErrorResponse
 
     /**
  * @summary Create product
  */
-export const usePostV1ProductCreate = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCreate>>, TError,{data: InternalProductAdaptersHttpCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1ProductCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCreate>>, TError,{data: ProductCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ProductCreate>>,
         TError,
-        {data: InternalProductAdaptersHttpCreateRequest},
+        {data: ProductCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1ProductCreateMutationOptions(options));
     }
     /**
- * Deletes a product from the supplier catalog. Prerequisite: caller must have Product delete permission. Use cautiously for draft or unused products; products referenced by orders/inventory may be protected by database constraints and return an error instead of deleting. Edge cases: unknown product returns 404.
+ * Deletes a product from the supplier catalog.
+
+**Prerequisites:** caller must have Product delete permission. Use cautiously for draft or unused products; products referenced by orders/inventory may be protected by database constraints and return an error instead of deleting.
+
+**Edge cases:** unknown product returns 404.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete product**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Product ID; Product ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
  * @summary Delete product
  */
 export type deleteV1ProductDeleteIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
+}
+
+export type deleteV1ProductDeleteIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1ProductDeleteIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1ProductDeleteIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1ProductDeleteIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1ProductDeleteIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1ProductDeleteIdResponseSuccess = (deleteV1ProductDeleteIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type deleteV1ProductDeleteIdResponse = (deleteV1ProductDeleteIdResponseSuccess)
+export type deleteV1ProductDeleteIdResponseError = (deleteV1ProductDeleteIdResponse400 | deleteV1ProductDeleteIdResponse401 | deleteV1ProductDeleteIdResponse403 | deleteV1ProductDeleteIdResponse429 | deleteV1ProductDeleteIdResponse500) & {
+  headers: Headers;
+};
 
 export const getDeleteV1ProductDeleteIdUrl = (id: string,) => {
 
@@ -268,9 +426,9 @@ export const getDeleteV1ProductDeleteIdUrl = (id: string,) => {
   return `/v1/product/delete/${id}`
 }
 
-export const deleteV1ProductDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1ProductDeleteIdResponse> => {
+export const deleteV1ProductDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1ProductDeleteIdResponseSuccess> => {
 
-  return fetcher<deleteV1ProductDeleteIdResponse>(getDeleteV1ProductDeleteIdUrl(id),
+  return fetcher<deleteV1ProductDeleteIdResponseSuccess>(getDeleteV1ProductDeleteIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -282,7 +440,7 @@ export const deleteV1ProductDeleteId = async (id: string, options?: RequestInit)
 
 
 
-export const getDeleteV1ProductDeleteIdMutationOptions = <TError = unknown,
+export const getDeleteV1ProductDeleteIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductDeleteId>>, TError,{id: string}, TContext> => {
 
@@ -311,12 +469,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1ProductDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1ProductDeleteId>>>
 
-    export type DeleteV1ProductDeleteIdMutationError = unknown
+    export type DeleteV1ProductDeleteIdMutationError = ErrorResponse
 
     /**
  * @summary Delete product
  */
-export const useDeleteV1ProductDeleteId = <TError = unknown,
+export const useDeleteV1ProductDeleteId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1ProductDeleteId>>,
@@ -328,36 +486,77 @@ export const useDeleteV1ProductDeleteId = <TError = unknown,
     }
     /**
  * Validates image metadata and returns a short-lived S3 PUT URL. Upload bytes with the returned headers, then submit key and public_url during product create or update.
+
+**Frontend usage:**
+Call this operation when the user submits the **Generate product image upload URL** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `content_type` — string; allowed: `image/jpeg`, `image/png`, `image/webp`
+- `file_name` — string; maximum length 255
+- `size` — integer; maximum 1.048576e+07
+
+**Optional inputs:**
+None.
+
+**Enum values:**
+- `content_type`: `image/jpeg`, `image/png`, `image/webp`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+- `503` — A required downstream service is temporarily unavailable.
  * @summary Generate product image upload URL
  */
 export type postV1ProductImagesPresignResponse200 = {
-  data: HttpProductImagePresignResponse
+  data: ProductImagePresignResponse
   status: 200
 }
 
 export type postV1ProductImagesPresignResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1ProductImagesPresignResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1ProductImagesPresignResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ProductImagesPresignResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ProductImagesPresignResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
 export type postV1ProductImagesPresignResponse503 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 503
 }
 
 export type postV1ProductImagesPresignResponseSuccess = (postV1ProductImagesPresignResponse200) & {
   headers: Headers;
 };
-export type postV1ProductImagesPresignResponseError = (postV1ProductImagesPresignResponse400 | postV1ProductImagesPresignResponse401 | postV1ProductImagesPresignResponse503) & {
+export type postV1ProductImagesPresignResponseError = (postV1ProductImagesPresignResponse400 | postV1ProductImagesPresignResponse401 | postV1ProductImagesPresignResponse403 | postV1ProductImagesPresignResponse429 | postV1ProductImagesPresignResponse500 | postV1ProductImagesPresignResponse503) & {
   headers: Headers;
 };
-
-export type postV1ProductImagesPresignResponse = (postV1ProductImagesPresignResponseSuccess | postV1ProductImagesPresignResponseError)
 
 export const getPostV1ProductImagesPresignUrl = () => {
 
@@ -367,24 +566,24 @@ export const getPostV1ProductImagesPresignUrl = () => {
   return `/v1/product/images/presign`
 }
 
-export const postV1ProductImagesPresign = async (httpProductImagePresignRequest: HttpProductImagePresignRequest, options?: RequestInit): Promise<postV1ProductImagesPresignResponse> => {
+export const postV1ProductImagesPresign = async (productImagePresignRequest: ProductImagePresignRequest, options?: RequestInit): Promise<postV1ProductImagesPresignResponseSuccess> => {
 
-  return fetcher<postV1ProductImagesPresignResponse>(getPostV1ProductImagesPresignUrl(),
+  return fetcher<postV1ProductImagesPresignResponseSuccess>(getPostV1ProductImagesPresignUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpProductImagePresignRequest,)
+      productImagePresignRequest,)
   }
 );}
 
 
 
 
-export const getPostV1ProductImagesPresignMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, TError,{data: HttpProductImagePresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, TError,{data: HttpProductImagePresignRequest}, TContext> => {
+export const getPostV1ProductImagesPresignMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, TError,{data: ProductImagePresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, TError,{data: ProductImagePresignRequest}, TContext> => {
 
 const mutationKey = ['postV1ProductImagesPresign'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -396,7 +595,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, {data: HttpProductImagePresignRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, {data: ProductImagePresignRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1ProductImagesPresign(data,requestOptions)
@@ -410,47 +609,96 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1ProductImagesPresignMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ProductImagesPresign>>>
-    export type PostV1ProductImagesPresignMutationBody = HttpProductImagePresignRequest
-    export type PostV1ProductImagesPresignMutationError = ResponseErrorResponse
+    export type PostV1ProductImagesPresignMutationBody = ProductImagePresignRequest
+    export type PostV1ProductImagesPresignMutationError = ErrorResponse
 
     /**
  * @summary Generate product image upload URL
  */
-export const usePostV1ProductImagesPresign = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, TError,{data: HttpProductImagePresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1ProductImagesPresign = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductImagesPresign>>, TError,{data: ProductImagePresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ProductImagesPresign>>,
         TError,
-        {data: HttpProductImagePresignRequest},
+        {data: ProductImagePresignRequest},
         TContext
       > => {
       return useMutation(getPostV1ProductImagesPresignMutationOptions(options));
     }
     /**
  * Returns a paginated product catalog for the authenticated supplier.
-Filters: status, category_id, search, currency, unit, date_from, date_to, limit, and offset.
-Enum values: status: draft, pending_review, active, paused, retired. date_from/date_to: YYYY-MM-DD.
-Expected outcomes: returns items, total, limit, and offset for catalog table rendering.
+
+**Filters:** status, category_id, search, currency, unit, date_from, date_to, limit, and offset.
+
+**Enum values:** status: draft, pending_review, active, paused, retired. date_from/date_to: YYYY-MM-DD.
+
+**Expected outcomes:** returns items, total, limit, and offset for catalog table rendering.
+
+**Frontend usage:**
+Use this operation to populate the **List products** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `category_id` (query) — string; Product category UUID; Product category UUID
+- `currency` (query) — string; allowed: `NGN`, `USD`; Currency code; Currency code
+- `date_from` (query) — string; Created from date in YYYY-MM-DD; Created from date in YYYY-MM-DD
+- `date_to` (query) — string; Created to date in YYYY-MM-DD; Created to date in YYYY-MM-DD
+- `limit` (query) — integer; Limit; Limit
+- `offset` (query) — integer; Offset; Offset
+- `search` (query) — string; Search by product name or SKU; Search by product name or SKU
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `draft`, `pending_review`, `active`, `paused`, `retired`; Product status; Product status
+- `unit` (query) — string; Unit short code, for example L; Unit short code, for example L
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List products
  */
 export type getV1ProductListResponse200 = {
-  data: HttpProductListResponse
+  data: ProductListResponse
   status: 200
 }
 
 export type getV1ProductListResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type getV1ProductListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ProductListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ProductListResponseSuccess = (getV1ProductListResponse200) & {
   headers: Headers;
 };
-export type getV1ProductListResponseError = (getV1ProductListResponse400) & {
+export type getV1ProductListResponseError = (getV1ProductListResponse400 | getV1ProductListResponse401 | getV1ProductListResponse403 | getV1ProductListResponse429 | getV1ProductListResponse500) & {
   headers: Headers;
 };
-
-export type getV1ProductListResponse = (getV1ProductListResponseSuccess | getV1ProductListResponseError)
 
 export const getGetV1ProductListUrl = (params?: GetV1ProductListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -467,9 +715,9 @@ export const getGetV1ProductListUrl = (params?: GetV1ProductListParams,) => {
   return stringifiedParams.length > 0 ? `/v1/product/list?${stringifiedParams}` : `/v1/product/list`
 }
 
-export const getV1ProductList = async (params?: GetV1ProductListParams, options?: RequestInit): Promise<getV1ProductListResponse> => {
+export const getV1ProductList = async (params?: GetV1ProductListParams, options?: RequestInit): Promise<getV1ProductListResponseSuccess> => {
 
-  return fetcher<getV1ProductListResponse>(getGetV1ProductListUrl(params),
+  return fetcher<getV1ProductListResponseSuccess>(getGetV1ProductListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -489,7 +737,7 @@ export const getGetV1ProductListQueryKey = (params?: GetV1ProductListParams,) =>
     }
 
 
-export const getGetV1ProductListQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductList>>, TError = ResponseErrorResponse>(params?: GetV1ProductListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ProductListQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductList>>, TError = ErrorResponse>(params?: GetV1ProductListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -508,14 +756,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ProductListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductList>>>
-export type GetV1ProductListQueryError = ResponseErrorResponse
+export type GetV1ProductListQueryError = ErrorResponse
 
 
 /**
  * @summary List products
  */
 
-export function useGetV1ProductList<TData = Awaited<ReturnType<typeof getV1ProductList>>, TError = ResponseErrorResponse>(
+export function useGetV1ProductList<TData = Awaited<ReturnType<typeof getV1ProductList>>, TError = ErrorResponse>(
  params?: GetV1ProductListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -533,27 +781,62 @@ export function useGetV1ProductList<TData = Awaited<ReturnType<typeof getV1Produ
 
 
 /**
- * Returns supplier-scoped product status counts for catalog tabs and dashboard cards. Prerequisite: caller must have Product list permission. Expected outcome: counts for total, draft, pending_review, active, paused and retired products without fetching paginated catalog rows.
+ * Returns supplier-scoped product status counts for catalog tabs and dashboard cards.
+
+**Prerequisites:** caller must have Product list permission.
+
+**Expected outcomes:** counts for total, draft, pending_review, active, paused and retired products without fetching paginated catalog rows.
+
+**Frontend usage:**
+Use this operation to populate the **Get product catalog stats** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get product catalog stats
  */
 export type getV1ProductListStatsResponse200 = {
-  data: HttpProductStatsResponse
+  data: ProductStatsResponse
   status: 200
 }
 
 export type getV1ProductListStatsResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
+}
+
+export type getV1ProductListStatsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductListStatsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductListStatsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ProductListStatsResponseSuccess = (getV1ProductListStatsResponse200) & {
   headers: Headers;
 };
-export type getV1ProductListStatsResponseError = (getV1ProductListStatsResponse401) & {
+export type getV1ProductListStatsResponseError = (getV1ProductListStatsResponse401 | getV1ProductListStatsResponse403 | getV1ProductListStatsResponse429 | getV1ProductListStatsResponse500) & {
   headers: Headers;
 };
-
-export type getV1ProductListStatsResponse = (getV1ProductListStatsResponseSuccess | getV1ProductListStatsResponseError)
 
 export const getGetV1ProductListStatsUrl = () => {
 
@@ -563,9 +846,9 @@ export const getGetV1ProductListStatsUrl = () => {
   return `/v1/product/list/stats`
 }
 
-export const getV1ProductListStats = async ( options?: RequestInit): Promise<getV1ProductListStatsResponse> => {
+export const getV1ProductListStats = async ( options?: RequestInit): Promise<getV1ProductListStatsResponseSuccess> => {
 
-  return fetcher<getV1ProductListStatsResponse>(getGetV1ProductListStatsUrl(),
+  return fetcher<getV1ProductListStatsResponseSuccess>(getGetV1ProductListStatsUrl(),
   {
     ...options,
     method: 'GET'
@@ -585,7 +868,7 @@ export const getGetV1ProductListStatsQueryKey = () => {
     }
 
 
-export const getGetV1ProductListStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductListStats>>, TError = ResponseErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ProductListStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductListStats>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -604,14 +887,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ProductListStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductListStats>>>
-export type GetV1ProductListStatsQueryError = ResponseErrorResponse
+export type GetV1ProductListStatsQueryError = ErrorResponse
 
 
 /**
  * @summary Get product catalog stats
  */
 
-export function useGetV1ProductListStats<TData = Awaited<ReturnType<typeof getV1ProductListStats>>, TError = ResponseErrorResponse>(
+export function useGetV1ProductListStats<TData = Awaited<ReturnType<typeof getV1ProductListStats>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -629,20 +912,63 @@ export function useGetV1ProductListStats<TData = Awaited<ReturnType<typeof getV1
 
 
 /**
- * Calculates the effective product price for a distributor tier without mutating product data. Prerequisite: product must exist. Edge cases: missing tier defaults to bronze; unknown tiers receive no discount. Expected outcome: base price, discount, final price, and applied tier are returned for UI previews and order quoting.
+ * Calculates the effective product price for a distributor tier without mutating product data.
+
+**Prerequisites:** product must exist.
+
+**Edge cases:** missing tier defaults to bronze; unknown tiers receive no discount.
+
+**Expected outcomes:** base price, discount, final price, and applied tier are returned for UI previews and order quoting.
+
+**Frontend usage:**
+Call this operation when opening the **Calculate product price for a distributor tier** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Product ID; Product ID
+
+**Optional inputs:**
+- `tier` (query) — string; Distributor Tier; Distributor Tier
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
  * @summary Calculate product price for a distributor tier
  */
 export type getV1ProductPriceIdResponse200 = {
-  data: HttpProductPriceCalculationResponse
+  data: ProductPriceCalculationResponse
   status: 200
+}
+
+export type getV1ProductPriceIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1ProductPriceIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ProductPriceIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductPriceIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductPriceIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ProductPriceIdResponseSuccess = (getV1ProductPriceIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1ProductPriceIdResponse = (getV1ProductPriceIdResponseSuccess)
+export type getV1ProductPriceIdResponseError = (getV1ProductPriceIdResponse400 | getV1ProductPriceIdResponse401 | getV1ProductPriceIdResponse403 | getV1ProductPriceIdResponse429 | getV1ProductPriceIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1ProductPriceIdUrl = (id: string,
     params?: GetV1ProductPriceIdParams,) => {
@@ -661,9 +987,9 @@ export const getGetV1ProductPriceIdUrl = (id: string,
 }
 
 export const getV1ProductPriceId = async (id: string,
-    params?: GetV1ProductPriceIdParams, options?: RequestInit): Promise<getV1ProductPriceIdResponse> => {
+    params?: GetV1ProductPriceIdParams, options?: RequestInit): Promise<getV1ProductPriceIdResponseSuccess> => {
 
-  return fetcher<getV1ProductPriceIdResponse>(getGetV1ProductPriceIdUrl(id,params),
+  return fetcher<getV1ProductPriceIdResponseSuccess>(getGetV1ProductPriceIdUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -684,7 +1010,7 @@ export const getGetV1ProductPriceIdQueryKey = (id: string,
     }
 
 
-export const getGetV1ProductPriceIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductPriceId>>, TError = unknown>(id: string,
+export const getGetV1ProductPriceIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductPriceId>>, TError = ErrorResponse>(id: string,
     params?: GetV1ProductPriceIdParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductPriceId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
@@ -704,14 +1030,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ProductPriceIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductPriceId>>>
-export type GetV1ProductPriceIdQueryError = unknown
+export type GetV1ProductPriceIdQueryError = ErrorResponse
 
 
 /**
  * @summary Calculate product price for a distributor tier
  */
 
-export function useGetV1ProductPriceId<TData = Awaited<ReturnType<typeof getV1ProductPriceId>>, TError = unknown>(
+export function useGetV1ProductPriceId<TData = Awaited<ReturnType<typeof getV1ProductPriceId>>, TError = ErrorResponse>(
  id: string,
     params?: GetV1ProductPriceIdParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductPriceId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
@@ -731,39 +1057,67 @@ export function useGetV1ProductPriceId<TData = Awaited<ReturnType<typeof getV1Pr
 
 /**
  * Returns one supplier-scoped product by ID, including its category, warehouse allocations, pricing configuration, variants, tax configuration, images, status, and activation metadata.
-Prerequisites: caller must have Product read permission.
-Edge cases: malformed UUIDs return 400; unknown or cross-supplier IDs return 404 without leaking tenant data.
-Expected outcome: warehouse IDs and complete product configuration are returned for edit and detail screens.
+
+**Prerequisites:** caller must have Product read permission.
+
+**Edge cases:** malformed UUIDs return 400; unknown or cross-supplier IDs return 404 without leaking tenant data.
+
+**Expected outcomes:** warehouse IDs and complete product configuration are returned for edit and detail screens.
+
+**Frontend usage:**
+Call this operation when opening the **Get product details** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Product ID; Product ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
  * @summary Get product details
  */
 export type getV1ProductReadIdResponse200 = {
-  data: HttpProductEnvelope
+  data: ProductEnvelope
   status: 200
 }
 
 export type getV1ProductReadIdResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1ProductReadIdResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type getV1ProductReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type getV1ProductReadIdResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
+}
+
+export type getV1ProductReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ProductReadIdResponseSuccess = (getV1ProductReadIdResponse200) & {
   headers: Headers;
 };
-export type getV1ProductReadIdResponseError = (getV1ProductReadIdResponse400 | getV1ProductReadIdResponse401 | getV1ProductReadIdResponse404) & {
+export type getV1ProductReadIdResponseError = (getV1ProductReadIdResponse400 | getV1ProductReadIdResponse401 | getV1ProductReadIdResponse403 | getV1ProductReadIdResponse404 | getV1ProductReadIdResponse429 | getV1ProductReadIdResponse500) & {
   headers: Headers;
 };
-
-export type getV1ProductReadIdResponse = (getV1ProductReadIdResponseSuccess | getV1ProductReadIdResponseError)
 
 export const getGetV1ProductReadIdUrl = (id: string,) => {
 
@@ -773,9 +1127,9 @@ export const getGetV1ProductReadIdUrl = (id: string,) => {
   return `/v1/product/read/${id}`
 }
 
-export const getV1ProductReadId = async (id: string, options?: RequestInit): Promise<getV1ProductReadIdResponse> => {
+export const getV1ProductReadId = async (id: string, options?: RequestInit): Promise<getV1ProductReadIdResponseSuccess> => {
 
-  return fetcher<getV1ProductReadIdResponse>(getGetV1ProductReadIdUrl(id),
+  return fetcher<getV1ProductReadIdResponseSuccess>(getGetV1ProductReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -795,7 +1149,7 @@ export const getGetV1ProductReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1ProductReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductReadId>>, TError = ResponseErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ProductReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -814,14 +1168,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ProductReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductReadId>>>
-export type GetV1ProductReadIdQueryError = ResponseErrorResponse
+export type GetV1ProductReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get product details
  */
 
-export function useGetV1ProductReadId<TData = Awaited<ReturnType<typeof getV1ProductReadId>>, TError = ResponseErrorResponse>(
+export function useGetV1ProductReadId<TData = Awaited<ReturnType<typeof getV1ProductReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -839,20 +1193,73 @@ export function useGetV1ProductReadId<TData = Awaited<ReturnType<typeof getV1Pro
 
 
 /**
- * Moves a product through its allowed lifecycle states: draft, pending_review, active, paused, and retired. Prerequisites: product must exist and requested transition must be valid for the current status. Expected outcomes include publishing an approved product, pausing availability, or retiring a product. Invalid transitions return a friendly validation error.
+ * Moves a product through its allowed lifecycle states: draft, pending_review, active, paused, and retired.
+
+**Prerequisites:** product must exist and requested transition must be valid for the current status. Expected outcomes include publishing an approved product, pausing availability, or retiring a product. Invalid transitions return a friendly validation error.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update product status** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `id` (path) — string; Product ID; Product ID
+- `status` — string; allowed: `draft`, `active`, `inactive`, `scheduled`
+
+**Optional inputs:**
+None.
+
+**Enum values:**
+- `status`: `draft`, `active`, `inactive`, `scheduled`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Update product status
  */
 export type putV1ProductStatusIdResponse200 = {
-  data: HttpProductEnvelope
+  data: ProductEnvelope
   status: 200
+}
+
+export type putV1ProductStatusIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1ProductStatusIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1ProductStatusIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1ProductStatusIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1ProductStatusIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type putV1ProductStatusIdResponseSuccess = (putV1ProductStatusIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type putV1ProductStatusIdResponse = (putV1ProductStatusIdResponseSuccess)
+export type putV1ProductStatusIdResponseError = (putV1ProductStatusIdResponse400 | putV1ProductStatusIdResponse401 | putV1ProductStatusIdResponse403 | putV1ProductStatusIdResponse429 | putV1ProductStatusIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPutV1ProductStatusIdUrl = (id: string,) => {
 
@@ -863,24 +1270,24 @@ export const getPutV1ProductStatusIdUrl = (id: string,) => {
 }
 
 export const putV1ProductStatusId = async (id: string,
-    httpStatusUpdateRequest: HttpStatusUpdateRequest, options?: RequestInit): Promise<putV1ProductStatusIdResponse> => {
+    statusUpdateRequest: StatusUpdateRequest, options?: RequestInit): Promise<putV1ProductStatusIdResponseSuccess> => {
 
-  return fetcher<putV1ProductStatusIdResponse>(getPutV1ProductStatusIdUrl(id),
+  return fetcher<putV1ProductStatusIdResponseSuccess>(getPutV1ProductStatusIdUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpStatusUpdateRequest,)
+      statusUpdateRequest,)
   }
 );}
 
 
 
 
-export const getPutV1ProductStatusIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductStatusId>>, TError,{id: string;data: HttpStatusUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductStatusId>>, TError,{id: string;data: HttpStatusUpdateRequest}, TContext> => {
+export const getPutV1ProductStatusIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductStatusId>>, TError,{id: string;data: StatusUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductStatusId>>, TError,{id: string;data: StatusUpdateRequest}, TContext> => {
 
 const mutationKey = ['putV1ProductStatusId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -892,7 +1299,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductStatusId>>, {id: string;data: HttpStatusUpdateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductStatusId>>, {id: string;data: StatusUpdateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  putV1ProductStatusId(id,data,requestOptions)
@@ -906,37 +1313,131 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PutV1ProductStatusIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ProductStatusId>>>
-    export type PutV1ProductStatusIdMutationBody = HttpStatusUpdateRequest
-    export type PutV1ProductStatusIdMutationError = unknown
+    export type PutV1ProductStatusIdMutationBody = StatusUpdateRequest
+    export type PutV1ProductStatusIdMutationError = ErrorResponse
 
     /**
  * @summary Update product status
  */
-export const usePutV1ProductStatusId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductStatusId>>, TError,{id: string;data: HttpStatusUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1ProductStatusId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductStatusId>>, TError,{id: string;data: StatusUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1ProductStatusId>>,
         TError,
-        {id: string;data: HttpStatusUpdateRequest},
+        {id: string;data: StatusUpdateRequest},
         TContext
       > => {
       return useMutation(getPutV1ProductStatusIdMutationOptions(options));
     }
     /**
- * Updates editable catalog fields for a product. Prerequisites: product must exist and category_id must reference a category owned by the same supplier. SKU remains immutable; use clone when a new SKU is needed. Images should be uploaded through the presigned image endpoint first, then supplied here as metadata. Edge cases: invalid category ownership returns 403; malformed UUID returns 400; missing product returns 404.
+ * Updates editable catalog fields for a product.
+
+**Prerequisites:** product must exist and category_id must reference a category owned by the same supplier. SKU remains immutable; use clone when a new SKU is needed. Images should be uploaded through the presigned image endpoint first, then supplied here as metadata.
+
+**Edge cases:** invalid category ownership returns 403; malformed UUID returns 400; missing product returns 404.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update product** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `approval_workflow` — string; allowed: `auto-approve`, `scheduled`
+- `base_price` — number
+- `category_id` — string
+- `currency` — string
+- `distributor_visibility` — string; allowed: `all_distributors`
+- `id` (path) — string; Product ID; Product ID
+- `name` — string; minimum length 2; maximum length 255
+- `price_type` — string; allowed: `tiered`, `untiered`
+- `product_type` — string; allowed: `single_product`, `product_with_variants`
+- `unit` — string; maximum length 20
+
+**Optional inputs:**
+- `access_rules.geographic_availability` — array; minimum items 1
+- `access_rules.restrict_to_specific_distributors` — boolean
+- `access_rules.selected_distributor_ids` — array
+- `access_rules.visible_tiers` — array; allowed: `bronze`, `silver`, `gold`; minimum items 1
+- `activation_at` — string
+- `compliance.certification_expiry_date` — string
+- `compliance.documents[].name` — string; minimum length 1; maximum length 255
+- `compliance.documents[].url` — string; maximum length 1000
+- `compliance.regulatory_reference_code` — string; minimum length 3; maximum length 255
+- `compliance.required_certifications` — array; minimum items 1
+- `compliance.safety_information` — string; minimum length 3; maximum length 5000
+- `cost_price` — number
+- `description` — string
+- `images[].alt_text` — string; maximum length 160
+- `images[].is_primary` — boolean
+- `images[].key` — string; maximum length 500
+- `images[].sort_order` — integer; minimum 0
+- `images[].url` — string; maximum length 1000
+- `packaging_type` — string
+- `pricing_config.promotional_pricing.enabled` — boolean
+- `pricing_config.promotional_pricing.promo_price` — number
+- `pricing_config.promotional_pricing.valid_from` — string
+- `pricing_config.promotional_pricing.valid_to` — string
+- `pricing_config.tier_discounts[].discount_percent` — number; minimum 0; maximum 100
+- `pricing_config.tier_discounts[].tier` — string; allowed: `bronze`, `silver`, `gold`
+- `product_variants[].cost_price` — number
+- `product_variants[].display_name` — string; minimum length 2; maximum length 255
+- `product_variants[].selling_price` — number
+- `product_variants[].sku` — string; minimum length 2; maximum length 50
+- `status` — string; allowed: `draft`, `active`, `inactive`, `scheduled`
+- `tax_configuration.tax_rate` — number; minimum 0
+- `tax_configuration.tax_type` — string; allowed: `VAT`, `GST`, `SalesTax`, `None`
+
+**Enum values:**
+- `access_rules.visible_tiers`: `bronze`, `silver`, `gold`
+- `approval_workflow`: `auto-approve`, `scheduled`
+- `distributor_visibility`: `all_distributors`
+- `price_type`: `tiered`, `untiered`
+- `pricing_config.tier_discounts[].tier`: `bronze`, `silver`, `gold`
+- `product_type`: `single_product`, `product_with_variants`
+- `status`: `draft`, `active`, `inactive`, `scheduled`
+- `tax_configuration.tax_type`: `VAT`, `GST`, `SalesTax`, `None`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
  * @summary Update product
  */
 export type putV1ProductUpdateIdResponse200 = {
-  data: HttpProductEnvelope
+  data: ProductEnvelope
   status: 200
+}
+
+export type putV1ProductUpdateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1ProductUpdateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1ProductUpdateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1ProductUpdateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1ProductUpdateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type putV1ProductUpdateIdResponseSuccess = (putV1ProductUpdateIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type putV1ProductUpdateIdResponse = (putV1ProductUpdateIdResponseSuccess)
+export type putV1ProductUpdateIdResponseError = (putV1ProductUpdateIdResponse400 | putV1ProductUpdateIdResponse401 | putV1ProductUpdateIdResponse403 | putV1ProductUpdateIdResponse429 | putV1ProductUpdateIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPutV1ProductUpdateIdUrl = (id: string,) => {
 
@@ -947,24 +1448,24 @@ export const getPutV1ProductUpdateIdUrl = (id: string,) => {
 }
 
 export const putV1ProductUpdateId = async (id: string,
-    internalProductAdaptersHttpUpdateRequest: InternalProductAdaptersHttpUpdateRequest, options?: RequestInit): Promise<putV1ProductUpdateIdResponse> => {
+    productUpdateRequest: ProductUpdateRequest, options?: RequestInit): Promise<putV1ProductUpdateIdResponseSuccess> => {
 
-  return fetcher<putV1ProductUpdateIdResponse>(getPutV1ProductUpdateIdUrl(id),
+  return fetcher<putV1ProductUpdateIdResponseSuccess>(getPutV1ProductUpdateIdUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalProductAdaptersHttpUpdateRequest,)
+      productUpdateRequest,)
   }
 );}
 
 
 
 
-export const getPutV1ProductUpdateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUpdateId>>, TError,{id: string;data: InternalProductAdaptersHttpUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUpdateId>>, TError,{id: string;data: InternalProductAdaptersHttpUpdateRequest}, TContext> => {
+export const getPutV1ProductUpdateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUpdateId>>, TError,{id: string;data: ProductUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUpdateId>>, TError,{id: string;data: ProductUpdateRequest}, TContext> => {
 
 const mutationKey = ['putV1ProductUpdateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -976,7 +1477,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductUpdateId>>, {id: string;data: InternalProductAdaptersHttpUpdateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductUpdateId>>, {id: string;data: ProductUpdateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  putV1ProductUpdateId(id,data,requestOptions)
@@ -990,18 +1491,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PutV1ProductUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ProductUpdateId>>>
-    export type PutV1ProductUpdateIdMutationBody = InternalProductAdaptersHttpUpdateRequest
-    export type PutV1ProductUpdateIdMutationError = unknown
+    export type PutV1ProductUpdateIdMutationBody = ProductUpdateRequest
+    export type PutV1ProductUpdateIdMutationError = ErrorResponse
 
     /**
  * @summary Update product
  */
-export const usePutV1ProductUpdateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUpdateId>>, TError,{id: string;data: InternalProductAdaptersHttpUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1ProductUpdateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUpdateId>>, TError,{id: string;data: ProductUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1ProductUpdateId>>,
         TError,
-        {id: string;data: InternalProductAdaptersHttpUpdateRequest},
+        {id: string;data: ProductUpdateRequest},
         TContext
       > => {
       return useMutation(getPutV1ProductUpdateIdMutationOptions(options));

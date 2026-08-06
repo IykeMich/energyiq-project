@@ -3,7 +3,6 @@ import type {
   Product,
   ProductUpsertRequest,
   ProductListParams,
-  ProductListResult,
   ProductStats,
   ProductStatusUpdateRequest,
   ProductPriceCalculation,
@@ -47,7 +46,7 @@ export class ProductUseCases {
     return this.api.deleteProduct(id);
   }
 
-  async listProducts(params?: ProductListParams): Promise<ProductListResult> {
+  async listProducts(params?: ProductListParams): Promise<Product[]> {
     return this.api.listProducts(params);
   }
 

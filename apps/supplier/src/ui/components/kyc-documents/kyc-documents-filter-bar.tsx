@@ -2,7 +2,7 @@ import { DropdownMenu, DropdownMenuTrigger } from '@energyiq/ui';
 import type {
   KycDocumentFilter,
   KycDocumentFilterSelection,
-} from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+} from './kyc-documents-types';
 import {
   FilterBarContainer,
   FilterMenuContent,

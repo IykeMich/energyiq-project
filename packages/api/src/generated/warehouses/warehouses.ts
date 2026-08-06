@@ -20,22 +20,27 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  EmptyResponse,
+  ErrorResponse,
   GetV1WarehousesIdProductsParams,
+  GetV1WarehousesOverviewParams,
   GetV1WarehousesParams,
+  GetV1WarehousesTransfersOverviewParams,
   GetV1WarehousesTransfersParams,
-  HttpStockTransferCancelRequest,
-  HttpStockTransferCreateRequest,
-  HttpStockTransferListResponse,
-  HttpStockTransferResponse,
-  HttpWarehouseCreateRequest,
-  HttpWarehouseListResponse,
-  HttpWarehouseProductsResponse,
-  HttpWarehouseResponse,
-  HttpWarehouseStatsResponse,
-  HttpWarehouseStockResponse,
-  HttpWarehouseUpdateRequest,
-  ResponseEmptyResponse,
-  ResponseErrorResponse
+  StockTransferCancelRequest,
+  StockTransferCreateRequest,
+  StockTransferListResponse,
+  StockTransferResponse,
+  TransferHistoryOverviewResponse,
+  WarehouseCreateRequest,
+  WarehouseListResponse,
+  WarehouseOverviewResponse,
+  WarehouseProductsResponse,
+  WarehouseResponse,
+  WarehouseScreenResponse,
+  WarehouseStatsResponse,
+  WarehouseStockResponse,
+  WarehouseUpdateRequest
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -46,27 +51,77 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Returns paginated warehouses for the warehouse inventory screen. Filters: status accepts active or inactive; search matches warehouse name or location. Each item is Figma-shaped and includes warehouse_name, location, stock_level_percentage, last_updated_at, and status.
+ * Returns paginated warehouses for the warehouse inventory screen.
+
+**Filters:** status accepts active or inactive; search matches warehouse name or location. Each item is Figma-shaped and includes warehouse_name, location, stock_level_percentage, last_updated_at, and status.
+
+**Frontend usage:**
+Use this operation to populate the **List warehouses** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `search` (query) — string; Search by warehouse name or location; Search by warehouse name or location
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `active`, `inactive`; Filter by warehouse status; Filter by warehouse status
+
+**Enum values:**
+- `sort`: `asc`, `desc`
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List warehouses
  */
 export type getV1WarehousesResponse200 = {
-  data: HttpWarehouseListResponse
+  data: WarehouseListResponse
   status: 200
 }
 
 export type getV1WarehousesResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type getV1WarehousesResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1WarehousesResponseSuccess = (getV1WarehousesResponse200) & {
   headers: Headers;
 };
-export type getV1WarehousesResponseError = (getV1WarehousesResponse400) & {
+export type getV1WarehousesResponseError = (getV1WarehousesResponse400 | getV1WarehousesResponse401 | getV1WarehousesResponse403 | getV1WarehousesResponse429 | getV1WarehousesResponse500) & {
   headers: Headers;
 };
-
-export type getV1WarehousesResponse = (getV1WarehousesResponseSuccess | getV1WarehousesResponseError)
 
 export const getGetV1WarehousesUrl = (params?: GetV1WarehousesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -83,9 +138,9 @@ export const getGetV1WarehousesUrl = (params?: GetV1WarehousesParams,) => {
   return stringifiedParams.length > 0 ? `/v1/warehouses?${stringifiedParams}` : `/v1/warehouses`
 }
 
-export const getV1Warehouses = async (params?: GetV1WarehousesParams, options?: RequestInit): Promise<getV1WarehousesResponse> => {
+export const getV1Warehouses = async (params?: GetV1WarehousesParams, options?: RequestInit): Promise<getV1WarehousesResponseSuccess> => {
 
-  return fetcher<getV1WarehousesResponse>(getGetV1WarehousesUrl(params),
+  return fetcher<getV1WarehousesResponseSuccess>(getGetV1WarehousesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -105,7 +160,7 @@ export const getGetV1WarehousesQueryKey = (params?: GetV1WarehousesParams,) => {
     }
 
 
-export const getGetV1WarehousesQueryOptions = <TData = Awaited<ReturnType<typeof getV1Warehouses>>, TError = ResponseErrorResponse>(params?: GetV1WarehousesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1Warehouses>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1WarehousesQueryOptions = <TData = Awaited<ReturnType<typeof getV1Warehouses>>, TError = ErrorResponse>(params?: GetV1WarehousesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1Warehouses>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -124,14 +179,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1WarehousesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1Warehouses>>>
-export type GetV1WarehousesQueryError = ResponseErrorResponse
+export type GetV1WarehousesQueryError = ErrorResponse
 
 
 /**
  * @summary List warehouses
  */
 
-export function useGetV1Warehouses<TData = Awaited<ReturnType<typeof getV1Warehouses>>, TError = ResponseErrorResponse>(
+export function useGetV1Warehouses<TData = Awaited<ReturnType<typeof getV1Warehouses>>, TError = ErrorResponse>(
  params?: GetV1WarehousesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1Warehouses>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -150,36 +205,77 @@ export function useGetV1Warehouses<TData = Awaited<ReturnType<typeof getV1Wareho
 
 /**
  * Creates a supplier-scoped warehouse for the warehouse inventory screen. The request accepts only the Figma-aligned fields: warehouse_name, location, manager_id, and status. Stock starts at zero until products are allocated.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create warehouse** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `location` — string; maximum length 255
+- `status` — string; allowed: `active`, `inactive`
+- `warehouse_name` — string; minimum length 2; maximum length 255
+
+**Optional inputs:**
+- `manager_id` — string
+
+**Enum values:**
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create warehouse
  */
 export type postV1WarehousesResponse201 = {
-  data: HttpWarehouseResponse
+  data: WarehouseResponse
   status: 201
 }
 
 export type postV1WarehousesResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1WarehousesResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1WarehousesResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1WarehousesResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1WarehousesResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1WarehousesResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1WarehousesResponseSuccess = (postV1WarehousesResponse201) & {
   headers: Headers;
 };
-export type postV1WarehousesResponseError = (postV1WarehousesResponse400 | postV1WarehousesResponse401 | postV1WarehousesResponse409) & {
+export type postV1WarehousesResponseError = (postV1WarehousesResponse400 | postV1WarehousesResponse401 | postV1WarehousesResponse403 | postV1WarehousesResponse409 | postV1WarehousesResponse429 | postV1WarehousesResponse500) & {
   headers: Headers;
 };
-
-export type postV1WarehousesResponse = (postV1WarehousesResponseSuccess | postV1WarehousesResponseError)
 
 export const getPostV1WarehousesUrl = () => {
 
@@ -189,24 +285,24 @@ export const getPostV1WarehousesUrl = () => {
   return `/v1/warehouses`
 }
 
-export const postV1Warehouses = async (httpWarehouseCreateRequest: HttpWarehouseCreateRequest, options?: RequestInit): Promise<postV1WarehousesResponse> => {
+export const postV1Warehouses = async (warehouseCreateRequest: WarehouseCreateRequest, options?: RequestInit): Promise<postV1WarehousesResponseSuccess> => {
 
-  return fetcher<postV1WarehousesResponse>(getPostV1WarehousesUrl(),
+  return fetcher<postV1WarehousesResponseSuccess>(getPostV1WarehousesUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpWarehouseCreateRequest,)
+      warehouseCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1WarehousesMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Warehouses>>, TError,{data: HttpWarehouseCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1Warehouses>>, TError,{data: HttpWarehouseCreateRequest}, TContext> => {
+export const getPostV1WarehousesMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Warehouses>>, TError,{data: WarehouseCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1Warehouses>>, TError,{data: WarehouseCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1Warehouses'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -218,7 +314,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1Warehouses>>, {data: HttpWarehouseCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1Warehouses>>, {data: WarehouseCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1Warehouses(data,requestOptions)
@@ -232,37 +328,231 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1WarehousesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1Warehouses>>>
-    export type PostV1WarehousesMutationBody = HttpWarehouseCreateRequest
-    export type PostV1WarehousesMutationError = ResponseErrorResponse
+    export type PostV1WarehousesMutationBody = WarehouseCreateRequest
+    export type PostV1WarehousesMutationError = ErrorResponse
 
     /**
  * @summary Create warehouse
  */
-export const usePostV1Warehouses = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Warehouses>>, TError,{data: HttpWarehouseCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1Warehouses = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1Warehouses>>, TError,{data: WarehouseCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1Warehouses>>,
         TError,
-        {data: HttpWarehouseCreateRequest},
+        {data: WarehouseCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1WarehousesMutationOptions(options));
     }
     /**
+ * Returns the warehouse inventory screen payload for the Figma warehouse node.
+
+**Filters:** status accepts active or inactive; search matches product, warehouse name, or warehouse location. The response includes page_title, summary cards, filter options, and a paginated table with total_stock, active_warehouses, default_price, status, and action labels.
+
+**Frontend usage:**
+Use this operation to populate the **Get warehouse inventory overview** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `search` (query) — string; Search by product or warehouse; Search by product or warehouse
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `active`, `inactive`; Filter by warehouse status; Filter by warehouse status
+
+**Enum values:**
+- `sort`: `asc`, `desc`
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get warehouse inventory overview
+ */
+export type getV1WarehousesOverviewResponse200 = {
+  data: WarehouseOverviewResponse
+  status: 200
+}
+
+export type getV1WarehousesOverviewResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1WarehousesOverviewResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesOverviewResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesOverviewResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesOverviewResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1WarehousesOverviewResponseSuccess = (getV1WarehousesOverviewResponse200) & {
+  headers: Headers;
+};
+export type getV1WarehousesOverviewResponseError = (getV1WarehousesOverviewResponse400 | getV1WarehousesOverviewResponse401 | getV1WarehousesOverviewResponse403 | getV1WarehousesOverviewResponse429 | getV1WarehousesOverviewResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1WarehousesOverviewUrl = (params?: GetV1WarehousesOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/warehouses/overview?${stringifiedParams}` : `/v1/warehouses/overview`
+}
+
+export const getV1WarehousesOverview = async (params?: GetV1WarehousesOverviewParams, options?: RequestInit): Promise<getV1WarehousesOverviewResponseSuccess> => {
+
+  return fetcher<getV1WarehousesOverviewResponseSuccess>(getGetV1WarehousesOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1WarehousesOverviewQueryKey = (params?: GetV1WarehousesOverviewParams,) => {
+    return [
+    `/v1/warehouses/overview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1WarehousesOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesOverview>>, TError = ErrorResponse>(params?: GetV1WarehousesOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1WarehousesOverviewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1WarehousesOverview>>> = ({ signal }) => getV1WarehousesOverview(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1WarehousesOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesOverview>>>
+export type GetV1WarehousesOverviewQueryError = ErrorResponse
+
+
+/**
+ * @summary Get warehouse inventory overview
+ */
+
+export function useGetV1WarehousesOverview<TData = Awaited<ReturnType<typeof getV1WarehousesOverview>>, TError = ErrorResponse>(
+ params?: GetV1WarehousesOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1WarehousesOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
  * Returns the warehouse dashboard summary for the Figma warehouse list page. The response includes total_warehouses and stock_distribution grouped by product.
+
+**Frontend usage:**
+Use this operation to populate the **Get warehouse stats** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get warehouse stats
  */
 export type getV1WarehousesStatsResponse200 = {
-  data: HttpWarehouseStatsResponse
+  data: WarehouseStatsResponse
   status: 200
+}
+
+export type getV1WarehousesStatsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesStatsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesStatsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesStatsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1WarehousesStatsResponseSuccess = (getV1WarehousesStatsResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1WarehousesStatsResponse = (getV1WarehousesStatsResponseSuccess)
+export type getV1WarehousesStatsResponseError = (getV1WarehousesStatsResponse401 | getV1WarehousesStatsResponse403 | getV1WarehousesStatsResponse429 | getV1WarehousesStatsResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1WarehousesStatsUrl = () => {
 
@@ -272,9 +562,9 @@ export const getGetV1WarehousesStatsUrl = () => {
   return `/v1/warehouses/stats`
 }
 
-export const getV1WarehousesStats = async ( options?: RequestInit): Promise<getV1WarehousesStatsResponse> => {
+export const getV1WarehousesStats = async ( options?: RequestInit): Promise<getV1WarehousesStatsResponseSuccess> => {
 
-  return fetcher<getV1WarehousesStatsResponse>(getGetV1WarehousesStatsUrl(),
+  return fetcher<getV1WarehousesStatsResponseSuccess>(getGetV1WarehousesStatsUrl(),
   {
     ...options,
     method: 'GET'
@@ -294,7 +584,7 @@ export const getGetV1WarehousesStatsQueryKey = () => {
     }
 
 
-export const getGetV1WarehousesStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesStats>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1WarehousesStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesStats>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -313,14 +603,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1WarehousesStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesStats>>>
-export type GetV1WarehousesStatsQueryError = unknown
+export type GetV1WarehousesStatsQueryError = ErrorResponse
 
 
 /**
  * @summary Get warehouse stats
  */
 
-export function useGetV1WarehousesStats<TData = Awaited<ReturnType<typeof getV1WarehousesStats>>, TError = unknown>(
+export function useGetV1WarehousesStats<TData = Awaited<ReturnType<typeof getV1WarehousesStats>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -338,27 +628,78 @@ export function useGetV1WarehousesStats<TData = Awaited<ReturnType<typeof getV1W
 
 
 /**
- * Returns paginated transfer history for the Figma transfer history table. Filters: status accepts pending, processing, confirmed, cancelled or failed; date_from/date_to use YYYY-MM-DD. Each row includes product, source and destination warehouse names and locations, quantity, requester, reviewer, notes, status, and timestamps.
+ * Returns paginated transfer history for the Figma transfer history table.
+
+**Filters:** status accepts pending, processing, confirmed, cancelled or failed; date_from/date_to use YYYY-MM-DD. Each row includes product, source and destination warehouse names and locations, quantity, requester, reviewer, notes, status, and timestamps.
+
+**Frontend usage:**
+Use this operation to populate the **List stock transfer history** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `date_from` (query) — string; Start date in YYYY-MM-DD; Start date in YYYY-MM-DD
+- `date_to` (query) — string; End date in YYYY-MM-DD; End date in YYYY-MM-DD
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `pending`, `processing`, `confirmed`, `cancelled`, `failed`; Transfer status; Transfer status
+
+**Enum values:**
+- `sort`: `asc`, `desc`
+- `status`: `pending`, `processing`, `confirmed`, `cancelled`, `failed`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List stock transfer history
  */
 export type getV1WarehousesTransfersResponse200 = {
-  data: HttpStockTransferListResponse
+  data: StockTransferListResponse
   status: 200
 }
 
 export type getV1WarehousesTransfersResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type getV1WarehousesTransfersResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesTransfersResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesTransfersResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesTransfersResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1WarehousesTransfersResponseSuccess = (getV1WarehousesTransfersResponse200) & {
   headers: Headers;
 };
-export type getV1WarehousesTransfersResponseError = (getV1WarehousesTransfersResponse400) & {
+export type getV1WarehousesTransfersResponseError = (getV1WarehousesTransfersResponse400 | getV1WarehousesTransfersResponse401 | getV1WarehousesTransfersResponse403 | getV1WarehousesTransfersResponse429 | getV1WarehousesTransfersResponse500) & {
   headers: Headers;
 };
-
-export type getV1WarehousesTransfersResponse = (getV1WarehousesTransfersResponseSuccess | getV1WarehousesTransfersResponseError)
 
 export const getGetV1WarehousesTransfersUrl = (params?: GetV1WarehousesTransfersParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -375,9 +716,9 @@ export const getGetV1WarehousesTransfersUrl = (params?: GetV1WarehousesTransfers
   return stringifiedParams.length > 0 ? `/v1/warehouses/transfers?${stringifiedParams}` : `/v1/warehouses/transfers`
 }
 
-export const getV1WarehousesTransfers = async (params?: GetV1WarehousesTransfersParams, options?: RequestInit): Promise<getV1WarehousesTransfersResponse> => {
+export const getV1WarehousesTransfers = async (params?: GetV1WarehousesTransfersParams, options?: RequestInit): Promise<getV1WarehousesTransfersResponseSuccess> => {
 
-  return fetcher<getV1WarehousesTransfersResponse>(getGetV1WarehousesTransfersUrl(params),
+  return fetcher<getV1WarehousesTransfersResponseSuccess>(getGetV1WarehousesTransfersUrl(params),
   {
     ...options,
     method: 'GET'
@@ -397,7 +738,7 @@ export const getGetV1WarehousesTransfersQueryKey = (params?: GetV1WarehousesTran
     }
 
 
-export const getGetV1WarehousesTransfersQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError = ResponseErrorResponse>(params?: GetV1WarehousesTransfersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1WarehousesTransfersQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError = ErrorResponse>(params?: GetV1WarehousesTransfersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -416,14 +757,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1WarehousesTransfersQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesTransfers>>>
-export type GetV1WarehousesTransfersQueryError = ResponseErrorResponse
+export type GetV1WarehousesTransfersQueryError = ErrorResponse
 
 
 /**
  * @summary List stock transfer history
  */
 
-export function useGetV1WarehousesTransfers<TData = Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError = ResponseErrorResponse>(
+export function useGetV1WarehousesTransfers<TData = Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError = ErrorResponse>(
  params?: GetV1WarehousesTransfersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesTransfers>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -441,27 +782,72 @@ export function useGetV1WarehousesTransfers<TData = Awaited<ReturnType<typeof ge
 
 
 /**
- * Creates a pending warehouse-to-warehouse stock transfer. Prerequisites: source and destination warehouses must be different and belong to the supplier; product must exist; source warehouse must have enough stock. The response is enriched with product and warehouse display fields required by the Figma transfer flow.
+ * Creates a pending warehouse-to-warehouse stock transfer.
+
+**Prerequisites:** source and destination warehouses must be different and belong to the supplier; product must exist; source warehouse must have enough stock. The response is enriched with product and warehouse display fields required by the Figma transfer flow.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create stock transfer** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `from_warehouse_id` — string
+- `product_id` — string
+- `quantity` — integer
+- `to_warehouse_id` — string
+
+**Optional inputs:**
+- `notes` — string; maximum length 500
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create stock transfer
  */
 export type postV1WarehousesTransfersResponse201 = {
-  data: HttpStockTransferResponse
+  data: StockTransferResponse
   status: 201
 }
 
 export type postV1WarehousesTransfersResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type postV1WarehousesTransfersResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1WarehousesTransfersResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1WarehousesTransfersResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1WarehousesTransfersResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1WarehousesTransfersResponseSuccess = (postV1WarehousesTransfersResponse201) & {
   headers: Headers;
 };
-export type postV1WarehousesTransfersResponseError = (postV1WarehousesTransfersResponse400) & {
+export type postV1WarehousesTransfersResponseError = (postV1WarehousesTransfersResponse400 | postV1WarehousesTransfersResponse401 | postV1WarehousesTransfersResponse403 | postV1WarehousesTransfersResponse429 | postV1WarehousesTransfersResponse500) & {
   headers: Headers;
 };
-
-export type postV1WarehousesTransfersResponse = (postV1WarehousesTransfersResponseSuccess | postV1WarehousesTransfersResponseError)
 
 export const getPostV1WarehousesTransfersUrl = () => {
 
@@ -471,24 +857,24 @@ export const getPostV1WarehousesTransfersUrl = () => {
   return `/v1/warehouses/transfers`
 }
 
-export const postV1WarehousesTransfers = async (httpStockTransferCreateRequest: HttpStockTransferCreateRequest, options?: RequestInit): Promise<postV1WarehousesTransfersResponse> => {
+export const postV1WarehousesTransfers = async (stockTransferCreateRequest: StockTransferCreateRequest, options?: RequestInit): Promise<postV1WarehousesTransfersResponseSuccess> => {
 
-  return fetcher<postV1WarehousesTransfersResponse>(getPostV1WarehousesTransfersUrl(),
+  return fetcher<postV1WarehousesTransfersResponseSuccess>(getPostV1WarehousesTransfersUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpStockTransferCreateRequest,)
+      stockTransferCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1WarehousesTransfersMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, TError,{data: HttpStockTransferCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, TError,{data: HttpStockTransferCreateRequest}, TContext> => {
+export const getPostV1WarehousesTransfersMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, TError,{data: StockTransferCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, TError,{data: StockTransferCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1WarehousesTransfers'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -500,7 +886,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, {data: HttpStockTransferCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, {data: StockTransferCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1WarehousesTransfers(data,requestOptions)
@@ -514,37 +900,240 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1WarehousesTransfersMutationResult = NonNullable<Awaited<ReturnType<typeof postV1WarehousesTransfers>>>
-    export type PostV1WarehousesTransfersMutationBody = HttpStockTransferCreateRequest
-    export type PostV1WarehousesTransfersMutationError = ResponseErrorResponse
+    export type PostV1WarehousesTransfersMutationBody = StockTransferCreateRequest
+    export type PostV1WarehousesTransfersMutationError = ErrorResponse
 
     /**
  * @summary Create stock transfer
  */
-export const usePostV1WarehousesTransfers = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, TError,{data: HttpStockTransferCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1WarehousesTransfers = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfers>>, TError,{data: StockTransferCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1WarehousesTransfers>>,
         TError,
-        {data: HttpStockTransferCreateRequest},
+        {data: StockTransferCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1WarehousesTransfersMutationOptions(options));
     }
     /**
- * Cancels a pending stock transfer without changing inventory. Prerequisites: caller must be authorized by RBAC and must not be the same user who created the transfer. The response is enriched with product and warehouse display fields for the transfer flow.
+ * Returns the Figma transfer history screen payload with filter options and a paginated table.
+
+**Filters:** status accepts pending, processing, confirmed, cancelled or failed; date_from/date_to use YYYY-MM-DD.
+
+**Frontend usage:**
+Use this operation to populate the **Get transfer history overview** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `date_from` (query) — string; Start date in YYYY-MM-DD; Start date in YYYY-MM-DD
+- `date_to` (query) — string; End date in YYYY-MM-DD; End date in YYYY-MM-DD
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `pending`, `processing`, `confirmed`, `cancelled`, `failed`; Transfer status; Transfer status
+
+**Enum values:**
+- `sort`: `asc`, `desc`
+- `status`: `pending`, `processing`, `confirmed`, `cancelled`, `failed`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get transfer history overview
+ */
+export type getV1WarehousesTransfersOverviewResponse200 = {
+  data: TransferHistoryOverviewResponse
+  status: 200
+}
+
+export type getV1WarehousesTransfersOverviewResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1WarehousesTransfersOverviewResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesTransfersOverviewResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesTransfersOverviewResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesTransfersOverviewResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1WarehousesTransfersOverviewResponseSuccess = (getV1WarehousesTransfersOverviewResponse200) & {
+  headers: Headers;
+};
+export type getV1WarehousesTransfersOverviewResponseError = (getV1WarehousesTransfersOverviewResponse400 | getV1WarehousesTransfersOverviewResponse401 | getV1WarehousesTransfersOverviewResponse403 | getV1WarehousesTransfersOverviewResponse429 | getV1WarehousesTransfersOverviewResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1WarehousesTransfersOverviewUrl = (params?: GetV1WarehousesTransfersOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/warehouses/transfers/overview?${stringifiedParams}` : `/v1/warehouses/transfers/overview`
+}
+
+export const getV1WarehousesTransfersOverview = async (params?: GetV1WarehousesTransfersOverviewParams, options?: RequestInit): Promise<getV1WarehousesTransfersOverviewResponseSuccess> => {
+
+  return fetcher<getV1WarehousesTransfersOverviewResponseSuccess>(getGetV1WarehousesTransfersOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1WarehousesTransfersOverviewQueryKey = (params?: GetV1WarehousesTransfersOverviewParams,) => {
+    return [
+    `/v1/warehouses/transfers/overview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1WarehousesTransfersOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>, TError = ErrorResponse>(params?: GetV1WarehousesTransfersOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1WarehousesTransfersOverviewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>> = ({ signal }) => getV1WarehousesTransfersOverview(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1WarehousesTransfersOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>>
+export type GetV1WarehousesTransfersOverviewQueryError = ErrorResponse
+
+
+/**
+ * @summary Get transfer history overview
+ */
+
+export function useGetV1WarehousesTransfersOverview<TData = Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>, TError = ErrorResponse>(
+ params?: GetV1WarehousesTransfersOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesTransfersOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1WarehousesTransfersOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Cancels a pending stock transfer without changing inventory.
+
+**Prerequisites:** caller must be authorized by RBAC and must not be the same user who created the transfer. The response is enriched with product and warehouse display fields for the transfer flow.
+
+**Frontend usage:**
+Call this operation from the **Cancel stock transfer** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Transfer ID; Transfer ID
+
+**Optional inputs:**
+- `reason` — string; maximum length 500
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Cancel stock transfer
  */
 export type postV1WarehousesTransfersIdCancelResponse200 = {
-  data: HttpStockTransferResponse
+  data: StockTransferResponse
   status: 200
+}
+
+export type postV1WarehousesTransfersIdCancelResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1WarehousesTransfersIdCancelResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1WarehousesTransfersIdCancelResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1WarehousesTransfersIdCancelResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1WarehousesTransfersIdCancelResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1WarehousesTransfersIdCancelResponseSuccess = (postV1WarehousesTransfersIdCancelResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1WarehousesTransfersIdCancelResponse = (postV1WarehousesTransfersIdCancelResponseSuccess)
+export type postV1WarehousesTransfersIdCancelResponseError = (postV1WarehousesTransfersIdCancelResponse400 | postV1WarehousesTransfersIdCancelResponse401 | postV1WarehousesTransfersIdCancelResponse403 | postV1WarehousesTransfersIdCancelResponse429 | postV1WarehousesTransfersIdCancelResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1WarehousesTransfersIdCancelUrl = (id: string,) => {
 
@@ -555,24 +1144,24 @@ export const getPostV1WarehousesTransfersIdCancelUrl = (id: string,) => {
 }
 
 export const postV1WarehousesTransfersIdCancel = async (id: string,
-    httpStockTransferCancelRequest: HttpStockTransferCancelRequest, options?: RequestInit): Promise<postV1WarehousesTransfersIdCancelResponse> => {
+    stockTransferCancelRequest: StockTransferCancelRequest, options?: RequestInit): Promise<postV1WarehousesTransfersIdCancelResponseSuccess> => {
 
-  return fetcher<postV1WarehousesTransfersIdCancelResponse>(getPostV1WarehousesTransfersIdCancelUrl(id),
+  return fetcher<postV1WarehousesTransfersIdCancelResponseSuccess>(getPostV1WarehousesTransfersIdCancelUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpStockTransferCancelRequest,)
+      stockTransferCancelRequest,)
   }
 );}
 
 
 
 
-export const getPostV1WarehousesTransfersIdCancelMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, TError,{id: string;data: HttpStockTransferCancelRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, TError,{id: string;data: HttpStockTransferCancelRequest}, TContext> => {
+export const getPostV1WarehousesTransfersIdCancelMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, TError,{id: string;data: StockTransferCancelRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, TError,{id: string;data: StockTransferCancelRequest}, TContext> => {
 
 const mutationKey = ['postV1WarehousesTransfersIdCancel'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -584,7 +1173,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, {id: string;data: HttpStockTransferCancelRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, {id: string;data: StockTransferCancelRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1WarehousesTransfersIdCancel(id,data,requestOptions)
@@ -598,44 +1187,86 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1WarehousesTransfersIdCancelMutationResult = NonNullable<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>>
-    export type PostV1WarehousesTransfersIdCancelMutationBody = HttpStockTransferCancelRequest
-    export type PostV1WarehousesTransfersIdCancelMutationError = unknown
+    export type PostV1WarehousesTransfersIdCancelMutationBody = StockTransferCancelRequest
+    export type PostV1WarehousesTransfersIdCancelMutationError = ErrorResponse
 
     /**
  * @summary Cancel stock transfer
  */
-export const usePostV1WarehousesTransfersIdCancel = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, TError,{id: string;data: HttpStockTransferCancelRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1WarehousesTransfersIdCancel = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>, TError,{id: string;data: StockTransferCancelRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1WarehousesTransfersIdCancel>>,
         TError,
-        {id: string;data: HttpStockTransferCancelRequest},
+        {id: string;data: StockTransferCancelRequest},
         TContext
       > => {
       return useMutation(getPostV1WarehousesTransfersIdCancelMutationOptions(options));
     }
     /**
- * Confirms a pending stock transfer and moves inventory atomically. Prerequisites: caller must be authorized by RBAC and must not be the same user who created the transfer. The response is enriched with product and warehouse display fields for the transfer flow.
+ * Confirms a pending stock transfer and moves inventory atomically.
+
+**Prerequisites:** caller must be authorized by RBAC and must not be the same user who created the transfer. The response is enriched with product and warehouse display fields for the transfer flow.
+
+**Frontend usage:**
+Call this operation from the **Confirm stock transfer** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Transfer ID; Transfer ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Confirm stock transfer
  */
 export type postV1WarehousesTransfersIdConfirmResponse200 = {
-  data: HttpStockTransferResponse
+  data: StockTransferResponse
   status: 200
 }
 
 export type postV1WarehousesTransfersIdConfirmResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type postV1WarehousesTransfersIdConfirmResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1WarehousesTransfersIdConfirmResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1WarehousesTransfersIdConfirmResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1WarehousesTransfersIdConfirmResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1WarehousesTransfersIdConfirmResponseSuccess = (postV1WarehousesTransfersIdConfirmResponse200) & {
   headers: Headers;
 };
-export type postV1WarehousesTransfersIdConfirmResponseError = (postV1WarehousesTransfersIdConfirmResponse400) & {
+export type postV1WarehousesTransfersIdConfirmResponseError = (postV1WarehousesTransfersIdConfirmResponse400 | postV1WarehousesTransfersIdConfirmResponse401 | postV1WarehousesTransfersIdConfirmResponse403 | postV1WarehousesTransfersIdConfirmResponse429 | postV1WarehousesTransfersIdConfirmResponse500) & {
   headers: Headers;
 };
-
-export type postV1WarehousesTransfersIdConfirmResponse = (postV1WarehousesTransfersIdConfirmResponseSuccess | postV1WarehousesTransfersIdConfirmResponseError)
 
 export const getPostV1WarehousesTransfersIdConfirmUrl = (id: string,) => {
 
@@ -645,9 +1276,9 @@ export const getPostV1WarehousesTransfersIdConfirmUrl = (id: string,) => {
   return `/v1/warehouses/transfers/${id}/confirm`
 }
 
-export const postV1WarehousesTransfersIdConfirm = async (id: string, options?: RequestInit): Promise<postV1WarehousesTransfersIdConfirmResponse> => {
+export const postV1WarehousesTransfersIdConfirm = async (id: string, options?: RequestInit): Promise<postV1WarehousesTransfersIdConfirmResponseSuccess> => {
 
-  return fetcher<postV1WarehousesTransfersIdConfirmResponse>(getPostV1WarehousesTransfersIdConfirmUrl(id),
+  return fetcher<postV1WarehousesTransfersIdConfirmResponseSuccess>(getPostV1WarehousesTransfersIdConfirmUrl(id),
   {
     ...options,
     method: 'POST'
@@ -659,7 +1290,7 @@ export const postV1WarehousesTransfersIdConfirm = async (id: string, options?: R
 
 
 
-export const getPostV1WarehousesTransfersIdConfirmMutationOptions = <TError = ResponseErrorResponse,
+export const getPostV1WarehousesTransfersIdConfirmMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdConfirm>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdConfirm>>, TError,{id: string}, TContext> => {
 
@@ -688,12 +1319,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1WarehousesTransfersIdConfirmMutationResult = NonNullable<Awaited<ReturnType<typeof postV1WarehousesTransfersIdConfirm>>>
 
-    export type PostV1WarehousesTransfersIdConfirmMutationError = ResponseErrorResponse
+    export type PostV1WarehousesTransfersIdConfirmMutationError = ErrorResponse
 
     /**
  * @summary Confirm stock transfer
  */
-export const usePostV1WarehousesTransfersIdConfirm = <TError = ResponseErrorResponse,
+export const usePostV1WarehousesTransfersIdConfirm = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1WarehousesTransfersIdConfirm>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1WarehousesTransfersIdConfirm>>,
@@ -704,192 +1335,67 @@ export const usePostV1WarehousesTransfersIdConfirm = <TError = ResponseErrorResp
       return useMutation(getPostV1WarehousesTransfersIdConfirmMutationOptions(options));
     }
     /**
- * Returns one warehouse detail record for the edit warehouse basic-information view. The response includes warehouse_id, warehouse_name, location, manager_id, manager_name, status, and last_updated_at.
- * @summary Get warehouse details
- */
-export type getV1WarehousesIdResponse200 = {
-  data: HttpWarehouseResponse
-  status: 200
-}
+ * Delete warehouse.
 
-export type getV1WarehousesIdResponseSuccess = (getV1WarehousesIdResponse200) & {
-  headers: Headers;
-};
-;
+**Frontend usage:**
+Call this operation only after confirmation of **Delete warehouse**; remove or refresh the affected item after success.
 
-export type getV1WarehousesIdResponse = (getV1WarehousesIdResponseSuccess)
+**Required inputs:**
+- `id` (path) — string; Warehouse ID; Warehouse ID
 
-export const getGetV1WarehousesIdUrl = (id: string,) => {
+**Optional inputs:**
+None.
 
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
 
+**Expected outcomes:**
+- `200` — OK.
 
-
-  return `/v1/warehouses/${id}`
-}
-
-export const getV1WarehousesId = async (id: string, options?: RequestInit): Promise<getV1WarehousesIdResponse> => {
-
-  return fetcher<getV1WarehousesIdResponse>(getGetV1WarehousesIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1WarehousesIdQueryKey = (id: string,) => {
-    return [
-    `/v1/warehouses/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1WarehousesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetV1WarehousesIdQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1WarehousesId>>> = ({ signal }) => getV1WarehousesId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesId>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetV1WarehousesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesId>>>
-export type GetV1WarehousesIdQueryError = unknown
-
-
-/**
- * @summary Get warehouse details
- */
-
-export function useGetV1WarehousesId<TData = Awaited<ReturnType<typeof getV1WarehousesId>>, TError = unknown>(
- id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetV1WarehousesIdQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-/**
- * Updates the Figma-aligned warehouse fields warehouse_name, location, manager_id, and status. Product assignment rows accept product_id, stock_quantity, and remove. When remove=true the product is deleted from the warehouse inventory; otherwise stock_quantity is upserted for that product.
- * @summary Updates warehouse basic details and can add or remove warehouse products.
- */
-export type putV1WarehousesIdResponse200 = {
-  data: HttpWarehouseResponse
-  status: 200
-}
-
-export type putV1WarehousesIdResponseSuccess = (putV1WarehousesIdResponse200) & {
-  headers: Headers;
-};
-;
-
-export type putV1WarehousesIdResponse = (putV1WarehousesIdResponseSuccess)
-
-export const getPutV1WarehousesIdUrl = (id: string,) => {
-
-
-
-
-  return `/v1/warehouses/${id}`
-}
-
-export const putV1WarehousesId = async (id: string,
-    httpWarehouseUpdateRequest: HttpWarehouseUpdateRequest, options?: RequestInit): Promise<putV1WarehousesIdResponse> => {
-
-  return fetcher<putV1WarehousesIdResponse>(getPutV1WarehousesIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpWarehouseUpdateRequest,)
-  }
-);}
-
-
-
-
-export const getPutV1WarehousesIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: HttpWarehouseUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: HttpWarehouseUpdateRequest}, TContext> => {
-
-const mutationKey = ['putV1WarehousesId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1WarehousesId>>, {id: string;data: HttpWarehouseUpdateRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1WarehousesId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1WarehousesIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1WarehousesId>>>
-    export type PutV1WarehousesIdMutationBody = HttpWarehouseUpdateRequest
-    export type PutV1WarehousesIdMutationError = unknown
-
-    /**
- * @summary Updates warehouse basic details and can add or remove warehouse products.
- */
-export const usePutV1WarehousesId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: HttpWarehouseUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof putV1WarehousesId>>,
-        TError,
-        {id: string;data: HttpWarehouseUpdateRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1WarehousesIdMutationOptions(options));
-    }
-    /**
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete warehouse
  */
 export type deleteV1WarehousesIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
+}
+
+export type deleteV1WarehousesIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1WarehousesIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1WarehousesIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1WarehousesIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1WarehousesIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1WarehousesIdResponseSuccess = (deleteV1WarehousesIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type deleteV1WarehousesIdResponse = (deleteV1WarehousesIdResponseSuccess)
+export type deleteV1WarehousesIdResponseError = (deleteV1WarehousesIdResponse400 | deleteV1WarehousesIdResponse401 | deleteV1WarehousesIdResponse403 | deleteV1WarehousesIdResponse429 | deleteV1WarehousesIdResponse500) & {
+  headers: Headers;
+};
 
 export const getDeleteV1WarehousesIdUrl = (id: string,) => {
 
@@ -899,9 +1405,9 @@ export const getDeleteV1WarehousesIdUrl = (id: string,) => {
   return `/v1/warehouses/${id}`
 }
 
-export const deleteV1WarehousesId = async (id: string, options?: RequestInit): Promise<deleteV1WarehousesIdResponse> => {
+export const deleteV1WarehousesId = async (id: string, options?: RequestInit): Promise<deleteV1WarehousesIdResponseSuccess> => {
 
-  return fetcher<deleteV1WarehousesIdResponse>(getDeleteV1WarehousesIdUrl(id),
+  return fetcher<deleteV1WarehousesIdResponseSuccess>(getDeleteV1WarehousesIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -913,7 +1419,7 @@ export const deleteV1WarehousesId = async (id: string, options?: RequestInit): P
 
 
 
-export const getDeleteV1WarehousesIdMutationOptions = <TError = unknown,
+export const getDeleteV1WarehousesIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1WarehousesId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1WarehousesId>>, TError,{id: string}, TContext> => {
 
@@ -942,12 +1448,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1WarehousesIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1WarehousesId>>>
 
-    export type DeleteV1WarehousesIdMutationError = unknown
+    export type DeleteV1WarehousesIdMutationError = ErrorResponse
 
     /**
  * @summary Delete warehouse
  */
-export const useDeleteV1WarehousesId = <TError = unknown,
+export const useDeleteV1WarehousesId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1WarehousesId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1WarehousesId>>,
@@ -958,20 +1464,349 @@ export const useDeleteV1WarehousesId = <TError = unknown,
       return useMutation(getDeleteV1WarehousesIdMutationOptions(options));
     }
     /**
- * Returns paginated products assigned to a warehouse for the edit warehouse product tab. Filters: search matches product name or SKU. Each item includes product_name, unit, stock_quantity, price_per_unit, and last_updated_at.
+ * Returns one warehouse detail record for the edit warehouse basic-information view. The response includes warehouse_id, warehouse_name, location, manager_id, manager_name, status, and last_updated_at.
+
+**Frontend usage:**
+Call this operation when opening the **Get warehouse details** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Warehouse ID; Warehouse ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get warehouse details
+ */
+export type getV1WarehousesIdResponse200 = {
+  data: WarehouseResponse
+  status: 200
+}
+
+export type getV1WarehousesIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1WarehousesIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1WarehousesIdResponseSuccess = (getV1WarehousesIdResponse200) & {
+  headers: Headers;
+};
+export type getV1WarehousesIdResponseError = (getV1WarehousesIdResponse400 | getV1WarehousesIdResponse401 | getV1WarehousesIdResponse403 | getV1WarehousesIdResponse429 | getV1WarehousesIdResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1WarehousesIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/warehouses/${id}`
+}
+
+export const getV1WarehousesId = async (id: string, options?: RequestInit): Promise<getV1WarehousesIdResponseSuccess> => {
+
+  return fetcher<getV1WarehousesIdResponseSuccess>(getGetV1WarehousesIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1WarehousesIdQueryKey = (id: string,) => {
+    return [
+    `/v1/warehouses/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1WarehousesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1WarehousesIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1WarehousesId>>> = ({ signal }) => getV1WarehousesId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1WarehousesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesId>>>
+export type GetV1WarehousesIdQueryError = ErrorResponse
+
+
+/**
+ * @summary Get warehouse details
+ */
+
+export function useGetV1WarehousesId<TData = Awaited<ReturnType<typeof getV1WarehousesId>>, TError = ErrorResponse>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1WarehousesIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Updates the Figma-aligned warehouse fields warehouse_name, location, manager_id, and status. Product assignment rows accept product_id, stock_quantity, storage_location, storage_reference, and remove. When remove=true the product is deleted from the warehouse inventory; otherwise stock_quantity is upserted for that product.
+
+**Frontend usage:**
+Call this operation when the user saves the **Updates warehouse basic details and can add or remove warehouse products.** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `id` (path) — string; Warehouse ID; Warehouse ID
+- `location` — string; maximum length 255
+- `status` — string; allowed: `active`, `inactive`
+- `warehouse_name` — string; minimum length 2; maximum length 255
+
+**Optional inputs:**
+- `manager_id` — string
+- `products[].product_id` — string
+- `products[].remove` — boolean
+- `products[].stock_quantity` — integer; minimum 0
+- `products[].storage_location` — string; maximum length 255
+- `products[].storage_reference` — string; maximum length 120
+
+**Enum values:**
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Updates warehouse basic details and can add or remove warehouse products.
+ */
+export type putV1WarehousesIdResponse200 = {
+  data: WarehouseResponse
+  status: 200
+}
+
+export type putV1WarehousesIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1WarehousesIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1WarehousesIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1WarehousesIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1WarehousesIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type putV1WarehousesIdResponseSuccess = (putV1WarehousesIdResponse200) & {
+  headers: Headers;
+};
+export type putV1WarehousesIdResponseError = (putV1WarehousesIdResponse400 | putV1WarehousesIdResponse401 | putV1WarehousesIdResponse403 | putV1WarehousesIdResponse429 | putV1WarehousesIdResponse500) & {
+  headers: Headers;
+};
+
+export const getPutV1WarehousesIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/warehouses/${id}`
+}
+
+export const putV1WarehousesId = async (id: string,
+    warehouseUpdateRequest: WarehouseUpdateRequest, options?: RequestInit): Promise<putV1WarehousesIdResponseSuccess> => {
+
+  return fetcher<putV1WarehousesIdResponseSuccess>(getPutV1WarehousesIdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      warehouseUpdateRequest,)
+  }
+);}
+
+
+
+
+export const getPutV1WarehousesIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: WarehouseUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: WarehouseUpdateRequest}, TContext> => {
+
+const mutationKey = ['putV1WarehousesId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1WarehousesId>>, {id: string;data: WarehouseUpdateRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putV1WarehousesId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1WarehousesIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1WarehousesId>>>
+    export type PutV1WarehousesIdMutationBody = WarehouseUpdateRequest
+    export type PutV1WarehousesIdMutationError = ErrorResponse
+
+    /**
+ * @summary Updates warehouse basic details and can add or remove warehouse products.
+ */
+export const usePutV1WarehousesId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1WarehousesId>>, TError,{id: string;data: WarehouseUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putV1WarehousesId>>,
+        TError,
+        {id: string;data: WarehouseUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1WarehousesIdMutationOptions(options));
+    }
+    /**
+ * Returns paginated products assigned to a warehouse for the edit warehouse product tab.
+
+**Filters:** search matches product name or SKU. Each item includes product_name, unit, stock_quantity, price_per_unit, and last_updated_at.
+
+**Frontend usage:**
+Use this operation to populate the **List warehouse products** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+- `id` (path) — string; Warehouse ID; Warehouse ID
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `search` (query) — string; Search by product name or SKU; Search by product name or SKU
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List warehouse products
  */
 export type getV1WarehousesIdProductsResponse200 = {
-  data: HttpWarehouseProductsResponse
+  data: WarehouseProductsResponse
   status: 200
+}
+
+export type getV1WarehousesIdProductsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1WarehousesIdProductsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesIdProductsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesIdProductsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesIdProductsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1WarehousesIdProductsResponseSuccess = (getV1WarehousesIdProductsResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1WarehousesIdProductsResponse = (getV1WarehousesIdProductsResponseSuccess)
+export type getV1WarehousesIdProductsResponseError = (getV1WarehousesIdProductsResponse400 | getV1WarehousesIdProductsResponse401 | getV1WarehousesIdProductsResponse403 | getV1WarehousesIdProductsResponse429 | getV1WarehousesIdProductsResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1WarehousesIdProductsUrl = (id: string,
     params?: GetV1WarehousesIdProductsParams,) => {
@@ -990,9 +1825,9 @@ export const getGetV1WarehousesIdProductsUrl = (id: string,
 }
 
 export const getV1WarehousesIdProducts = async (id: string,
-    params?: GetV1WarehousesIdProductsParams, options?: RequestInit): Promise<getV1WarehousesIdProductsResponse> => {
+    params?: GetV1WarehousesIdProductsParams, options?: RequestInit): Promise<getV1WarehousesIdProductsResponseSuccess> => {
 
-  return fetcher<getV1WarehousesIdProductsResponse>(getGetV1WarehousesIdProductsUrl(id,params),
+  return fetcher<getV1WarehousesIdProductsResponseSuccess>(getGetV1WarehousesIdProductsUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -1013,7 +1848,7 @@ export const getGetV1WarehousesIdProductsQueryKey = (id: string,
     }
 
 
-export const getGetV1WarehousesIdProductsQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesIdProducts>>, TError = unknown>(id: string,
+export const getGetV1WarehousesIdProductsQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesIdProducts>>, TError = ErrorResponse>(id: string,
     params?: GetV1WarehousesIdProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdProducts>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
@@ -1033,14 +1868,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1WarehousesIdProductsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesIdProducts>>>
-export type GetV1WarehousesIdProductsQueryError = unknown
+export type GetV1WarehousesIdProductsQueryError = ErrorResponse
 
 
 /**
  * @summary List warehouse products
  */
 
-export function useGetV1WarehousesIdProducts<TData = Awaited<ReturnType<typeof getV1WarehousesIdProducts>>, TError = unknown>(
+export function useGetV1WarehousesIdProducts<TData = Awaited<ReturnType<typeof getV1WarehousesIdProducts>>, TError = ErrorResponse>(
  id: string,
     params?: GetV1WarehousesIdProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdProducts>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
@@ -1059,20 +1894,202 @@ export function useGetV1WarehousesIdProducts<TData = Awaited<ReturnType<typeof g
 
 
 /**
- * Returns aggregate stock availability for one warehouse based on product inventory rows. Expected outcome: total_quantity, total_max_stock, product counts and stock_level_percentage as a 0-100 percentage.
+ * Returns the Figma edit-warehouse screen payload for a single warehouse. The response includes the warehouse header fields and product rows with stock_quantity, price_per_unit, storage_location, storage_reference, and remove action labels.
+
+**Frontend usage:**
+Call this operation when opening the **Get warehouse screen detail** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Warehouse ID; Warehouse ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get warehouse screen detail
+ */
+export type getV1WarehousesIdScreenResponse200 = {
+  data: WarehouseScreenResponse
+  status: 200
+}
+
+export type getV1WarehousesIdScreenResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1WarehousesIdScreenResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesIdScreenResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesIdScreenResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesIdScreenResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1WarehousesIdScreenResponseSuccess = (getV1WarehousesIdScreenResponse200) & {
+  headers: Headers;
+};
+export type getV1WarehousesIdScreenResponseError = (getV1WarehousesIdScreenResponse400 | getV1WarehousesIdScreenResponse401 | getV1WarehousesIdScreenResponse403 | getV1WarehousesIdScreenResponse429 | getV1WarehousesIdScreenResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1WarehousesIdScreenUrl = (id: string,) => {
+
+
+
+
+  return `/v1/warehouses/${id}/screen`
+}
+
+export const getV1WarehousesIdScreen = async (id: string, options?: RequestInit): Promise<getV1WarehousesIdScreenResponseSuccess> => {
+
+  return fetcher<getV1WarehousesIdScreenResponseSuccess>(getGetV1WarehousesIdScreenUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1WarehousesIdScreenQueryKey = (id: string,) => {
+    return [
+    `/v1/warehouses/${id}/screen`
+    ] as const;
+    }
+
+
+export const getGetV1WarehousesIdScreenQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesIdScreen>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdScreen>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1WarehousesIdScreenQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1WarehousesIdScreen>>> = ({ signal }) => getV1WarehousesIdScreen(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdScreen>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1WarehousesIdScreenQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesIdScreen>>>
+export type GetV1WarehousesIdScreenQueryError = ErrorResponse
+
+
+/**
+ * @summary Get warehouse screen detail
+ */
+
+export function useGetV1WarehousesIdScreen<TData = Awaited<ReturnType<typeof getV1WarehousesIdScreen>>, TError = ErrorResponse>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdScreen>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1WarehousesIdScreenQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Returns aggregate stock availability for one warehouse based on product inventory rows.
+
+**Expected outcomes:** total_quantity, total_max_stock, product counts and stock_level_percentage as a 0-100 percentage.
+
+**Frontend usage:**
+Call this operation when opening the **Get warehouse stock availability** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Warehouse ID; Warehouse ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get warehouse stock availability
  */
 export type getV1WarehousesIdStockResponse200 = {
-  data: HttpWarehouseStockResponse
+  data: WarehouseStockResponse
   status: 200
+}
+
+export type getV1WarehousesIdStockResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1WarehousesIdStockResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1WarehousesIdStockResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1WarehousesIdStockResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1WarehousesIdStockResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1WarehousesIdStockResponseSuccess = (getV1WarehousesIdStockResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1WarehousesIdStockResponse = (getV1WarehousesIdStockResponseSuccess)
+export type getV1WarehousesIdStockResponseError = (getV1WarehousesIdStockResponse400 | getV1WarehousesIdStockResponse401 | getV1WarehousesIdStockResponse403 | getV1WarehousesIdStockResponse429 | getV1WarehousesIdStockResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1WarehousesIdStockUrl = (id: string,) => {
 
@@ -1082,9 +2099,9 @@ export const getGetV1WarehousesIdStockUrl = (id: string,) => {
   return `/v1/warehouses/${id}/stock`
 }
 
-export const getV1WarehousesIdStock = async (id: string, options?: RequestInit): Promise<getV1WarehousesIdStockResponse> => {
+export const getV1WarehousesIdStock = async (id: string, options?: RequestInit): Promise<getV1WarehousesIdStockResponseSuccess> => {
 
-  return fetcher<getV1WarehousesIdStockResponse>(getGetV1WarehousesIdStockUrl(id),
+  return fetcher<getV1WarehousesIdStockResponseSuccess>(getGetV1WarehousesIdStockUrl(id),
   {
     ...options,
     method: 'GET'
@@ -1104,7 +2121,7 @@ export const getGetV1WarehousesIdStockQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1WarehousesIdStockQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1WarehousesIdStockQueryOptions = <TData = Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1123,14 +2140,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1WarehousesIdStockQueryResult = NonNullable<Awaited<ReturnType<typeof getV1WarehousesIdStock>>>
-export type GetV1WarehousesIdStockQueryError = unknown
+export type GetV1WarehousesIdStockQueryError = ErrorResponse
 
 
 /**
  * @summary Get warehouse stock availability
  */
 
-export function useGetV1WarehousesIdStock<TData = Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError = unknown>(
+export function useGetV1WarehousesIdStock<TData = Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1WarehousesIdStock>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

@@ -270,7 +270,7 @@ export function toWarehouseViewModel(source: warehouse.Warehouse): Warehouse {
     capacityL: capacity,
 
     lastUpdated: formatDate(
-      source.updated_at ?? source.created_at,
+      source.last_updated_at ?? source.updated_at ?? source.created_at,
     ),
 
     status:

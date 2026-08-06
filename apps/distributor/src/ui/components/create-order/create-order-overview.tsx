@@ -78,7 +78,7 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   const productCatalog = useMemo<CreateOrderProductOption[]>(
     () => [
       ...PRODUCT_CATALOG,
-      ...(productsData?.items ?? []).map((product) => {
+      ...(productsData ?? []).map((product) => {
         const goldTier = product.tier_pricing?.find((tier) => tier.tier === 'gold');
         return {
           id: product.id ?? '',

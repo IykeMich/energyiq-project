@@ -20,14 +20,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ComplianceSummaryResponse,
+  DashboardResponse,
+  DocumentListResponse,
+  DocumentRejectRequest,
+  DocumentResponse,
+  EmptyResponse,
+  ErrorResponse,
   GetV1DocumentListParams,
-  GetV1DocumentOverviewParams,
-  HttpComplianceSummaryResponse,
-  HttpDashboardResponse,
-  HttpDocumentListResponse,
-  HttpDocumentResponse,
-  InternalDocumentAdaptersHttpRejectRequest,
-  ResponseEmptyResponse
+  GetV1DocumentOverviewParams
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -38,20 +39,75 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Approves a pending document and records reviewer metadata. Prerequisite: document must be pending; approving already reviewed documents returns 409.
+ * Approves a pending document and records reviewer metadata.
+
+**Prerequisites:** document must be pending; approving already reviewed documents returns 409.
+
+**Frontend usage:**
+Call this operation from the **Approve document** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Document ID; Document ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Approve document
  */
 export type postV1DocumentApproveIdResponse200 = {
-  data: HttpDocumentResponse
+  data: DocumentResponse
   status: 200
+}
+
+export type postV1DocumentApproveIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DocumentApproveIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DocumentApproveIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DocumentApproveIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1DocumentApproveIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DocumentApproveIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DocumentApproveIdResponseSuccess = (postV1DocumentApproveIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1DocumentApproveIdResponse = (postV1DocumentApproveIdResponseSuccess)
+export type postV1DocumentApproveIdResponseError = (postV1DocumentApproveIdResponse400 | postV1DocumentApproveIdResponse401 | postV1DocumentApproveIdResponse403 | postV1DocumentApproveIdResponse404 | postV1DocumentApproveIdResponse429 | postV1DocumentApproveIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1DocumentApproveIdUrl = (id: string,) => {
 
@@ -61,9 +117,9 @@ export const getPostV1DocumentApproveIdUrl = (id: string,) => {
   return `/v1/document/approve/${id}`
 }
 
-export const postV1DocumentApproveId = async (id: string, options?: RequestInit): Promise<postV1DocumentApproveIdResponse> => {
+export const postV1DocumentApproveId = async (id: string, options?: RequestInit): Promise<postV1DocumentApproveIdResponseSuccess> => {
 
-  return fetcher<postV1DocumentApproveIdResponse>(getPostV1DocumentApproveIdUrl(id),
+  return fetcher<postV1DocumentApproveIdResponseSuccess>(getPostV1DocumentApproveIdUrl(id),
   {
     ...options,
     method: 'POST'
@@ -75,7 +131,7 @@ export const postV1DocumentApproveId = async (id: string, options?: RequestInit)
 
 
 
-export const getPostV1DocumentApproveIdMutationOptions = <TError = unknown,
+export const getPostV1DocumentApproveIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentApproveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentApproveId>>, TError,{id: string}, TContext> => {
 
@@ -104,12 +160,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1DocumentApproveIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DocumentApproveId>>>
 
-    export type PostV1DocumentApproveIdMutationError = unknown
+    export type PostV1DocumentApproveIdMutationError = ErrorResponse
 
     /**
  * @summary Approve document
  */
-export const usePostV1DocumentApproveId = <TError = unknown,
+export const usePostV1DocumentApproveId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentApproveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DocumentApproveId>>,
@@ -121,19 +177,60 @@ export const usePostV1DocumentApproveId = <TError = unknown,
     }
     /**
  * Returns aggregate compliance counts for summary cards. This endpoint exposes counts only; use `/v1/document/overview` for the complete Figma screen payload.
+
+**Frontend usage:**
+Call this operation when opening the **Compliance document summary** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Compliance document summary
  */
 export type getV1DocumentComplianceResponse200 = {
-  data: HttpComplianceSummaryResponse
+  data: ComplianceSummaryResponse
   status: 200
+}
+
+export type getV1DocumentComplianceResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentComplianceResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentComplianceResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentComplianceResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentComplianceResponseSuccess = (getV1DocumentComplianceResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentComplianceResponse = (getV1DocumentComplianceResponseSuccess)
+export type getV1DocumentComplianceResponseError = (getV1DocumentComplianceResponse401 | getV1DocumentComplianceResponse403 | getV1DocumentComplianceResponse429 | getV1DocumentComplianceResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentComplianceUrl = () => {
 
@@ -143,9 +240,9 @@ export const getGetV1DocumentComplianceUrl = () => {
   return `/v1/document/compliance`
 }
 
-export const getV1DocumentCompliance = async ( options?: RequestInit): Promise<getV1DocumentComplianceResponse> => {
+export const getV1DocumentCompliance = async ( options?: RequestInit): Promise<getV1DocumentComplianceResponseSuccess> => {
 
-  return fetcher<getV1DocumentComplianceResponse>(getGetV1DocumentComplianceUrl(),
+  return fetcher<getV1DocumentComplianceResponseSuccess>(getGetV1DocumentComplianceUrl(),
   {
     ...options,
     method: 'GET'
@@ -165,7 +262,7 @@ export const getGetV1DocumentComplianceQueryKey = () => {
     }
 
 
-export const getGetV1DocumentComplianceQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentComplianceQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -184,14 +281,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentComplianceQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentCompliance>>>
-export type GetV1DocumentComplianceQueryError = unknown
+export type GetV1DocumentComplianceQueryError = ErrorResponse
 
 
 /**
  * @summary Compliance document summary
  */
 
-export function useGetV1DocumentCompliance<TData = Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError = unknown>(
+export function useGetV1DocumentCompliance<TData = Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCompliance>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -210,19 +307,72 @@ export function useGetV1DocumentCompliance<TData = Awaited<ReturnType<typeof get
 
 /**
  * Deletes only pending/unreviewed documents. Reviewed documents are retained for audit and return 409 if deletion is attempted.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete pending document**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Document ID; Document ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete pending document
  */
 export type deleteV1DocumentDeleteIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
+}
+
+export type deleteV1DocumentDeleteIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1DocumentDeleteIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1DocumentDeleteIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1DocumentDeleteIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type deleteV1DocumentDeleteIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1DocumentDeleteIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1DocumentDeleteIdResponseSuccess = (deleteV1DocumentDeleteIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type deleteV1DocumentDeleteIdResponse = (deleteV1DocumentDeleteIdResponseSuccess)
+export type deleteV1DocumentDeleteIdResponseError = (deleteV1DocumentDeleteIdResponse400 | deleteV1DocumentDeleteIdResponse401 | deleteV1DocumentDeleteIdResponse403 | deleteV1DocumentDeleteIdResponse409 | deleteV1DocumentDeleteIdResponse429 | deleteV1DocumentDeleteIdResponse500) & {
+  headers: Headers;
+};
 
 export const getDeleteV1DocumentDeleteIdUrl = (id: string,) => {
 
@@ -232,9 +382,9 @@ export const getDeleteV1DocumentDeleteIdUrl = (id: string,) => {
   return `/v1/document/delete/${id}`
 }
 
-export const deleteV1DocumentDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentDeleteIdResponse> => {
+export const deleteV1DocumentDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentDeleteIdResponseSuccess> => {
 
-  return fetcher<deleteV1DocumentDeleteIdResponse>(getDeleteV1DocumentDeleteIdUrl(id),
+  return fetcher<deleteV1DocumentDeleteIdResponseSuccess>(getDeleteV1DocumentDeleteIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -246,7 +396,7 @@ export const deleteV1DocumentDeleteId = async (id: string, options?: RequestInit
 
 
 
-export const getDeleteV1DocumentDeleteIdMutationOptions = <TError = unknown,
+export const getDeleteV1DocumentDeleteIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentDeleteId>>, TError,{id: string}, TContext> => {
 
@@ -275,12 +425,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1DocumentDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1DocumentDeleteId>>>
 
-    export type DeleteV1DocumentDeleteIdMutationError = unknown
+    export type DeleteV1DocumentDeleteIdMutationError = ErrorResponse
 
     /**
  * @summary Delete pending document
  */
-export const useDeleteV1DocumentDeleteId = <TError = unknown,
+export const useDeleteV1DocumentDeleteId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1DocumentDeleteId>>,
@@ -292,19 +442,70 @@ export const useDeleteV1DocumentDeleteId = <TError = unknown,
     }
     /**
  * Returns raw document records for audit and operational flows. This endpoint is not the Figma screen contract; use `/v1/document/overview` for the document-management UI payload.
+
+**Frontend usage:**
+Use this operation to populate the **List documents** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `distributor_id` (query) — string; Distributor UUID; Distributor UUID
+- `status` (query) — string; allowed: `pending`, `approved`, `rejected`, `expired`; Stored document status filter; Stored document status filter
+
+**Enum values:**
+- `status`: `pending`, `approved`, `rejected`, `expired`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List documents
  */
 export type getV1DocumentListResponse200 = {
-  data: HttpDocumentListResponse
+  data: DocumentListResponse
   status: 200
+}
+
+export type getV1DocumentListResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DocumentListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentListResponseSuccess = (getV1DocumentListResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentListResponse = (getV1DocumentListResponseSuccess)
+export type getV1DocumentListResponseError = (getV1DocumentListResponse400 | getV1DocumentListResponse401 | getV1DocumentListResponse403 | getV1DocumentListResponse429 | getV1DocumentListResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentListUrl = (params?: GetV1DocumentListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -321,9 +522,9 @@ export const getGetV1DocumentListUrl = (params?: GetV1DocumentListParams,) => {
   return stringifiedParams.length > 0 ? `/v1/document/list?${stringifiedParams}` : `/v1/document/list`
 }
 
-export const getV1DocumentList = async (params?: GetV1DocumentListParams, options?: RequestInit): Promise<getV1DocumentListResponse> => {
+export const getV1DocumentList = async (params?: GetV1DocumentListParams, options?: RequestInit): Promise<getV1DocumentListResponseSuccess> => {
 
-  return fetcher<getV1DocumentListResponse>(getGetV1DocumentListUrl(params),
+  return fetcher<getV1DocumentListResponseSuccess>(getGetV1DocumentListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -343,7 +544,7 @@ export const getGetV1DocumentListQueryKey = (params?: GetV1DocumentListParams,) 
     }
 
 
-export const getGetV1DocumentListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentList>>, TError = unknown>(params?: GetV1DocumentListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentList>>, TError = ErrorResponse>(params?: GetV1DocumentListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -362,14 +563,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentList>>>
-export type GetV1DocumentListQueryError = unknown
+export type GetV1DocumentListQueryError = ErrorResponse
 
 
 /**
  * @summary List documents
  */
 
-export function useGetV1DocumentList<TData = Awaited<ReturnType<typeof getV1DocumentList>>, TError = unknown>(
+export function useGetV1DocumentList<TData = Awaited<ReturnType<typeof getV1DocumentList>>, TError = ErrorResponse>(
  params?: GetV1DocumentListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -388,19 +589,73 @@ export function useGetV1DocumentList<TData = Awaited<ReturnType<typeof getV1Docu
 
 /**
  * Returns the UI-ready document-management payload that matches the Figma overview screen exactly: summary cards, filter options, document type preview cards, distributor table rows, pending-review items, expiring-soon items, and rejection-reason options.
+
+**Frontend usage:**
+Use this operation to populate the **Document overview** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `distributor_id` (query) — string; Distributor UUID; Distributor UUID
+- `document_type` (query) — string; Document type filter; Document type filter
+- `limit` (query) — integer; Dashboard table page size; Dashboard table page size
+- `offset` (query) — integer; Dashboard table offset; Dashboard table offset
+- `status` (query) — string; allowed: `verified`, `in_review`, `incomplete`, `expiring_soon`; Dashboard status filter; Dashboard status filter
+
+**Enum values:**
+- `status`: `verified`, `in_review`, `incomplete`, `expiring_soon`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Document overview
  */
 export type getV1DocumentOverviewResponse200 = {
-  data: HttpDashboardResponse
+  data: DashboardResponse
   status: 200
+}
+
+export type getV1DocumentOverviewResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DocumentOverviewResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentOverviewResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentOverviewResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentOverviewResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentOverviewResponseSuccess = (getV1DocumentOverviewResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentOverviewResponse = (getV1DocumentOverviewResponseSuccess)
+export type getV1DocumentOverviewResponseError = (getV1DocumentOverviewResponse400 | getV1DocumentOverviewResponse401 | getV1DocumentOverviewResponse403 | getV1DocumentOverviewResponse429 | getV1DocumentOverviewResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentOverviewUrl = (params?: GetV1DocumentOverviewParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -417,9 +672,9 @@ export const getGetV1DocumentOverviewUrl = (params?: GetV1DocumentOverviewParams
   return stringifiedParams.length > 0 ? `/v1/document/overview?${stringifiedParams}` : `/v1/document/overview`
 }
 
-export const getV1DocumentOverview = async (params?: GetV1DocumentOverviewParams, options?: RequestInit): Promise<getV1DocumentOverviewResponse> => {
+export const getV1DocumentOverview = async (params?: GetV1DocumentOverviewParams, options?: RequestInit): Promise<getV1DocumentOverviewResponseSuccess> => {
 
-  return fetcher<getV1DocumentOverviewResponse>(getGetV1DocumentOverviewUrl(params),
+  return fetcher<getV1DocumentOverviewResponseSuccess>(getGetV1DocumentOverviewUrl(params),
   {
     ...options,
     method: 'GET'
@@ -439,7 +694,7 @@ export const getGetV1DocumentOverviewQueryKey = (params?: GetV1DocumentOverviewP
     }
 
 
-export const getGetV1DocumentOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentOverview>>, TError = unknown>(params?: GetV1DocumentOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentOverview>>, TError = ErrorResponse>(params?: GetV1DocumentOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -458,14 +713,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentOverview>>>
-export type GetV1DocumentOverviewQueryError = unknown
+export type GetV1DocumentOverviewQueryError = ErrorResponse
 
 
 /**
  * @summary Document overview
  */
 
-export function useGetV1DocumentOverview<TData = Awaited<ReturnType<typeof getV1DocumentOverview>>, TError = unknown>(
+export function useGetV1DocumentOverview<TData = Awaited<ReturnType<typeof getV1DocumentOverview>>, TError = ErrorResponse>(
  params?: GetV1DocumentOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -484,19 +739,72 @@ export function useGetV1DocumentOverview<TData = Awaited<ReturnType<typeof getV1
 
 /**
  * Returns the frontend-facing document preview payload used by the Figma review modal, including distributor identity, display labels, status copy, and rejection reason options.
+
+**Frontend usage:**
+Call this operation when opening the **Read document preview** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Document ID; Document ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Read document preview
  */
 export type getV1DocumentReadIdResponse200 = {
-  data: HttpDocumentResponse
+  data: DocumentResponse
   status: 200
+}
+
+export type getV1DocumentReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DocumentReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentReadIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1DocumentReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentReadIdResponseSuccess = (getV1DocumentReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentReadIdResponse = (getV1DocumentReadIdResponseSuccess)
+export type getV1DocumentReadIdResponseError = (getV1DocumentReadIdResponse400 | getV1DocumentReadIdResponse401 | getV1DocumentReadIdResponse403 | getV1DocumentReadIdResponse404 | getV1DocumentReadIdResponse429 | getV1DocumentReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentReadIdUrl = (id: string,) => {
 
@@ -506,9 +814,9 @@ export const getGetV1DocumentReadIdUrl = (id: string,) => {
   return `/v1/document/read/${id}`
 }
 
-export const getV1DocumentReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentReadIdResponse> => {
+export const getV1DocumentReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentReadIdResponseSuccess> => {
 
-  return fetcher<getV1DocumentReadIdResponse>(getGetV1DocumentReadIdUrl(id),
+  return fetcher<getV1DocumentReadIdResponseSuccess>(getGetV1DocumentReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -528,7 +836,7 @@ export const getGetV1DocumentReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1DocumentReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -547,14 +855,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentReadId>>>
-export type GetV1DocumentReadIdQueryError = unknown
+export type GetV1DocumentReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Read document preview
  */
 
-export function useGetV1DocumentReadId<TData = Awaited<ReturnType<typeof getV1DocumentReadId>>, TError = unknown>(
+export function useGetV1DocumentReadId<TData = Awaited<ReturnType<typeof getV1DocumentReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -573,19 +881,73 @@ export function useGetV1DocumentReadId<TData = Awaited<ReturnType<typeof getV1Do
 
 /**
  * Rejects a pending document with a human-readable reason that can be shown to the distributor for resubmission.
+
+**Frontend usage:**
+Call this operation from the **Reject document** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Document ID; Document ID
+- `reason` — string; minimum length 5; maximum length 500
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Reject document
  */
 export type postV1DocumentRejectIdResponse200 = {
-  data: HttpDocumentResponse
+  data: DocumentResponse
   status: 200
+}
+
+export type postV1DocumentRejectIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DocumentRejectIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DocumentRejectIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DocumentRejectIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1DocumentRejectIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DocumentRejectIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DocumentRejectIdResponseSuccess = (postV1DocumentRejectIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1DocumentRejectIdResponse = (postV1DocumentRejectIdResponseSuccess)
+export type postV1DocumentRejectIdResponseError = (postV1DocumentRejectIdResponse400 | postV1DocumentRejectIdResponse401 | postV1DocumentRejectIdResponse403 | postV1DocumentRejectIdResponse404 | postV1DocumentRejectIdResponse429 | postV1DocumentRejectIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1DocumentRejectIdUrl = (id: string,) => {
 
@@ -596,24 +958,24 @@ export const getPostV1DocumentRejectIdUrl = (id: string,) => {
 }
 
 export const postV1DocumentRejectId = async (id: string,
-    internalDocumentAdaptersHttpRejectRequest: InternalDocumentAdaptersHttpRejectRequest, options?: RequestInit): Promise<postV1DocumentRejectIdResponse> => {
+    documentRejectRequest: DocumentRejectRequest, options?: RequestInit): Promise<postV1DocumentRejectIdResponseSuccess> => {
 
-  return fetcher<postV1DocumentRejectIdResponse>(getPostV1DocumentRejectIdUrl(id),
+  return fetcher<postV1DocumentRejectIdResponseSuccess>(getPostV1DocumentRejectIdUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalDocumentAdaptersHttpRejectRequest,)
+      documentRejectRequest,)
   }
 );}
 
 
 
 
-export const getPostV1DocumentRejectIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentRejectId>>, TError,{id: string;data: InternalDocumentAdaptersHttpRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentRejectId>>, TError,{id: string;data: InternalDocumentAdaptersHttpRejectRequest}, TContext> => {
+export const getPostV1DocumentRejectIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentRejectId>>, TError,{id: string;data: DocumentRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentRejectId>>, TError,{id: string;data: DocumentRejectRequest}, TContext> => {
 
 const mutationKey = ['postV1DocumentRejectId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -625,7 +987,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentRejectId>>, {id: string;data: InternalDocumentAdaptersHttpRejectRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentRejectId>>, {id: string;data: DocumentRejectRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1DocumentRejectId(id,data,requestOptions)
@@ -639,18 +1001,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1DocumentRejectIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DocumentRejectId>>>
-    export type PostV1DocumentRejectIdMutationBody = InternalDocumentAdaptersHttpRejectRequest
-    export type PostV1DocumentRejectIdMutationError = unknown
+    export type PostV1DocumentRejectIdMutationBody = DocumentRejectRequest
+    export type PostV1DocumentRejectIdMutationError = ErrorResponse
 
     /**
  * @summary Reject document
  */
-export const usePostV1DocumentRejectId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentRejectId>>, TError,{id: string;data: InternalDocumentAdaptersHttpRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1DocumentRejectId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentRejectId>>, TError,{id: string;data: DocumentRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DocumentRejectId>>,
         TError,
-        {id: string;data: InternalDocumentAdaptersHttpRejectRequest},
+        {id: string;data: DocumentRejectRequest},
         TContext
       > => {
       return useMutation(getPostV1DocumentRejectIdMutationOptions(options));

@@ -40,8 +40,8 @@ export function ProductListPage() {
   const categoriesQuery = useProductCategoriesQuery();
   const deleteProduct = useDeleteProductMutation();
 
-  const products = productsQuery.data?.items ?? [];
-  const statsProducts = statsProductsQuery.data?.items ?? [];
+  const products = productsQuery.data ?? [];
+  const statsProducts = statsProductsQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
   const categoryById = useMemo(
     () => new Map(categories.filter((category) => category.id).map((category) => [category.id, category])),

@@ -25,7 +25,7 @@ export function TransferHistoryPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  const warehouses = useMemo(() => warehousesResult?.items ?? [], [warehousesResult]);
+  const warehouses = useMemo(() => warehousesResult ?? [], [warehousesResult]);
 
   const rows = useMemo<TransferRecord[]>(
     () => (transfersResult?.items ?? []).map((transfer) => toTransferRecordViewModel(transfer, warehouses)),

@@ -24,7 +24,7 @@ const FIELD_CLASSNAME = 'h-[47px] rounded-[33px]';
 /** Right-panel "Inventory" card for step 3 of the "Add New Product" wizard. */
 export function ProductInventoryCard({ draft, onChange, onCancel, onNext }: ProductInventoryCardProps) {
   const warehousesQuery = useWarehousesQuery({ status: 'active' });
-  const warehouses = warehousesQuery.data?.items ?? [];
+  const warehouses = warehousesQuery.data ?? [];
 
   const warehouseOptions = warehouses
     .filter((warehouse) => warehouse.warehouse_id && warehouse.warehouse_name)

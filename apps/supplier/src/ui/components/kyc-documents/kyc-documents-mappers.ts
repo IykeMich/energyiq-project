@@ -1,12 +1,14 @@
-import { CheckCircle2, Clock, FileText, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, Files, AlertTriangle } from 'lucide-react';
 import type {
   DomainDocument,
-  DomainDashboardSummary,
-  DomainDocumentTypePreview,
-  DomainReviewQueueItem,
-  DomainExpiringSoonItem,
-  DomainDashboardRow,
-  DomainDashboardFilterOption,
+  Dashboard as DomainDashboard,
+  DashboardSummary as DomainDashboardSummary,
+  ComplianceSummary as DomainComplianceSummary,
+  DocumentTypePreview as DomainDocumentTypePreview,
+  ReviewQueueItem as DomainReviewQueueItem,
+  ExpiringSoonItem as DomainExpiringSoonItem,
+  DashboardRow as DomainDashboardRow,
+  DashboardFilterOption as DomainDashboardFilterOption,
 } from '@energyiq/api/generated/schemas';
 import type {
   KycKpi,
@@ -17,7 +19,8 @@ import type {
   DocumentListRow,
   DocumentStatus,
   KycDocumentFilter,
-} from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+  KycDocumentFilterOption,
+} from './kyc-documents-types';
 
 /**
  * `DomainDocument` (used by the Review Queue page, `GET /v1/document/list`) only carries
@@ -47,6 +50,17 @@ export function mapDocumentsToReviewQueueItems(documents: DomainDocument[]): Rev
     distributor: distributorLabel(document.distributor_id),
     fileName: document.file_name ?? document.document_type ?? 'Document',
     submittedAgo: `Submitted ${relativeTimeFrom(document.created_at)}.`,
+    documentUrl: document.file_url,
+  }));
+}
+
+/** `dashboard.rejection_reason_options` -> the Reject Document modal's reason dropdown. */
+export function mapRejectionReasonOptions(
+  dashboard: DomainDashboard | undefined,
+): KycDocumentFilterOption[] {
+  return (dashboard?.rejection_reason_options ?? []).map((option) => ({
+    value: option.value ?? '',
+    label: option.label ?? '',
   }));
 }
 
@@ -72,27 +86,28 @@ function cardBadge(
   return { label, emphasis };
 }
 
-/** `dashboard.summary` -> the 4 KPI tiles at the top of the dashboard. */
+/** `dashboard.summary` -> the 4 KPI tiles at the top of the dashboard. Titles come from
+ * the server's own `card.label` so backend copy changes reach the UI without a deploy. */
 export function mapDashboardSummaryToKpis(summary: DomainDashboardSummary | undefined): KycKpi[] {
   return [
     {
-      title: 'Total Distributors:',
+      title: summary?.total_distributors?.label ?? 'Total Distributors:',
       value: (summary?.total_distributors?.value ?? 0).toLocaleString(),
       Icon: KPI_ICONS.totalDistributors,
     },
     {
-      title: 'Verified:',
+      title: summary?.verified?.label ?? 'Verified:',
       value: (summary?.verified?.value ?? 0).toLocaleString(),
       Icon: KPI_ICONS.verified,
       badge: cardBadge(summary?.verified, 'success'),
     },
     {
-      title: 'Review Queue:',
+      title: summary?.review_queue?.label ?? 'Review Queue:',
       value: (summary?.review_queue?.value ?? 0).toLocaleString(),
       Icon: KPI_ICONS.reviewQueue,
     },
     {
-      title: 'Expired:',
+      title: summary?.expired?.label ?? 'Expired:',
       value: (summary?.expired?.value ?? 0).toLocaleString(),
       Icon: KPI_ICONS.expired,
       badge: cardBadge(summary?.expired, 'destructive'),
@@ -169,5 +184,17 @@ export function mapDashboardFilterOptions(
     id,
     label,
     options: (options ?? []).map((option) => ({ value: option.value ?? '', label: option.label ?? '' })),
+  };
+}
+
+/** `GET /v1/document/compliance` -> a 5th KPI tile. Its counts (`total_documents`,
+ * `expiring_soon`) don't overlap with any of the 4 overview-sourced cards — the overview
+ * summary has `total_distributors`, not a document-level total, and no standalone
+ * expiring-soon count. No `sub_label`/`sub_value` exist here, so no badge. */
+export function mapComplianceSummaryToKpi(summary: DomainComplianceSummary | undefined): KycKpi {
+  return {
+    title: 'Total Documents:',
+    value: (summary?.total_documents ?? 0).toLocaleString(),
+    Icon: Files,
   };
 }

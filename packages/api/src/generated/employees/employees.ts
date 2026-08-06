@@ -20,13 +20,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  GetV1EmployeeListParams,
-  HttpEmployeeCreateRequest,
-  HttpEmployeeListResponse,
-  HttpEmployeeResponse,
-  HttpEmployeeStatsResponse,
-  HttpEmployeeUpdateRequest,
-  ResponseEmptyResponse
+  EmployeeCreateRequest,
+  EmployeeListResponse,
+  EmployeeResponse,
+  EmployeeStatsResponse,
+  EmployeeUpdateRequest,
+  EmptyResponse,
+  ErrorResponse,
+  GetV1EmployeeListParams
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -37,20 +38,83 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Creates a supplier staff account for the employee management screen. Prerequisites: caller must hold employee:create; role must be one of admin, manager, staff or finance. Outcome: employee is active with invite-pending password setup metadata.
+ * Creates a supplier staff account for the employee management screen.
+
+**Prerequisites:** caller must hold employee:create; role must be one of admin, manager, staff or finance.
+
+**Outcomes:** employee is active with invite-pending password setup metadata.
+
+**Frontend usage:**
+Call this operation when the user submits the **Invite/create employee** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `email` — string; maximum length 255
+- `name` — string; minimum length 2; maximum length 255
+- `role` — string; allowed: `admin`, `manager`, `staff`, `finance`
+
+**Optional inputs:**
+- `phone` — string; maximum length 20
+- `role_id` — string
+
+**Enum values:**
+- `role`: `admin`, `manager`, `staff`, `finance`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Invite/create employee
  */
 export type postV1EmployeeCreateResponse201 = {
-  data: HttpEmployeeResponse
+  data: EmployeeResponse
   status: 201
+}
+
+export type postV1EmployeeCreateResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1EmployeeCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1EmployeeCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1EmployeeCreateResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1EmployeeCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1EmployeeCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1EmployeeCreateResponseSuccess = (postV1EmployeeCreateResponse201) & {
   headers: Headers;
 };
-;
-
-export type postV1EmployeeCreateResponse = (postV1EmployeeCreateResponseSuccess)
+export type postV1EmployeeCreateResponseError = (postV1EmployeeCreateResponse400 | postV1EmployeeCreateResponse401 | postV1EmployeeCreateResponse403 | postV1EmployeeCreateResponse409 | postV1EmployeeCreateResponse429 | postV1EmployeeCreateResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1EmployeeCreateUrl = () => {
 
@@ -60,24 +124,24 @@ export const getPostV1EmployeeCreateUrl = () => {
   return `/v1/employee/create`
 }
 
-export const postV1EmployeeCreate = async (httpEmployeeCreateRequest: HttpEmployeeCreateRequest, options?: RequestInit): Promise<postV1EmployeeCreateResponse> => {
+export const postV1EmployeeCreate = async (employeeCreateRequest: EmployeeCreateRequest, options?: RequestInit): Promise<postV1EmployeeCreateResponseSuccess> => {
 
-  return fetcher<postV1EmployeeCreateResponse>(getPostV1EmployeeCreateUrl(),
+  return fetcher<postV1EmployeeCreateResponseSuccess>(getPostV1EmployeeCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpEmployeeCreateRequest,)
+      employeeCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1EmployeeCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1EmployeeCreate>>, TError,{data: HttpEmployeeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1EmployeeCreate>>, TError,{data: HttpEmployeeCreateRequest}, TContext> => {
+export const getPostV1EmployeeCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1EmployeeCreate>>, TError,{data: EmployeeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1EmployeeCreate>>, TError,{data: EmployeeCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1EmployeeCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -89,7 +153,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1EmployeeCreate>>, {data: HttpEmployeeCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1EmployeeCreate>>, {data: EmployeeCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1EmployeeCreate(data,requestOptions)
@@ -103,37 +167,90 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1EmployeeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1EmployeeCreate>>>
-    export type PostV1EmployeeCreateMutationBody = HttpEmployeeCreateRequest
-    export type PostV1EmployeeCreateMutationError = unknown
+    export type PostV1EmployeeCreateMutationBody = EmployeeCreateRequest
+    export type PostV1EmployeeCreateMutationError = ErrorResponse
 
     /**
  * @summary Invite/create employee
  */
-export const usePostV1EmployeeCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1EmployeeCreate>>, TError,{data: HttpEmployeeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1EmployeeCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1EmployeeCreate>>, TError,{data: EmployeeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1EmployeeCreate>>,
         TError,
-        {data: HttpEmployeeCreateRequest},
+        {data: EmployeeCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1EmployeeCreateMutationOptions(options));
     }
     /**
  * Soft deletes an employee by setting status to deleted, preserving audit history while removing access and list visibility.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete employee**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Employee ID; Employee ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete employee
  */
 export type deleteV1EmployeeDeleteIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
+}
+
+export type deleteV1EmployeeDeleteIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1EmployeeDeleteIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1EmployeeDeleteIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1EmployeeDeleteIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteV1EmployeeDeleteIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1EmployeeDeleteIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1EmployeeDeleteIdResponseSuccess = (deleteV1EmployeeDeleteIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type deleteV1EmployeeDeleteIdResponse = (deleteV1EmployeeDeleteIdResponseSuccess)
+export type deleteV1EmployeeDeleteIdResponseError = (deleteV1EmployeeDeleteIdResponse400 | deleteV1EmployeeDeleteIdResponse401 | deleteV1EmployeeDeleteIdResponse403 | deleteV1EmployeeDeleteIdResponse404 | deleteV1EmployeeDeleteIdResponse429 | deleteV1EmployeeDeleteIdResponse500) & {
+  headers: Headers;
+};
 
 export const getDeleteV1EmployeeDeleteIdUrl = (id: string,) => {
 
@@ -143,9 +260,9 @@ export const getDeleteV1EmployeeDeleteIdUrl = (id: string,) => {
   return `/v1/employee/delete/${id}`
 }
 
-export const deleteV1EmployeeDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1EmployeeDeleteIdResponse> => {
+export const deleteV1EmployeeDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1EmployeeDeleteIdResponseSuccess> => {
 
-  return fetcher<deleteV1EmployeeDeleteIdResponse>(getDeleteV1EmployeeDeleteIdUrl(id),
+  return fetcher<deleteV1EmployeeDeleteIdResponseSuccess>(getDeleteV1EmployeeDeleteIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -157,7 +274,7 @@ export const deleteV1EmployeeDeleteId = async (id: string, options?: RequestInit
 
 
 
-export const getDeleteV1EmployeeDeleteIdMutationOptions = <TError = unknown,
+export const getDeleteV1EmployeeDeleteIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1EmployeeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1EmployeeDeleteId>>, TError,{id: string}, TContext> => {
 
@@ -186,12 +303,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1EmployeeDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1EmployeeDeleteId>>>
 
-    export type DeleteV1EmployeeDeleteIdMutationError = unknown
+    export type DeleteV1EmployeeDeleteIdMutationError = ErrorResponse
 
     /**
  * @summary Delete employee
  */
-export const useDeleteV1EmployeeDeleteId = <TError = unknown,
+export const useDeleteV1EmployeeDeleteId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1EmployeeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1EmployeeDeleteId>>,
@@ -203,19 +320,76 @@ export const useDeleteV1EmployeeDeleteId = <TError = unknown,
     }
     /**
  * Lists employees with search, role/status filters and pagination for employee management dashboard cards and table states.
+
+**Frontend usage:**
+Use this operation to populate the **List employees** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size; Page size
+- `offset` (query) — integer; Offset; Offset
+- `role` (query) — string; allowed: `admin`, `manager`, `staff`, `finance`; Role filter; Role filter
+- `search` (query) — string; Name or email search; Name or email search
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `active`, `suspended`; Status filter; Status filter
+
+**Enum values:**
+- `role`: `admin`, `manager`, `staff`, `finance`
+- `sort`: `asc`, `desc`
+- `status`: `active`, `suspended`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List employees
  */
 export type getV1EmployeeListResponse200 = {
-  data: HttpEmployeeListResponse
+  data: EmployeeListResponse
   status: 200
+}
+
+export type getV1EmployeeListResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1EmployeeListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1EmployeeListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1EmployeeListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1EmployeeListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1EmployeeListResponseSuccess = (getV1EmployeeListResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1EmployeeListResponse = (getV1EmployeeListResponseSuccess)
+export type getV1EmployeeListResponseError = (getV1EmployeeListResponse400 | getV1EmployeeListResponse401 | getV1EmployeeListResponse403 | getV1EmployeeListResponse429 | getV1EmployeeListResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1EmployeeListUrl = (params?: GetV1EmployeeListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -232,9 +406,9 @@ export const getGetV1EmployeeListUrl = (params?: GetV1EmployeeListParams,) => {
   return stringifiedParams.length > 0 ? `/v1/employee/list?${stringifiedParams}` : `/v1/employee/list`
 }
 
-export const getV1EmployeeList = async (params?: GetV1EmployeeListParams, options?: RequestInit): Promise<getV1EmployeeListResponse> => {
+export const getV1EmployeeList = async (params?: GetV1EmployeeListParams, options?: RequestInit): Promise<getV1EmployeeListResponseSuccess> => {
 
-  return fetcher<getV1EmployeeListResponse>(getGetV1EmployeeListUrl(params),
+  return fetcher<getV1EmployeeListResponseSuccess>(getGetV1EmployeeListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -254,7 +428,7 @@ export const getGetV1EmployeeListQueryKey = (params?: GetV1EmployeeListParams,) 
     }
 
 
-export const getGetV1EmployeeListQueryOptions = <TData = Awaited<ReturnType<typeof getV1EmployeeList>>, TError = unknown>(params?: GetV1EmployeeListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1EmployeeListQueryOptions = <TData = Awaited<ReturnType<typeof getV1EmployeeList>>, TError = ErrorResponse>(params?: GetV1EmployeeListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -273,14 +447,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1EmployeeListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1EmployeeList>>>
-export type GetV1EmployeeListQueryError = unknown
+export type GetV1EmployeeListQueryError = ErrorResponse
 
 
 /**
  * @summary List employees
  */
 
-export function useGetV1EmployeeList<TData = Awaited<ReturnType<typeof getV1EmployeeList>>, TError = unknown>(
+export function useGetV1EmployeeList<TData = Awaited<ReturnType<typeof getV1EmployeeList>>, TError = ErrorResponse>(
  params?: GetV1EmployeeListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -298,20 +472,62 @@ export function useGetV1EmployeeList<TData = Awaited<ReturnType<typeof getV1Empl
 
 
 /**
- * Returns top-card counts for employee management: total employees, active employees, pending invitations and inactive accounts. Prerequisite: caller must have employee:list permission. Expected outcome: lightweight counts that let the frontend render dashboard cards without fetching every employee row.
+ * Returns top-card counts for employee management: total employees, active employees, pending invitations and inactive accounts.
+
+**Prerequisites:** caller must have employee:list permission.
+
+**Expected outcomes:** lightweight counts that let the frontend render dashboard cards without fetching every employee row.
+
+**Frontend usage:**
+Use this operation to populate the **Employee dashboard stats** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Employee dashboard stats
  */
 export type getV1EmployeeListStatsResponse200 = {
-  data: HttpEmployeeStatsResponse
+  data: EmployeeStatsResponse
   status: 200
+}
+
+export type getV1EmployeeListStatsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1EmployeeListStatsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1EmployeeListStatsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1EmployeeListStatsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1EmployeeListStatsResponseSuccess = (getV1EmployeeListStatsResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1EmployeeListStatsResponse = (getV1EmployeeListStatsResponseSuccess)
+export type getV1EmployeeListStatsResponseError = (getV1EmployeeListStatsResponse401 | getV1EmployeeListStatsResponse403 | getV1EmployeeListStatsResponse429 | getV1EmployeeListStatsResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1EmployeeListStatsUrl = () => {
 
@@ -321,9 +537,9 @@ export const getGetV1EmployeeListStatsUrl = () => {
   return `/v1/employee/list/stats`
 }
 
-export const getV1EmployeeListStats = async ( options?: RequestInit): Promise<getV1EmployeeListStatsResponse> => {
+export const getV1EmployeeListStats = async ( options?: RequestInit): Promise<getV1EmployeeListStatsResponseSuccess> => {
 
-  return fetcher<getV1EmployeeListStatsResponse>(getGetV1EmployeeListStatsUrl(),
+  return fetcher<getV1EmployeeListStatsResponseSuccess>(getGetV1EmployeeListStatsUrl(),
   {
     ...options,
     method: 'GET'
@@ -343,7 +559,7 @@ export const getGetV1EmployeeListStatsQueryKey = () => {
     }
 
 
-export const getGetV1EmployeeListStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1EmployeeListStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -362,14 +578,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1EmployeeListStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1EmployeeListStats>>>
-export type GetV1EmployeeListStatsQueryError = unknown
+export type GetV1EmployeeListStatsQueryError = ErrorResponse
 
 
 /**
  * @summary Employee dashboard stats
  */
 
-export function useGetV1EmployeeListStats<TData = Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError = unknown>(
+export function useGetV1EmployeeListStats<TData = Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -388,19 +604,72 @@ export function useGetV1EmployeeListStats<TData = Awaited<ReturnType<typeof getV
 
 /**
  * Returns one employee with role, status and last-active metadata. Supplier scoping prevents access to employees outside the current tenant.
+
+**Frontend usage:**
+Call this operation when opening the **Read employee** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Employee ID; Employee ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Read employee
  */
 export type getV1EmployeeReadIdResponse200 = {
-  data: HttpEmployeeResponse
+  data: EmployeeResponse
   status: 200
+}
+
+export type getV1EmployeeReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1EmployeeReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1EmployeeReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1EmployeeReadIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1EmployeeReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1EmployeeReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1EmployeeReadIdResponseSuccess = (getV1EmployeeReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1EmployeeReadIdResponse = (getV1EmployeeReadIdResponseSuccess)
+export type getV1EmployeeReadIdResponseError = (getV1EmployeeReadIdResponse400 | getV1EmployeeReadIdResponse401 | getV1EmployeeReadIdResponse403 | getV1EmployeeReadIdResponse404 | getV1EmployeeReadIdResponse429 | getV1EmployeeReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1EmployeeReadIdUrl = (id: string,) => {
 
@@ -410,9 +679,9 @@ export const getGetV1EmployeeReadIdUrl = (id: string,) => {
   return `/v1/employee/read/${id}`
 }
 
-export const getV1EmployeeReadId = async (id: string, options?: RequestInit): Promise<getV1EmployeeReadIdResponse> => {
+export const getV1EmployeeReadId = async (id: string, options?: RequestInit): Promise<getV1EmployeeReadIdResponseSuccess> => {
 
-  return fetcher<getV1EmployeeReadIdResponse>(getGetV1EmployeeReadIdUrl(id),
+  return fetcher<getV1EmployeeReadIdResponseSuccess>(getGetV1EmployeeReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -432,7 +701,7 @@ export const getGetV1EmployeeReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1EmployeeReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1EmployeeReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -451,14 +720,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1EmployeeReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1EmployeeReadId>>>
-export type GetV1EmployeeReadIdQueryError = unknown
+export type GetV1EmployeeReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Read employee
  */
 
-export function useGetV1EmployeeReadId<TData = Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError = unknown>(
+export function useGetV1EmployeeReadId<TData = Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1EmployeeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -476,20 +745,75 @@ export function useGetV1EmployeeReadId<TData = Awaited<ReturnType<typeof getV1Em
 
 
 /**
- * Updates employee profile, role assignment and active/suspended status. Edge cases: deleted employees are not returned in lists; invalid roles are rejected.
+ * Updates employee profile, role assignment and active/suspended status.
+
+**Edge cases:** deleted employees are not returned in lists; invalid roles are rejected.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update employee** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `id` (path) — string; Employee ID; Employee ID
+- `name` — string; minimum length 2; maximum length 255
+- `role` — string; allowed: `admin`, `manager`, `staff`, `finance`
+- `status` — string; allowed: `active`, `suspended`, `deleted`
+
+**Optional inputs:**
+- `phone` — string; maximum length 20
+- `role_id` — string
+
+**Enum values:**
+- `role`: `admin`, `manager`, `staff`, `finance`
+- `status`: `active`, `suspended`, `deleted`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
  * @summary Update employee
  */
 export type putV1EmployeeUpdateIdResponse200 = {
-  data: HttpEmployeeResponse
+  data: EmployeeResponse
   status: 200
+}
+
+export type putV1EmployeeUpdateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1EmployeeUpdateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1EmployeeUpdateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1EmployeeUpdateIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type putV1EmployeeUpdateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1EmployeeUpdateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type putV1EmployeeUpdateIdResponseSuccess = (putV1EmployeeUpdateIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type putV1EmployeeUpdateIdResponse = (putV1EmployeeUpdateIdResponseSuccess)
+export type putV1EmployeeUpdateIdResponseError = (putV1EmployeeUpdateIdResponse400 | putV1EmployeeUpdateIdResponse401 | putV1EmployeeUpdateIdResponse403 | putV1EmployeeUpdateIdResponse404 | putV1EmployeeUpdateIdResponse429 | putV1EmployeeUpdateIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPutV1EmployeeUpdateIdUrl = (id: string,) => {
 
@@ -500,24 +824,24 @@ export const getPutV1EmployeeUpdateIdUrl = (id: string,) => {
 }
 
 export const putV1EmployeeUpdateId = async (id: string,
-    httpEmployeeUpdateRequest: HttpEmployeeUpdateRequest, options?: RequestInit): Promise<putV1EmployeeUpdateIdResponse> => {
+    employeeUpdateRequest: EmployeeUpdateRequest, options?: RequestInit): Promise<putV1EmployeeUpdateIdResponseSuccess> => {
 
-  return fetcher<putV1EmployeeUpdateIdResponse>(getPutV1EmployeeUpdateIdUrl(id),
+  return fetcher<putV1EmployeeUpdateIdResponseSuccess>(getPutV1EmployeeUpdateIdUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpEmployeeUpdateRequest,)
+      employeeUpdateRequest,)
   }
 );}
 
 
 
 
-export const getPutV1EmployeeUpdateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, TError,{id: string;data: HttpEmployeeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, TError,{id: string;data: HttpEmployeeUpdateRequest}, TContext> => {
+export const getPutV1EmployeeUpdateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, TError,{id: string;data: EmployeeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, TError,{id: string;data: EmployeeUpdateRequest}, TContext> => {
 
 const mutationKey = ['putV1EmployeeUpdateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -529,7 +853,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, {id: string;data: HttpEmployeeUpdateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, {id: string;data: EmployeeUpdateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  putV1EmployeeUpdateId(id,data,requestOptions)
@@ -543,18 +867,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PutV1EmployeeUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>>
-    export type PutV1EmployeeUpdateIdMutationBody = HttpEmployeeUpdateRequest
-    export type PutV1EmployeeUpdateIdMutationError = unknown
+    export type PutV1EmployeeUpdateIdMutationBody = EmployeeUpdateRequest
+    export type PutV1EmployeeUpdateIdMutationError = ErrorResponse
 
     /**
  * @summary Update employee
  */
-export const usePutV1EmployeeUpdateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, TError,{id: string;data: HttpEmployeeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1EmployeeUpdateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1EmployeeUpdateId>>, TError,{id: string;data: EmployeeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1EmployeeUpdateId>>,
         TError,
-        {id: string;data: HttpEmployeeUpdateRequest},
+        {id: string;data: EmployeeUpdateRequest},
         TContext
       > => {
       return useMutation(getPutV1EmployeeUpdateIdMutationOptions(options));

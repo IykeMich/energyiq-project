@@ -20,11 +20,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  HttpDocumentCategoryCreateRequest,
-  HttpDocumentCategoryListResponse,
-  HttpDocumentCategoryResponse,
-  HttpDocumentCategoryUpdateRequest,
-  ResponseEmptyResponse
+  DocumentCategoryCreateRequest,
+  DocumentCategoryListResponse,
+  DocumentCategoryResponse,
+  DocumentCategoryUpdateRequest,
+  EmptyResponse,
+  ErrorResponse
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -36,19 +37,72 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Creates a supplier-scoped document category that document types can reference by ID.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create document category** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `document_category` — string; minimum length 2; maximum length 120
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create document category
  */
 export type postV1DocumentCategoryCreateResponse201 = {
-  data: HttpDocumentCategoryResponse
+  data: DocumentCategoryResponse
   status: 201
+}
+
+export type postV1DocumentCategoryCreateResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DocumentCategoryCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DocumentCategoryCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DocumentCategoryCreateResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1DocumentCategoryCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DocumentCategoryCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DocumentCategoryCreateResponseSuccess = (postV1DocumentCategoryCreateResponse201) & {
   headers: Headers;
 };
-;
-
-export type postV1DocumentCategoryCreateResponse = (postV1DocumentCategoryCreateResponseSuccess)
+export type postV1DocumentCategoryCreateResponseError = (postV1DocumentCategoryCreateResponse400 | postV1DocumentCategoryCreateResponse401 | postV1DocumentCategoryCreateResponse403 | postV1DocumentCategoryCreateResponse409 | postV1DocumentCategoryCreateResponse429 | postV1DocumentCategoryCreateResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1DocumentCategoryCreateUrl = () => {
 
@@ -58,24 +112,24 @@ export const getPostV1DocumentCategoryCreateUrl = () => {
   return `/v1/document-category/create`
 }
 
-export const postV1DocumentCategoryCreate = async (httpDocumentCategoryCreateRequest: HttpDocumentCategoryCreateRequest, options?: RequestInit): Promise<postV1DocumentCategoryCreateResponse> => {
+export const postV1DocumentCategoryCreate = async (documentCategoryCreateRequest: DocumentCategoryCreateRequest, options?: RequestInit): Promise<postV1DocumentCategoryCreateResponseSuccess> => {
 
-  return fetcher<postV1DocumentCategoryCreateResponse>(getPostV1DocumentCategoryCreateUrl(),
+  return fetcher<postV1DocumentCategoryCreateResponseSuccess>(getPostV1DocumentCategoryCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpDocumentCategoryCreateRequest,)
+      documentCategoryCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1DocumentCategoryCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, TError,{data: HttpDocumentCategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, TError,{data: HttpDocumentCategoryCreateRequest}, TContext> => {
+export const getPostV1DocumentCategoryCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, TError,{data: DocumentCategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, TError,{data: DocumentCategoryCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1DocumentCategoryCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -87,7 +141,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, {data: HttpDocumentCategoryCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, {data: DocumentCategoryCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1DocumentCategoryCreate(data,requestOptions)
@@ -101,37 +155,96 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1DocumentCategoryCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>>
-    export type PostV1DocumentCategoryCreateMutationBody = HttpDocumentCategoryCreateRequest
-    export type PostV1DocumentCategoryCreateMutationError = unknown
+    export type PostV1DocumentCategoryCreateMutationBody = DocumentCategoryCreateRequest
+    export type PostV1DocumentCategoryCreateMutationError = ErrorResponse
 
     /**
  * @summary Create document category
  */
-export const usePostV1DocumentCategoryCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, TError,{data: HttpDocumentCategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1DocumentCategoryCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>, TError,{data: DocumentCategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DocumentCategoryCreate>>,
         TError,
-        {data: HttpDocumentCategoryCreateRequest},
+        {data: DocumentCategoryCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1DocumentCategoryCreateMutationOptions(options));
     }
     /**
  * Deletes a document category only when no active document type is still using it.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete document category**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Document category ID; Document category ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete document category
  */
 export type deleteV1DocumentCategoryDeleteIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1DocumentCategoryDeleteIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1DocumentCategoryDeleteIdResponseSuccess = (deleteV1DocumentCategoryDeleteIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type deleteV1DocumentCategoryDeleteIdResponse = (deleteV1DocumentCategoryDeleteIdResponseSuccess)
+export type deleteV1DocumentCategoryDeleteIdResponseError = (deleteV1DocumentCategoryDeleteIdResponse400 | deleteV1DocumentCategoryDeleteIdResponse401 | deleteV1DocumentCategoryDeleteIdResponse403 | deleteV1DocumentCategoryDeleteIdResponse404 | deleteV1DocumentCategoryDeleteIdResponse409 | deleteV1DocumentCategoryDeleteIdResponse429 | deleteV1DocumentCategoryDeleteIdResponse500) & {
+  headers: Headers;
+};
 
 export const getDeleteV1DocumentCategoryDeleteIdUrl = (id: string,) => {
 
@@ -141,9 +254,9 @@ export const getDeleteV1DocumentCategoryDeleteIdUrl = (id: string,) => {
   return `/v1/document-category/delete/${id}`
 }
 
-export const deleteV1DocumentCategoryDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentCategoryDeleteIdResponse> => {
+export const deleteV1DocumentCategoryDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentCategoryDeleteIdResponseSuccess> => {
 
-  return fetcher<deleteV1DocumentCategoryDeleteIdResponse>(getDeleteV1DocumentCategoryDeleteIdUrl(id),
+  return fetcher<deleteV1DocumentCategoryDeleteIdResponseSuccess>(getDeleteV1DocumentCategoryDeleteIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -155,7 +268,7 @@ export const deleteV1DocumentCategoryDeleteId = async (id: string, options?: Req
 
 
 
-export const getDeleteV1DocumentCategoryDeleteIdMutationOptions = <TError = unknown,
+export const getDeleteV1DocumentCategoryDeleteIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentCategoryDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentCategoryDeleteId>>, TError,{id: string}, TContext> => {
 
@@ -184,12 +297,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1DocumentCategoryDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1DocumentCategoryDeleteId>>>
 
-    export type DeleteV1DocumentCategoryDeleteIdMutationError = unknown
+    export type DeleteV1DocumentCategoryDeleteIdMutationError = ErrorResponse
 
     /**
  * @summary Delete document category
  */
-export const useDeleteV1DocumentCategoryDeleteId = <TError = unknown,
+export const useDeleteV1DocumentCategoryDeleteId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentCategoryDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1DocumentCategoryDeleteId>>,
@@ -201,19 +314,60 @@ export const useDeleteV1DocumentCategoryDeleteId = <TError = unknown,
     }
     /**
  * Lists supplier-scoped document categories that can be selected when creating or updating document types.
+
+**Frontend usage:**
+Use this operation to populate the **List document categories** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List document categories
  */
 export type getV1DocumentCategoryListResponse200 = {
-  data: HttpDocumentCategoryListResponse
+  data: DocumentCategoryListResponse
   status: 200
+}
+
+export type getV1DocumentCategoryListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentCategoryListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentCategoryListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentCategoryListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentCategoryListResponseSuccess = (getV1DocumentCategoryListResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentCategoryListResponse = (getV1DocumentCategoryListResponseSuccess)
+export type getV1DocumentCategoryListResponseError = (getV1DocumentCategoryListResponse401 | getV1DocumentCategoryListResponse403 | getV1DocumentCategoryListResponse429 | getV1DocumentCategoryListResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentCategoryListUrl = () => {
 
@@ -223,9 +377,9 @@ export const getGetV1DocumentCategoryListUrl = () => {
   return `/v1/document-category/list`
 }
 
-export const getV1DocumentCategoryList = async ( options?: RequestInit): Promise<getV1DocumentCategoryListResponse> => {
+export const getV1DocumentCategoryList = async ( options?: RequestInit): Promise<getV1DocumentCategoryListResponseSuccess> => {
 
-  return fetcher<getV1DocumentCategoryListResponse>(getGetV1DocumentCategoryListUrl(),
+  return fetcher<getV1DocumentCategoryListResponseSuccess>(getGetV1DocumentCategoryListUrl(),
   {
     ...options,
     method: 'GET'
@@ -245,7 +399,7 @@ export const getGetV1DocumentCategoryListQueryKey = () => {
     }
 
 
-export const getGetV1DocumentCategoryListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentCategoryListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -264,14 +418,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentCategoryListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentCategoryList>>>
-export type GetV1DocumentCategoryListQueryError = unknown
+export type GetV1DocumentCategoryListQueryError = ErrorResponse
 
 
 /**
  * @summary List document categories
  */
 
-export function useGetV1DocumentCategoryList<TData = Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError = unknown>(
+export function useGetV1DocumentCategoryList<TData = Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCategoryList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -290,19 +444,72 @@ export function useGetV1DocumentCategoryList<TData = Awaited<ReturnType<typeof g
 
 /**
  * Returns one document category by ID for edit screens and dropdown hydration.
+
+**Frontend usage:**
+Call this operation when opening the **Get document category** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Document category ID; Document category ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get document category
  */
 export type getV1DocumentCategoryReadIdResponse200 = {
-  data: HttpDocumentCategoryResponse
+  data: DocumentCategoryResponse
   status: 200
+}
+
+export type getV1DocumentCategoryReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DocumentCategoryReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentCategoryReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentCategoryReadIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1DocumentCategoryReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentCategoryReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentCategoryReadIdResponseSuccess = (getV1DocumentCategoryReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentCategoryReadIdResponse = (getV1DocumentCategoryReadIdResponseSuccess)
+export type getV1DocumentCategoryReadIdResponseError = (getV1DocumentCategoryReadIdResponse400 | getV1DocumentCategoryReadIdResponse401 | getV1DocumentCategoryReadIdResponse403 | getV1DocumentCategoryReadIdResponse404 | getV1DocumentCategoryReadIdResponse429 | getV1DocumentCategoryReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentCategoryReadIdUrl = (id: string,) => {
 
@@ -312,9 +519,9 @@ export const getGetV1DocumentCategoryReadIdUrl = (id: string,) => {
   return `/v1/document-category/read/${id}`
 }
 
-export const getV1DocumentCategoryReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentCategoryReadIdResponse> => {
+export const getV1DocumentCategoryReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentCategoryReadIdResponseSuccess> => {
 
-  return fetcher<getV1DocumentCategoryReadIdResponse>(getGetV1DocumentCategoryReadIdUrl(id),
+  return fetcher<getV1DocumentCategoryReadIdResponseSuccess>(getGetV1DocumentCategoryReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -334,7 +541,7 @@ export const getGetV1DocumentCategoryReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1DocumentCategoryReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentCategoryReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -353,14 +560,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentCategoryReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>>
-export type GetV1DocumentCategoryReadIdQueryError = unknown
+export type GetV1DocumentCategoryReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get document category
  */
 
-export function useGetV1DocumentCategoryReadId<TData = Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError = unknown>(
+export function useGetV1DocumentCategoryReadId<TData = Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentCategoryReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -379,19 +586,73 @@ export function useGetV1DocumentCategoryReadId<TData = Awaited<ReturnType<typeof
 
 /**
  * Updates one document category. Document types keep referencing the same category ID after the label changes.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update document category** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `document_category` — string; minimum length 2; maximum length 120
+- `id` (path) — string; Document category ID; Document category ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Update document category
  */
 export type putV1DocumentCategoryUpdateIdResponse200 = {
-  data: HttpDocumentCategoryResponse
+  data: DocumentCategoryResponse
   status: 200
+}
+
+export type putV1DocumentCategoryUpdateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1DocumentCategoryUpdateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1DocumentCategoryUpdateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1DocumentCategoryUpdateIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type putV1DocumentCategoryUpdateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1DocumentCategoryUpdateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type putV1DocumentCategoryUpdateIdResponseSuccess = (putV1DocumentCategoryUpdateIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type putV1DocumentCategoryUpdateIdResponse = (putV1DocumentCategoryUpdateIdResponseSuccess)
+export type putV1DocumentCategoryUpdateIdResponseError = (putV1DocumentCategoryUpdateIdResponse400 | putV1DocumentCategoryUpdateIdResponse401 | putV1DocumentCategoryUpdateIdResponse403 | putV1DocumentCategoryUpdateIdResponse404 | putV1DocumentCategoryUpdateIdResponse429 | putV1DocumentCategoryUpdateIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPutV1DocumentCategoryUpdateIdUrl = (id: string,) => {
 
@@ -402,24 +663,24 @@ export const getPutV1DocumentCategoryUpdateIdUrl = (id: string,) => {
 }
 
 export const putV1DocumentCategoryUpdateId = async (id: string,
-    httpDocumentCategoryUpdateRequest: HttpDocumentCategoryUpdateRequest, options?: RequestInit): Promise<putV1DocumentCategoryUpdateIdResponse> => {
+    documentCategoryUpdateRequest: DocumentCategoryUpdateRequest, options?: RequestInit): Promise<putV1DocumentCategoryUpdateIdResponseSuccess> => {
 
-  return fetcher<putV1DocumentCategoryUpdateIdResponse>(getPutV1DocumentCategoryUpdateIdUrl(id),
+  return fetcher<putV1DocumentCategoryUpdateIdResponseSuccess>(getPutV1DocumentCategoryUpdateIdUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpDocumentCategoryUpdateRequest,)
+      documentCategoryUpdateRequest,)
   }
 );}
 
 
 
 
-export const getPutV1DocumentCategoryUpdateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, TError,{id: string;data: HttpDocumentCategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, TError,{id: string;data: HttpDocumentCategoryUpdateRequest}, TContext> => {
+export const getPutV1DocumentCategoryUpdateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, TError,{id: string;data: DocumentCategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, TError,{id: string;data: DocumentCategoryUpdateRequest}, TContext> => {
 
 const mutationKey = ['putV1DocumentCategoryUpdateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -431,7 +692,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, {id: string;data: HttpDocumentCategoryUpdateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, {id: string;data: DocumentCategoryUpdateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  putV1DocumentCategoryUpdateId(id,data,requestOptions)
@@ -445,18 +706,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PutV1DocumentCategoryUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>>
-    export type PutV1DocumentCategoryUpdateIdMutationBody = HttpDocumentCategoryUpdateRequest
-    export type PutV1DocumentCategoryUpdateIdMutationError = unknown
+    export type PutV1DocumentCategoryUpdateIdMutationBody = DocumentCategoryUpdateRequest
+    export type PutV1DocumentCategoryUpdateIdMutationError = ErrorResponse
 
     /**
  * @summary Update document category
  */
-export const usePutV1DocumentCategoryUpdateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, TError,{id: string;data: HttpDocumentCategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1DocumentCategoryUpdateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>, TError,{id: string;data: DocumentCategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1DocumentCategoryUpdateId>>,
         TError,
-        {id: string;data: HttpDocumentCategoryUpdateRequest},
+        {id: string;data: DocumentCategoryUpdateRequest},
         TContext
       > => {
       return useMutation(getPutV1DocumentCategoryUpdateIdMutationOptions(options));

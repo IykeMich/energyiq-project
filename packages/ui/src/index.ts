@@ -37,6 +37,7 @@ export {
 export { WizardStepPills, type WizardStepPillsProps } from './components/wizard-step-pills';
 export { LoadingOverlay } from './components/loading-overlay';
 export { DataGrid, type DataGridProps, type ColDef, type GridOptions } from './components/data-grid/data-grid';
+export { ComingSoon } from './components/coming-soon';
 
 // Layouts
 export { AuthLayout } from './layouts/auth-layout';

@@ -3,14 +3,14 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ConfirmDialog, toast } from '@energyiq/ui';
+import { useDeleteV1DocumentTypeDeleteId } from '@energyiq/api/generated/document-types/document-types';
 import {
   useGetV1DocumentTypeList,
-  useDeleteV1DocumentTypeDeleteId,
   getGetV1DocumentTypeListQueryKey,
-} from '@energyiq/api/generated/document-types/document-types';
+} from '@energyiq/api/generated/kyc-document-types/kyc-document-types';
 import { KycDocumentTypeConfigCard } from './kyc-document-type-config-card';
 import { mapDocumentTypeToConfig } from './kyc-document-type-mappers';
-import type { DocumentTypeConfig } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentTypeConfig } from './kyc-documents-types';
 
 /** "Document Types" configuration page: lists every document distributors must submit. */
 export function KycDocumentTypesOverview() {

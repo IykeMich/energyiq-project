@@ -19,7 +19,7 @@ interface ProductWarehouseTabProps {
 
 export function ProductWarehouseTab({ draft, onChange, onAdd, onRemove, errors }: ProductWarehouseTabProps) {
   const warehousesQuery = useWarehousesQuery({ status: 'active' });
-  const warehouses = warehousesQuery.data?.items ?? [];
+  const warehouses = warehousesQuery.data ?? [];
 
   const warehouseOptions = warehouses
     .filter((warehouse) => warehouse.warehouse_id && warehouse.warehouse_name)

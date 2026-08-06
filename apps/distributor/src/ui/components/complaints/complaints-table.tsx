@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { AppDistributorComplaintListItem, GetV1DistributorComplaintListStatus } from '@energyiq/api/generated/schemas';
+import type { DistributorComplaintListItem as AppDistributorComplaintListItem, GetV1DistributorComplaintListStatus } from '@energyiq/api/generated/schemas';
 import { DefaultTable } from '../table/default-table';
 import type { Column } from '../table/default-table';
 import { ComplaintsStatusBadge } from './complaints-status-badge';

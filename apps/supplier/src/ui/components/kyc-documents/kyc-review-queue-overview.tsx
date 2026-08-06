@@ -6,16 +6,18 @@ import { shared } from '@energyiq/domain';
 import { ConfirmDialog, LoadingOverlay, toast, notifyNoAccess } from '@energyiq/ui';
 import {
   useGetV1DocumentList,
+  useGetV1DocumentOverview,
   usePostV1DocumentApproveId,
   usePostV1DocumentRejectId,
   getGetV1DocumentListQueryKey,
+  getGetV1DocumentOverviewQueryKey,
   getGetV1DocumentComplianceQueryKey,
 } from '@energyiq/api/generated/documents/documents';
 import { KycReviewQueueCard } from './kyc-review-queue-card';
 import { KycDocumentPreviewModal } from './kyc-document-preview-modal';
 import { KycRejectDocumentModal } from './kyc-reject-document-modal';
-import { mapDocumentsToReviewQueueItems } from './kyc-documents-mappers';
-import type { ReviewQueueItem } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import { mapDocumentsToReviewQueueItems, mapRejectionReasonOptions } from './kyc-documents-mappers';
+import type { ReviewQueueItem } from './kyc-documents-types';
 
 const { DomainError, ResponseCodes } = shared;
 
@@ -33,6 +35,13 @@ export function KycReviewQueueOverview() {
   const { data, isLoading } = useGetV1DocumentList({ status: 'pending' });
   const items = useMemo(() => mapDocumentsToReviewQueueItems(data?.data?.data ?? []), [data]);
 
+  // Reject reasons live on the dashboard-overview payload, not the plain document list.
+  const { data: overviewResponse } = useGetV1DocumentOverview();
+  const rejectionReasons = useMemo(
+    () => mapRejectionReasonOptions(overviewResponse?.data.data),
+    [overviewResponse],
+  );
+
   const [previewItem, setPreviewItem] = useState<ReviewQueueItem | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ReviewQueueItem | null>(null);
   const [approveTarget, setApproveTarget] = useState<ReviewQueueItem | null>(null);
@@ -43,6 +52,9 @@ export function KycReviewQueueOverview() {
 
   const refreshQueue = async () => {
     await queryClient.invalidateQueries({ queryKey: getGetV1DocumentListQueryKey({ status: 'pending' }) });
+    // Prefix-matches every `/v1/document/overview` query regardless of filter params,
+    // so both this page's own fetch and the dashboard's KPIs refresh after a review.
+    await queryClient.invalidateQueries({ queryKey: getGetV1DocumentOverviewQueryKey() });
     await queryClient.invalidateQueries({ queryKey: getGetV1DocumentComplianceQueryKey() });
   };
 
@@ -68,16 +80,19 @@ export function KycReviewQueueOverview() {
   const handleConfirmReject = async ({ reason, comments }: { reason: string; comments: string }) => {
     const item = rejectTarget;
     if (!item) return;
+    // `reason` is the selected option's `value` — resolve it to its human-readable
+    // `label` so both the server-stored reason and the toast show real text, not a code.
+    const reasonLabel = rejectionReasons.find((option) => option.value === reason)?.label ?? reason;
     setRejectTarget(null);
     setProcessingMessage('Confirming rejection...');
     try {
       await rejectDocument.mutateAsync({
         id: item.id,
-        data: { reason: comments ? `${reason}: ${comments}` : reason },
+        data: { reason: comments ? `${reasonLabel}: ${comments}` : reasonLabel },
       });
       await refreshQueue();
       toast.error('Document rejected', {
-        description: `${item.distributor}'s ${item.fileName} was rejected (${reason}).`,
+        description: `${item.distributor}'s ${item.fileName} was rejected (${reasonLabel}).`,
       });
     } catch (error) {
       if (!notifyIfForbidden(error)) {
@@ -156,6 +171,7 @@ export function KycReviewQueueOverview() {
 
       <KycRejectDocumentModal
         item={rejectTarget}
+        reasons={rejectionReasons}
         onOpenChange={(open) => !open && setRejectTarget(null)}
         onConfirm={handleConfirmReject}
       />

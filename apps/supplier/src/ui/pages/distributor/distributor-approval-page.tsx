@@ -11,7 +11,7 @@ export function DistributorApprovalPage() {
 
   const pendingQuery = useDistributorsQuery({ status: 'pending' });
   const applications = useMemo(
-    () => (pendingQuery.data?.items ?? []).map(toDistributorApplication),
+    () => (pendingQuery.data ?? []).map(toDistributorApplication),
     [pendingQuery.data],
   );
 

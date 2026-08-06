@@ -19,6 +19,10 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query';
 
+import type {
+  ErrorResponse
+} from '../schemas';
+
 import { fetcher } from '../../fetcher';
 
 
@@ -27,19 +31,56 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
+ * List permissions filtered by caller's entity type.
+
+**Frontend usage:**
+Use this operation to populate the **List permissions filtered by caller's entity type** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List permissions filtered by caller's entity type
  */
-export type getV1PermissionListResponse200 = {
-  data: void
-  status: 200
+export type getV1PermissionListResponse401 = {
+  data: ErrorResponse
+  status: 401
 }
 
-export type getV1PermissionListResponseSuccess = (getV1PermissionListResponse200) & {
+export type getV1PermissionListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1PermissionListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1PermissionListResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type getV1PermissionListResponseError = (getV1PermissionListResponse401 | getV1PermissionListResponse403 | getV1PermissionListResponse429 | getV1PermissionListResponse500) & {
   headers: Headers;
 };
-;
 
-export type getV1PermissionListResponse = (getV1PermissionListResponseSuccess)
+export type getV1PermissionListResponse = (getV1PermissionListResponseError)
 
 export const getGetV1PermissionListUrl = () => {
 
@@ -71,7 +112,7 @@ export const getGetV1PermissionListQueryKey = () => {
     }
 
 
-export const getGetV1PermissionListQueryOptions = <TData = Awaited<ReturnType<typeof getV1PermissionList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PermissionList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1PermissionListQueryOptions = <TData = Awaited<ReturnType<typeof getV1PermissionList>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PermissionList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -90,14 +131,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1PermissionListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PermissionList>>>
-export type GetV1PermissionListQueryError = unknown
+export type GetV1PermissionListQueryError = ErrorResponse
 
 
 /**
  * @summary List permissions filtered by caller's entity type
  */
 
-export function useGetV1PermissionList<TData = Awaited<ReturnType<typeof getV1PermissionList>>, TError = unknown>(
+export function useGetV1PermissionList<TData = Awaited<ReturnType<typeof getV1PermissionList>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PermissionList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -115,19 +156,74 @@ export function useGetV1PermissionList<TData = Awaited<ReturnType<typeof getV1Pe
 
 
 /**
+ * Clone an existing role.
+
+**Frontend usage:**
+Call this operation from the **Clone an existing role** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Clone an existing role
  */
-export type postV1RoleCloneIdResponse200 = {
-  data: void
-  status: 200
+export type postV1RoleCloneIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1RoleCloneIdResponseSuccess = (postV1RoleCloneIdResponse200) & {
+export type postV1RoleCloneIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1RoleCloneIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1RoleCloneIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1RoleCloneIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1RoleCloneIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1RoleCloneIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1RoleCloneIdResponseError = (postV1RoleCloneIdResponse400 | postV1RoleCloneIdResponse401 | postV1RoleCloneIdResponse403 | postV1RoleCloneIdResponse404 | postV1RoleCloneIdResponse409 | postV1RoleCloneIdResponse429 | postV1RoleCloneIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1RoleCloneIdResponse = (postV1RoleCloneIdResponseSuccess)
+export type postV1RoleCloneIdResponse = (postV1RoleCloneIdResponseError)
 
 export const getPostV1RoleCloneIdUrl = (id: string,) => {
 
@@ -151,7 +247,7 @@ export const postV1RoleCloneId = async (id: string, options?: RequestInit): Prom
 
 
 
-export const getPostV1RoleCloneIdMutationOptions = <TError = unknown,
+export const getPostV1RoleCloneIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1RoleCloneId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1RoleCloneId>>, TError,{id: string}, TContext> => {
 
@@ -180,12 +276,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1RoleCloneIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1RoleCloneId>>>
 
-    export type PostV1RoleCloneIdMutationError = unknown
+    export type PostV1RoleCloneIdMutationError = ErrorResponse
 
     /**
  * @summary Clone an existing role
  */
-export const usePostV1RoleCloneId = <TError = unknown,
+export const usePostV1RoleCloneId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1RoleCloneId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1RoleCloneId>>,
@@ -196,19 +292,68 @@ export const usePostV1RoleCloneId = <TError = unknown,
       return useMutation(getPostV1RoleCloneIdMutationOptions(options));
     }
     /**
+ * Create a custom role.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create a custom role** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create a custom role
  */
-export type postV1RoleCreateResponse200 = {
-  data: void
-  status: 200
+export type postV1RoleCreateResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1RoleCreateResponseSuccess = (postV1RoleCreateResponse200) & {
+export type postV1RoleCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1RoleCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1RoleCreateResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1RoleCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1RoleCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1RoleCreateResponseError = (postV1RoleCreateResponse400 | postV1RoleCreateResponse401 | postV1RoleCreateResponse403 | postV1RoleCreateResponse409 | postV1RoleCreateResponse429 | postV1RoleCreateResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1RoleCreateResponse = (postV1RoleCreateResponseSuccess)
+export type postV1RoleCreateResponse = (postV1RoleCreateResponseError)
 
 export const getPostV1RoleCreateUrl = () => {
 
@@ -232,7 +377,7 @@ export const postV1RoleCreate = async ( options?: RequestInit): Promise<postV1Ro
 
 
 
-export const getPostV1RoleCreateMutationOptions = <TError = unknown,
+export const getPostV1RoleCreateMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1RoleCreate>>, TError,void, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1RoleCreate>>, TError,void, TContext> => {
 
@@ -261,12 +406,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1RoleCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1RoleCreate>>>
 
-    export type PostV1RoleCreateMutationError = unknown
+    export type PostV1RoleCreateMutationError = ErrorResponse
 
     /**
  * @summary Create a custom role
  */
-export const usePostV1RoleCreate = <TError = unknown,
+export const usePostV1RoleCreate = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1RoleCreate>>, TError,void, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1RoleCreate>>,
@@ -277,19 +422,74 @@ export const usePostV1RoleCreate = <TError = unknown,
       return useMutation(getPostV1RoleCreateMutationOptions(options));
     }
     /**
+ * Delete a role.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete a role**; remove or refresh the affected item after success.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete a role
  */
-export type deleteV1RoleDeleteIdResponse200 = {
-  data: void
-  status: 200
+export type deleteV1RoleDeleteIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type deleteV1RoleDeleteIdResponseSuccess = (deleteV1RoleDeleteIdResponse200) & {
+export type deleteV1RoleDeleteIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1RoleDeleteIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1RoleDeleteIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteV1RoleDeleteIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type deleteV1RoleDeleteIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1RoleDeleteIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type deleteV1RoleDeleteIdResponseError = (deleteV1RoleDeleteIdResponse400 | deleteV1RoleDeleteIdResponse401 | deleteV1RoleDeleteIdResponse403 | deleteV1RoleDeleteIdResponse404 | deleteV1RoleDeleteIdResponse409 | deleteV1RoleDeleteIdResponse429 | deleteV1RoleDeleteIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type deleteV1RoleDeleteIdResponse = (deleteV1RoleDeleteIdResponseSuccess)
+export type deleteV1RoleDeleteIdResponse = (deleteV1RoleDeleteIdResponseError)
 
 export const getDeleteV1RoleDeleteIdUrl = (id: string,) => {
 
@@ -313,7 +513,7 @@ export const deleteV1RoleDeleteId = async (id: string, options?: RequestInit): P
 
 
 
-export const getDeleteV1RoleDeleteIdMutationOptions = <TError = unknown,
+export const getDeleteV1RoleDeleteIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1RoleDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1RoleDeleteId>>, TError,{id: string}, TContext> => {
 
@@ -342,12 +542,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1RoleDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1RoleDeleteId>>>
 
-    export type DeleteV1RoleDeleteIdMutationError = unknown
+    export type DeleteV1RoleDeleteIdMutationError = ErrorResponse
 
     /**
  * @summary Delete a role
  */
-export const useDeleteV1RoleDeleteId = <TError = unknown,
+export const useDeleteV1RoleDeleteId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1RoleDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1RoleDeleteId>>,
@@ -358,19 +558,56 @@ export const useDeleteV1RoleDeleteId = <TError = unknown,
       return useMutation(getDeleteV1RoleDeleteIdMutationOptions(options));
     }
     /**
+ * List roles for current tenant.
+
+**Frontend usage:**
+Use this operation to populate the **List roles for current tenant** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List roles for current tenant
  */
-export type getV1RoleListResponse200 = {
-  data: void
-  status: 200
+export type getV1RoleListResponse401 = {
+  data: ErrorResponse
+  status: 401
 }
 
-export type getV1RoleListResponseSuccess = (getV1RoleListResponse200) & {
+export type getV1RoleListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1RoleListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1RoleListResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type getV1RoleListResponseError = (getV1RoleListResponse401 | getV1RoleListResponse403 | getV1RoleListResponse429 | getV1RoleListResponse500) & {
   headers: Headers;
 };
-;
 
-export type getV1RoleListResponse = (getV1RoleListResponseSuccess)
+export type getV1RoleListResponse = (getV1RoleListResponseError)
 
 export const getGetV1RoleListUrl = () => {
 
@@ -402,7 +639,7 @@ export const getGetV1RoleListQueryKey = () => {
     }
 
 
-export const getGetV1RoleListQueryOptions = <TData = Awaited<ReturnType<typeof getV1RoleList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1RoleList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1RoleListQueryOptions = <TData = Awaited<ReturnType<typeof getV1RoleList>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1RoleList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -421,14 +658,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1RoleListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1RoleList>>>
-export type GetV1RoleListQueryError = unknown
+export type GetV1RoleListQueryError = ErrorResponse
 
 
 /**
  * @summary List roles for current tenant
  */
 
-export function useGetV1RoleList<TData = Awaited<ReturnType<typeof getV1RoleList>>, TError = unknown>(
+export function useGetV1RoleList<TData = Awaited<ReturnType<typeof getV1RoleList>>, TError = ErrorResponse>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1RoleList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -446,19 +683,68 @@ export function useGetV1RoleList<TData = Awaited<ReturnType<typeof getV1RoleList
 
 
 /**
+ * Get role by ID.
+
+**Frontend usage:**
+Call this operation when opening the **Get role by ID** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get role by ID
  */
-export type getV1RoleReadIdResponse200 = {
-  data: void
-  status: 200
+export type getV1RoleReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type getV1RoleReadIdResponseSuccess = (getV1RoleReadIdResponse200) & {
+export type getV1RoleReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1RoleReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1RoleReadIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1RoleReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1RoleReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type getV1RoleReadIdResponseError = (getV1RoleReadIdResponse400 | getV1RoleReadIdResponse401 | getV1RoleReadIdResponse403 | getV1RoleReadIdResponse404 | getV1RoleReadIdResponse429 | getV1RoleReadIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type getV1RoleReadIdResponse = (getV1RoleReadIdResponseSuccess)
+export type getV1RoleReadIdResponse = (getV1RoleReadIdResponseError)
 
 export const getGetV1RoleReadIdUrl = (id: string,) => {
 
@@ -490,7 +776,7 @@ export const getGetV1RoleReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1RoleReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1RoleReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1RoleReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1RoleReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1RoleReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1RoleReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -509,14 +795,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1RoleReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1RoleReadId>>>
-export type GetV1RoleReadIdQueryError = unknown
+export type GetV1RoleReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get role by ID
  */
 
-export function useGetV1RoleReadId<TData = Awaited<ReturnType<typeof getV1RoleReadId>>, TError = unknown>(
+export function useGetV1RoleReadId<TData = Awaited<ReturnType<typeof getV1RoleReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1RoleReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -534,19 +820,68 @@ export function useGetV1RoleReadId<TData = Awaited<ReturnType<typeof getV1RoleRe
 
 
 /**
+ * Update a role.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update a role** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Update a role
  */
-export type putV1RoleUpdateIdResponse200 = {
-  data: void
-  status: 200
+export type putV1RoleUpdateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type putV1RoleUpdateIdResponseSuccess = (putV1RoleUpdateIdResponse200) & {
+export type putV1RoleUpdateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1RoleUpdateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1RoleUpdateIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type putV1RoleUpdateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1RoleUpdateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type putV1RoleUpdateIdResponseError = (putV1RoleUpdateIdResponse400 | putV1RoleUpdateIdResponse401 | putV1RoleUpdateIdResponse403 | putV1RoleUpdateIdResponse404 | putV1RoleUpdateIdResponse429 | putV1RoleUpdateIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type putV1RoleUpdateIdResponse = (putV1RoleUpdateIdResponseSuccess)
+export type putV1RoleUpdateIdResponse = (putV1RoleUpdateIdResponseError)
 
 export const getPutV1RoleUpdateIdUrl = (id: string,) => {
 
@@ -570,7 +905,7 @@ export const putV1RoleUpdateId = async (id: string, options?: RequestInit): Prom
 
 
 
-export const getPutV1RoleUpdateIdMutationOptions = <TError = unknown,
+export const getPutV1RoleUpdateIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1RoleUpdateId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof putV1RoleUpdateId>>, TError,{id: string}, TContext> => {
 
@@ -599,12 +934,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PutV1RoleUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1RoleUpdateId>>>
 
-    export type PutV1RoleUpdateIdMutationError = unknown
+    export type PutV1RoleUpdateIdMutationError = ErrorResponse
 
     /**
  * @summary Update a role
  */
-export const usePutV1RoleUpdateId = <TError = unknown,
+export const usePutV1RoleUpdateId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1RoleUpdateId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1RoleUpdateId>>,

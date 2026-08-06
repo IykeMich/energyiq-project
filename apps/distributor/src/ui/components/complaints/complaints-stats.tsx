@@ -1,4 +1,4 @@
-import type { AppDistributorComplaintSummary } from '@energyiq/api/generated/schemas';
+import type { DistributorComplaintSummary as AppDistributorComplaintSummary } from '@energyiq/api/generated/schemas';
 import { ComplaintsStatCard } from './complaints-stat-card';
 
 interface ComplaintsStatsProps {

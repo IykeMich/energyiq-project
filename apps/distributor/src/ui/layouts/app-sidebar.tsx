@@ -178,7 +178,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
       <SidebarFooter className="p-4">
         <SidebarSeparator className="mb-4" />
 
-        <div className="flex items-center gap-3 px-2">
+        <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
           <Avatar className="h-10 w-10">
             <AvatarImage
               src={undefined}
@@ -189,7 +189,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
             </AvatarFallback>
           </Avatar>
 
-          <div className="min-w-0 flex flex-col">
+          <div className="min-w-0 flex flex-col group-data-[collapsible=icon]:hidden">
             <p className="truncate text-sm font-medium text-white">
               {displayName}
             </p>

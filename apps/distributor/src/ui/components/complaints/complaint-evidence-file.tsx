@@ -1,4 +1,4 @@
-import type { AppDistributorComplaintEvidenceItem } from '@energyiq/api/generated/schemas';
+import type { DistributorComplaintEvidenceItem as AppDistributorComplaintEvidenceItem } from '@energyiq/api/generated/schemas';
 
 interface ComplaintEvidenceFileProps {
   file: AppDistributorComplaintEvidenceItem;

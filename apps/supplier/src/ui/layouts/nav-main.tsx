@@ -56,7 +56,12 @@ export function NavMain({ items, label, extraClass, containerExtraClass }: NavMa
       )}
       <SidebarMenu className={`space-y-0 ${extraClass ?? ''}`}>
         {items.map((item) => (
+        <>
           <NavMainItem key={item.title} item={item} />
+          <div className="text-white bg-green-500 w-full hidden">
+            Hello
+          </div>
+        </>
         ))}
       </SidebarMenu>
     </SidebarGroup>
@@ -135,7 +140,7 @@ function NavMainItem({ item }: { item: NavItem }) {
                       <SidebarMenuSubButton
                         asChild
                         isActive={isSubActive}
-                        className={`[&>svg]:size-3.5 text-sm font-medium w-full mr-0 ${
+                        className={`[&>svg]:size-3.5 text-sm font-medium w-full ml-8! ${
                           isSubActive ? 'text-[#FBC02D]' : 'text-gray-400'
                         } data-[active=true]:bg-[#FBC02D]/10! data-[active=true]:text-[#FBC02D]! data-[active=true]:font-semibold`}
                       >

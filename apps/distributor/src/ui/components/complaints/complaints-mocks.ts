@@ -1,6 +1,6 @@
 import {
   GetV1DistributorComplaintListStatus,
-  HttpRaiseRequestComplaintCategory,
+  RaiseRequestComplaintCategory as HttpRaiseRequestComplaintCategory,
 } from '@energyiq/api/generated/schemas';
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import type { DocumentStatus } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentStatus } from './kyc-documents-types';
 
 /** Color per document status — full hue for the text, same hue tinted for the pill. */
 const STATUS_COLOR: Record<DocumentStatus, string> = {

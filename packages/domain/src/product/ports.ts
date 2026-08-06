@@ -2,7 +2,6 @@ import type {
   Product,
   ProductUpsertRequest,
   ProductListParams,
-  ProductListResult,
   ProductStats,
   ProductStatusUpdateRequest,
   ProductPriceCalculation,
@@ -29,7 +28,7 @@ export interface ProductApi {
   getProduct(id: string): Promise<Product>;
   updateProduct(id: string, req: ProductUpsertRequest): Promise<Product>;
   deleteProduct(id: string): Promise<void>;
-  listProducts(params?: ProductListParams): Promise<ProductListResult>;
+  listProducts(params?: ProductListParams): Promise<Product[]>;
   getProductStats(): Promise<ProductStats>;
   cloneProduct(id: string, sku: string): Promise<Product>;
   updateProductStatus(id: string, req: ProductStatusUpdateRequest): Promise<Product>;

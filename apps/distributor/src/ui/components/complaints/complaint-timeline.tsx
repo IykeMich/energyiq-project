@@ -1,4 +1,4 @@
-import type { AppDistributorComplaintTimelineItem } from '@energyiq/api/generated/schemas';
+import type { DistributorComplaintTimelineItem as AppDistributorComplaintTimelineItem } from '@energyiq/api/generated/schemas';
 import { ComplaintTimelineItem } from './complaint-timeline-item';
 
 interface ComplaintTimelineProps {

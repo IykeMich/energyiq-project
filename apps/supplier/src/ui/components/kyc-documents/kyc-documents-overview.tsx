@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useGetV1DocumentOverview } from '@energyiq/api/generated/documents/documents';
+import {
+  useGetV1DocumentOverview,
+  useGetV1DocumentCompliance,
+} from '@energyiq/api/generated/documents/documents';
 import type { GetV1DocumentOverviewStatus } from '@energyiq/api/generated/schemas';
 import { KycDocumentsKpiStrip } from './kyc-documents-kpi-strip';
 import { KycDocumentsTypesPanel } from './kyc-documents-types-panel';
@@ -10,13 +13,14 @@ import { KycDocumentsFilterBar } from './kyc-documents-filter-bar';
 import { KycDocumentsListTable } from './kyc-documents-list-table';
 import {
   mapDashboardSummaryToKpis,
+  mapComplianceSummaryToKpi,
   mapDocumentTypePreviewToSummary,
   mapReviewQueueItemToPendingReview,
   mapExpiringSoonItemToUi,
   mapDashboardRowToDocumentListRow,
   mapDashboardFilterOptions,
 } from './kyc-documents-mappers';
-import type { DocumentListRow, KycDocumentFilterSelection } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentListRow, KycDocumentFilterSelection } from './kyc-documents-types';
 
 /** Drives every section's state in one place (loaded vs. loading vs. empty). */
 export type KycDocumentsStatus = 'ready' | 'loading' | 'empty';
@@ -50,10 +54,20 @@ export function KycDocumentsOverview({ status = 'ready' }: KycDocumentsOverviewP
     status: (filters.status as GetV1DocumentOverviewStatus | undefined) ?? undefined,
     distributor_id: filters.distributor ?? undefined,
     document_type: filters.document_type ?? undefined,
+    // The Document Lists table paginates client-side (see KycDocumentsListTable), so
+    // request a page large enough that its pager isn't silently truncating rows the
+    // server would otherwise hold back behind its own default page size.
+    limit: 100,
   });
   const dashboard = overviewResponse?.data.data;
 
-  const kpis = useMemo(() => mapDashboardSummaryToKpis(dashboard?.summary), [dashboard]);
+  const { data: complianceResponse } = useGetV1DocumentCompliance();
+  const compliance = complianceResponse?.data.data;
+
+  const kpis = useMemo(
+    () => [...mapDashboardSummaryToKpis(dashboard?.summary), mapComplianceSummaryToKpi(compliance)],
+    [dashboard, compliance],
+  );
   const typeSummaries = useMemo(
     () => (dashboard?.document_types ?? []).slice(0, 3).map(mapDocumentTypePreviewToSummary),
     [dashboard],
@@ -85,16 +99,28 @@ export function KycDocumentsOverview({ status = 'ready' }: KycDocumentsOverviewP
   const goToTypes = () => navigate(`/${slug}/kyc-documents/types`);
   const goToReview = () => navigate(`/${slug}/kyc-documents/review`);
   const goToEditType = (typeId: string) => navigate(`/${slug}/kyc-documents/types/${typeId}/edit`);
+  const goToDocument = (documentId: string) => navigate(`/${slug}/kyc-documents/documents/${documentId}`);
 
-  const handleRowAction = (_row: DocumentListRow) => {
+  const handleRowAction = (row: DocumentListRow) => {
+    if (row.action === 'review') {
+      goToReview();
+      return;
+    }
+    // TODO: no per-distributor/document detail page exists yet for the 'view' action —
+    // route there once one lands. Review Queue is the closest destination today.
     goToReview();
   };
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-white">
-        {dashboard?.page_title ?? 'Document Management'}
-      </h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-white">
+          {dashboard?.page_title ?? 'Document Management'}
+        </h1>
+        {dashboard?.page_subtitle && (
+          <p className="mt-1 text-sm text-gray-400">{dashboard.page_subtitle}</p>
+        )}
+      </div>
 
       <KycDocumentsKpiStrip kpis={kpis} placeholder={!isReady || isFetching} />
 
@@ -115,10 +141,12 @@ export function KycDocumentsOverview({ status = 'ready' }: KycDocumentsOverviewP
               items={pendingReviewItems}
               onViewAll={goToReview}
               onReview={() => goToReview()}
+              onViewDocument={goToDocument}
             />
             <KycDocumentsExpiringSoonList
               title={dashboard?.expiring_soon?.title ?? 'Expiring Soon'}
               items={expiringSoonItems}
+              onViewDocument={goToDocument}
             />
           </div>
 
@@ -132,6 +160,7 @@ export function KycDocumentsOverview({ status = 'ready' }: KycDocumentsOverviewP
         noDataMessage={
           hasActiveFilter ? 'No documents match your filters' : 'No distributor documents yet'
         }
+        showingLabel={dashboard?.table?.showing_label}
         onAction={handleRowAction}
       />
     </section>

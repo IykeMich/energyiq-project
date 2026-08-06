@@ -5,12 +5,17 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
+import type { GetV1OrderListStatsPaymentStatus } from './getV1OrderListStatsPaymentStatus';
 
 export type GetV1OrderListStatsParams = {
 /**
  * Filter by distributor UUID
  */
 distributor_id?: string;
+/**
+ * Filter by payment status
+ */
+payment_status?: GetV1OrderListStatsPaymentStatus;
 /**
  * Start date in YYYY-MM-DD
  */

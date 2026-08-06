@@ -35,7 +35,7 @@ export function DistributorListOverview() {
   // Unfiltered so the KPI cards always reflect the full distributor base, not the current filter.
   const summaryQuery = useDistributorsQuery();
   const summaryRows = useMemo(
-    () => (summaryQuery.data?.items ?? []).map(toDistributorRow),
+    () => (summaryQuery.data ?? []).map(toDistributorRow),
     [summaryQuery.data],
   );
   const summary = useMemo(() => buildDistributorSummary(summaryRows), [summaryRows]);
@@ -45,7 +45,7 @@ export function DistributorListOverview() {
     status: statusFilter,
     tier: tierFilter?.toLowerCase(),
   });
-  const rows = useMemo(() => (distributorsQuery.data?.items ?? []).map(toDistributorRow), [distributorsQuery.data]);
+  const rows = useMemo(() => (distributorsQuery.data ?? []).map(toDistributorRow), [distributorsQuery.data]);
 
   return (
     <section className="flex flex-col gap-6">

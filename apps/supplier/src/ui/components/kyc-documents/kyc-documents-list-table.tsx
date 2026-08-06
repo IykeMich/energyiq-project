@@ -4,7 +4,7 @@ import { getInitials } from '@energyiq/shared';
 import { DefaultTable, type Column } from '../table/default-table';
 import { KycDocumentsTierBadge } from './kyc-documents-tier-badge';
 import { KycDocumentsStatusBadge } from './kyc-documents-status-badge';
-import { type DocumentListRow } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import { type DocumentListRow } from './kyc-documents-types';
 
 function buildColumns(onAction: (row: DocumentListRow) => void): Column<DocumentListRow>[] {
   return [
@@ -65,6 +65,8 @@ interface KycDocumentsListTableProps {
   isLoading?: boolean;
   /** Message shown when there are no rows (e.g. no filter matches vs. no data). */
   noDataMessage?: string;
+  /** Server-computed "Showing X to Y of Z" copy from `dashboard.table.showing_label`. */
+  showingLabel?: string;
   onAction: (row: DocumentListRow) => void;
 }
 
@@ -73,6 +75,7 @@ export function KycDocumentsListTable({
   rows,
   isLoading,
   noDataMessage = 'No distributor documents yet',
+  showingLabel,
   onAction,
 }: KycDocumentsListTableProps) {
   const columns = useMemo(() => buildColumns(onAction), [onAction]);
@@ -86,9 +89,12 @@ export function KycDocumentsListTable({
       getRowId={(row) => row.id}
       noDataMessage={noDataMessage}
       header={
-        <div className="flex items-center gap-2">
-          <span className="h-5 w-1 rounded-full bg-[#FBC02D]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[#FAFAFA]">Document Lists</h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="h-5 w-1 rounded-full bg-[#FBC02D]" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-[#FAFAFA]">Document Lists</h2>
+          </div>
+          {showingLabel && <span className="text-xs text-gray-400">{showingLabel}</span>}
         </div>
       }
     />

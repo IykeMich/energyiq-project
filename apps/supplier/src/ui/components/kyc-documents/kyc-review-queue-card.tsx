@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from '@energyiq/ui';
 import { getInitials } from '@energyiq/shared';
 import { KycDocumentsTierBadge } from './kyc-documents-tier-badge';
 import { ApproveButton, PreviewButton, RejectButton } from './kyc-review-action-buttons';
-import type { ReviewQueueItem } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { ReviewQueueItem } from './kyc-documents-types';
 
 interface KycReviewQueueCardProps {
   item: ReviewQueueItem;

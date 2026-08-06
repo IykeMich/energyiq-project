@@ -7,13 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@energyiq/ui';
-import {
-  KYC_REJECT_REASONS,
-  type ReviewQueueItem,
-} from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type {
+  KycDocumentFilterOption,
+  ReviewQueueItem,
+} from './kyc-documents-types';
 
 interface KycRejectDocumentModalProps {
   item: ReviewQueueItem | null;
+  /** `dashboard.rejection_reason_options` — the server-driven list of reasons. */
+  reasons: KycDocumentFilterOption[];
   onOpenChange: (open: boolean) => void;
   onConfirm: (data: { reason: string; comments: string }) => void;
 }
@@ -21,6 +23,7 @@ interface KycRejectDocumentModalProps {
 /** Reject a document submission — captures a reason + optional comments before confirming. */
 export function KycRejectDocumentModal({
   item,
+  reasons,
   onOpenChange,
   onConfirm,
 }: KycRejectDocumentModalProps) {
@@ -57,9 +60,9 @@ export function KycRejectDocumentModal({
               <SelectValue placeholder="Select a reason" />
             </SelectTrigger>
             <SelectContent>
-              {KYC_REJECT_REASONS.map((rejectReason) => (
-                <SelectItem key={rejectReason} value={rejectReason}>
-                  {rejectReason}
+              {reasons.map((rejectReason) => (
+                <SelectItem key={rejectReason.value} value={rejectReason.value}>
+                  {rejectReason.label}
                 </SelectItem>
               ))}
             </SelectContent>

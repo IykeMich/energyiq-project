@@ -135,7 +135,7 @@ function ProductDetailsBody({ productId, fallback, mode, onEnterEdit, onExitEdit
         <div className="flex h-full flex-col gap-6 overflow-y-auto overscroll-contain px-8 py-6">
           <ProductDetailsInfo product={product} />
           <ProductDetailsAttributes attributes={PRODUCT_ATTRIBUTES_MOCK} onEdit={onEnterEdit} />
-          <ProductDetailsVariants variants={product.product_variants ?? []} />
+          <ProductDetailsVariants variants={product.variants ?? []} />
         </div>
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-[#121212]" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-[#121212]" />

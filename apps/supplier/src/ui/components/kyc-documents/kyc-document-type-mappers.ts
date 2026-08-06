@@ -1,8 +1,9 @@
 import type {
-  HttpDocumentTypePayload,
-  HttpDocumentTypeCreateRequest,
+  DocumentTypePayload as HttpDocumentTypePayload,
+  DocumentTypeCreateRequest as HttpDocumentTypeCreateRequest,
+  DocumentTypeUpdateRequest as HttpDocumentTypeUpdateRequest,
 } from '@energyiq/api/generated/schemas';
-import type { DocumentTypeConfig } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentTypeConfig, KycDocumentFilterOption } from './kyc-documents-types';
 import type { KycDocumentTypeFormData } from './kyc-document-type-schema';
 
 /**
@@ -80,21 +81,43 @@ export function mapDocumentTypeToFormDefaults(payload: HttpDocumentTypePayload):
 }
 
 /**
- * Form data -> `POST /v1/document-type/create` / `PUT /v1/document-type/update/{id}` body —
- * both requests share an identical shape, so one mapper covers both.
+ * Form data -> the shared fields of `POST /v1/document-type/create` and
+ * `PUT /v1/document-type/update/{id}` bodies. The two request types are structurally
+ * identical today but nominally distinct (separate generated `allowed_file_types` enum
+ * types) — `mapFormToCreateRequest`/`mapFormToUpdateRequest` below each assert this
+ * shared shape against their own real type, so the two contracts can't silently drift
+ * without a type error surfacing here.
  */
-export function mapFormToDocumentTypeRequest(form: KycDocumentTypeFormData): HttpDocumentTypeCreateRequest {
+function buildDocumentTypeRequestFields(form: KycDocumentTypeFormData) {
   return {
     document_name: form.documentName,
     document_category_id: form.documentCategoryId,
     description: form.description || undefined,
-    allowed_file_types: FILE_TYPE_OPTION_TO_API[
-      form.allowedFileType
-    ] as HttpDocumentTypeCreateRequest['allowed_file_types'],
+    allowed_file_types: FILE_TYPE_OPTION_TO_API[form.allowedFileType],
     max_file_size_mb: MAX_SIZE_OPTION_TO_MB[form.maxFileSize],
     required: form.required === 'Required',
     expiry_required: form.expiryRequired === 'Yes',
     validity_period_months:
       form.expiryRequired === 'Yes' ? VALIDITY_OPTION_TO_MONTHS[form.validityPeriod] : undefined,
   };
+}
+
+/** Form data -> `POST /v1/document-type/create` body. */
+export function mapFormToCreateRequest(form: KycDocumentTypeFormData): HttpDocumentTypeCreateRequest {
+  return buildDocumentTypeRequestFields(form) as HttpDocumentTypeCreateRequest;
+}
+
+/** Form data -> `PUT /v1/document-type/update/{id}` body. */
+export function mapFormToUpdateRequest(form: KycDocumentTypeFormData): HttpDocumentTypeUpdateRequest {
+  return buildDocumentTypeRequestFields(form) as HttpDocumentTypeUpdateRequest;
+}
+
+/** `GET /v1/document-category/list` -> the document-type form's category `<Select>` options. */
+export function mapCategoriesToOptions(
+  categories: Array<{ id?: string; document_category?: string }>,
+): KycDocumentFilterOption[] {
+  return categories.map((category) => ({
+    value: category.id ?? '',
+    label: category.document_category ?? '',
+  }));
 }

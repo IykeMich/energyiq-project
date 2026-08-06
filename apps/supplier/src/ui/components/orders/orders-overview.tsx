@@ -56,10 +56,10 @@ export function OrdersOverview() {
 
   const tabs = useMemo(() => mapOrderStatsToTabs(stats), [stats]);
   const distributorNames = useMemo(
-    () => (distributorsResult?.items ?? []).map((item) => item.name).filter((name): name is string => Boolean(name)),
+    () => (distributorsResult ?? []).map((item) => item.name).filter((name): name is string => Boolean(name)),
     [distributorsResult],
   );
-  const rows = useMemo(() => (listResult?.items ?? []).map(mapOrderToRow), [listResult]);
+  const rows = useMemo(() => (listResult ?? []).map(mapOrderToRow), [listResult]);
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();

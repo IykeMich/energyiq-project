@@ -38,8 +38,8 @@ export class DistributorApiAdapter implements distributor.DistributorApi {
 
   async listDistributors(
     params?: distributor.DistributorListParams,
-  ): Promise<distributor.DistributorListResult> {
-    return apiGet<distributor.DistributorListResult>(
+  ): Promise<distributor.Distributor[]> {
+    return apiGet<distributor.Distributor[]>(
       'v1/distributor/list',
       {
         searchParams: toSearchParams(params),

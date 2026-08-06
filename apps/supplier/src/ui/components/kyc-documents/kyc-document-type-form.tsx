@@ -11,9 +11,9 @@ import {
   useGetV1DocumentTypeReadId,
   usePostV1DocumentTypeCreate,
   usePutV1DocumentTypeUpdateId,
-  getGetV1DocumentTypeListQueryKey,
   getGetV1DocumentTypeReadIdQueryKey,
 } from '@energyiq/api/generated/document-types/document-types';
+import { getGetV1DocumentTypeListQueryKey } from '@energyiq/api/generated/kyc-document-types/kyc-document-types';
 import { useGetV1DocumentCategoryList } from '@energyiq/api/generated/document-categories/document-categories';
 import {
   KycTextField,
@@ -27,7 +27,9 @@ import {
 } from './kyc-document-type-schema';
 import {
   mapDocumentTypeToFormDefaults,
-  mapFormToDocumentTypeRequest,
+  mapFormToCreateRequest,
+  mapFormToUpdateRequest,
+  mapCategoriesToOptions,
 } from './kyc-document-type-mappers';
 import {
   REQUIRED_OPTIONS,
@@ -35,7 +37,7 @@ import {
   VALIDITY_PERIOD_OPTIONS,
   ALLOWED_FILE_TYPE_OPTIONS,
   MAX_FILE_SIZE_OPTIONS,
-} from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+} from './kyc-documents-types';
 
 const { DomainError, ResponseCodes } = shared;
 
@@ -60,10 +62,7 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
     query: { enabled: isEditing, queryKey: getGetV1DocumentTypeReadIdQueryKey(documentTypeId ?? '') },
   });
   const { data: categoryList } = useGetV1DocumentCategoryList();
-  const categoryOptions = (categoryList?.data.data ?? []).map((category) => ({
-    value: category.id ?? '',
-    label: category.document_category ?? '',
-  }));
+  const categoryOptions = mapCategoriesToOptions(categoryList?.data.data ?? []);
 
   const {
     control,
@@ -105,11 +104,10 @@ export function KycDocumentTypeForm({ documentTypeId }: KycDocumentTypeFormProps
 
   const onSubmit = async (data: KycDocumentTypeFormData) => {
     try {
-      const payload = mapFormToDocumentTypeRequest(data);
       if (isEditing && documentTypeId) {
-        await updateDocumentType.mutateAsync({ id: documentTypeId, data: payload });
+        await updateDocumentType.mutateAsync({ id: documentTypeId, data: mapFormToUpdateRequest(data) });
       } else {
-        await createDocumentType.mutateAsync({ data: payload });
+        await createDocumentType.mutateAsync({ data: mapFormToCreateRequest(data) });
       }
       await queryClient.invalidateQueries({ queryKey: getGetV1DocumentTypeListQueryKey() });
       setSuccessState({ documentName: data.documentName });

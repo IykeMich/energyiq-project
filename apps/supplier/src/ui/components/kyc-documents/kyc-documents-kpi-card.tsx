@@ -1,5 +1,5 @@
 import { cn } from '@energyiq/shared';
-import type { KycKpi } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { KycKpi } from './kyc-documents-types';
 
 interface KycDocumentsKpiCardProps {
   kpi: KycKpi;

@@ -68,18 +68,22 @@ export interface Product {
   distributor_visibility?: DistributorVisibility | string;
   activation_at?: string;
   images?: ProductImage[];
-  product_variants?: ProductVariant[];
+  variants?: ProductVariant[];
   tier_pricing?: TierPricing[];
   tax_configuration?: TaxConfiguration;
   supplier_id?: string;
-  warehouse_id?: string;
-  warehouse_ids?: string[];
+  warehouse_allocations?: WarehouseAllocation[];
   /** Available actions the caller may take on this product, e.g. ["edit", "delete"]. */
   available_actions?: string[];
   stock_level_label?: string;
   stock_level_percentage?: number;
   total_max_stock?: number;
   total_stock_quantity?: number;
+  /** Untyped on the read response in swagger (`type: object`, no nested schema) — see the write-side `*Request` schemas if this ever needs real fields. */
+  access_rules?: Record<string, unknown>;
+  compliance?: Record<string, unknown>;
+  pricing_config?: Record<string, unknown>;
+  trading_rules?: Record<string, unknown>;
   version?: number;
   created_at?: string;
   updated_at?: string;
@@ -118,13 +122,6 @@ export interface ProductListParams {
   date_to?: string;
   limit?: number;
   offset?: number;
-}
-
-export interface ProductListResult {
-  items: Product[];
-  limit: number;
-  offset: number;
-  total: number;
 }
 
 export interface ProductStats {

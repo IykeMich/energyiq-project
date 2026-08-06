@@ -1,5 +1,5 @@
 import { Download, Eye } from 'lucide-react';
-import type { DomainDocumentDetail } from '@energyiq/api/generated/schemas';
+import type { DocumentDetail as DomainDocumentDetail } from '@energyiq/api/generated/schemas';
 
 interface Props {
   document: DomainDocumentDetail;

@@ -51,9 +51,3 @@ export interface DistributorListParams {
   offset?: number;
 }
 
-export interface DistributorListResult {
-  items: Distributor[];
-  limit: number;
-  offset: number;
-  total: number;
-}

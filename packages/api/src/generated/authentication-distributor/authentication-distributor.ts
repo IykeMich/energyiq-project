@@ -20,26 +20,26 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BusinessProfileRequest,
+  CreateInvitationRequest,
+  DistributorEnvelope,
+  DistributorOnboardingDocumentRequest,
+  DistributorOnboardingPresignRequest,
+  DistributorVerifyOTPRequest,
+  DocumentEnvelope,
+  DocumentListEnvelope,
+  DraftProfileEnvelope,
+  EmptyResponse,
+  ErrorResponse,
   GetV1InvitationListParams,
   GetV1PublicInvitationVerifyParams,
-  HttpActivateRequest,
-  HttpBusinessProfileRequest,
-  HttpCreateInvitationRequest,
-  HttpDeleteDocumentRequest,
-  HttpDistributorEnvelope,
-  HttpDocumentEnvelope,
-  HttpDocumentListEnvelope,
-  HttpInvitationEnvelope,
-  HttpInvitationListEnvelope,
-  HttpRegisterEnvelope,
-  HttpRegisterRequest,
-  HttpVerifyEnvelope,
-  HttpVerifyOTPRequest,
-  InternalDistributorAdaptersHttpOnboardingDocumentRequest,
-  InternalDistributorAdaptersHttpResendOTPEnvelope,
-  InternalDistributorAdaptersHttpResendOTPRequest,
-  ResponseEmptyResponse,
-  ResponseErrorResponse
+  InvitationEnvelope,
+  InvitationListEnvelope,
+  LoginEnvelope,
+  PostV1AuthDistributorOnboardingDocumentsPresignedUrl200,
+  RegisterEnvelope,
+  RegisterRequest,
+  VerifyEnvelope
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -50,32 +50,1004 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
+ * Returns the logged-in distributor's saved profile and KYC checklist without putting a resume token in the URL.
+
+**Frontend usage:**
+Call this operation when opening the **Get authenticated distributor onboarding state** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get authenticated distributor onboarding state
+ */
+export type getV1AuthDistributorOnboardingResponse200 = {
+  data: DraftProfileEnvelope
+  status: 200
+}
+
+export type getV1AuthDistributorOnboardingResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1AuthDistributorOnboardingResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1AuthDistributorOnboardingResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1AuthDistributorOnboardingResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1AuthDistributorOnboardingResponseSuccess = (getV1AuthDistributorOnboardingResponse200) & {
+  headers: Headers;
+};
+export type getV1AuthDistributorOnboardingResponseError = (getV1AuthDistributorOnboardingResponse401 | getV1AuthDistributorOnboardingResponse403 | getV1AuthDistributorOnboardingResponse429 | getV1AuthDistributorOnboardingResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1AuthDistributorOnboardingUrl = () => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding`
+}
+
+export const getV1AuthDistributorOnboarding = async ( options?: RequestInit): Promise<getV1AuthDistributorOnboardingResponseSuccess> => {
+
+  return fetcher<getV1AuthDistributorOnboardingResponseSuccess>(getGetV1AuthDistributorOnboardingUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1AuthDistributorOnboardingQueryKey = () => {
+    return [
+    `/v1/auth/distributor-onboarding`
+    ] as const;
+    }
+
+
+export const getGetV1AuthDistributorOnboardingQueryOptions = <TData = Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1AuthDistributorOnboardingQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>> = ({ signal }) => getV1AuthDistributorOnboarding({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1AuthDistributorOnboardingQueryResult = NonNullable<Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>>
+export type GetV1AuthDistributorOnboardingQueryError = ErrorResponse
+
+
+/**
+ * @summary Get authenticated distributor onboarding state
+ */
+
+export function useGetV1AuthDistributorOnboarding<TData = Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>, TError = ErrorResponse>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1AuthDistributorOnboarding>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1AuthDistributorOnboardingQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Persists the complete business profile for the distributor identified by the Bearer JWT. Available only while next_action is complete_onboarding; no identity token is accepted in the body.
+
+**Frontend usage:**
+Call this operation when the user saves the **Save authenticated distributor business profile** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `business_address` — string; minimum length 5; maximum length 500
+- `business_phone_number` — string
+- `cac_number` — string; minimum length 2; maximum length 50
+- `city` — string; minimum length 2; maximum length 100
+- `country` — string; minimum length 2; maximum length 100
+- `operational_regions` — array; minimum items 1
+- `primary_contact_person` — string; minimum length 2; maximum length 255
+- `registered_business_name` — string; minimum length 2; maximum length 255
+- `state` — string; minimum length 2; maximum length 100
+- `tin` — string; minimum length 2; maximum length 50
+
+**Optional inputs:**
+- `meta` — object
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Save authenticated distributor business profile
+ */
+export type putV1AuthDistributorOnboardingBusinessProfileResponse200 = {
+  data: DistributorEnvelope
+  status: 200
+}
+
+export type putV1AuthDistributorOnboardingBusinessProfileResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1AuthDistributorOnboardingBusinessProfileResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1AuthDistributorOnboardingBusinessProfileResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1AuthDistributorOnboardingBusinessProfileResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1AuthDistributorOnboardingBusinessProfileResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type putV1AuthDistributorOnboardingBusinessProfileResponseSuccess = (putV1AuthDistributorOnboardingBusinessProfileResponse200) & {
+  headers: Headers;
+};
+export type putV1AuthDistributorOnboardingBusinessProfileResponseError = (putV1AuthDistributorOnboardingBusinessProfileResponse400 | putV1AuthDistributorOnboardingBusinessProfileResponse401 | putV1AuthDistributorOnboardingBusinessProfileResponse403 | putV1AuthDistributorOnboardingBusinessProfileResponse429 | putV1AuthDistributorOnboardingBusinessProfileResponse500) & {
+  headers: Headers;
+};
+
+export const getPutV1AuthDistributorOnboardingBusinessProfileUrl = () => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding/business-profile`
+}
+
+export const putV1AuthDistributorOnboardingBusinessProfile = async (businessProfileRequest: BusinessProfileRequest, options?: RequestInit): Promise<putV1AuthDistributorOnboardingBusinessProfileResponseSuccess> => {
+
+  return fetcher<putV1AuthDistributorOnboardingBusinessProfileResponseSuccess>(getPutV1AuthDistributorOnboardingBusinessProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      businessProfileRequest,)
+  }
+);}
+
+
+
+
+export const getPutV1AuthDistributorOnboardingBusinessProfileMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1AuthDistributorOnboardingBusinessProfile>>, TError,{data: BusinessProfileRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1AuthDistributorOnboardingBusinessProfile>>, TError,{data: BusinessProfileRequest}, TContext> => {
+
+const mutationKey = ['putV1AuthDistributorOnboardingBusinessProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1AuthDistributorOnboardingBusinessProfile>>, {data: BusinessProfileRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  putV1AuthDistributorOnboardingBusinessProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1AuthDistributorOnboardingBusinessProfileMutationResult = NonNullable<Awaited<ReturnType<typeof putV1AuthDistributorOnboardingBusinessProfile>>>
+    export type PutV1AuthDistributorOnboardingBusinessProfileMutationBody = BusinessProfileRequest
+    export type PutV1AuthDistributorOnboardingBusinessProfileMutationError = ErrorResponse
+
+    /**
+ * @summary Save authenticated distributor business profile
+ */
+export const usePutV1AuthDistributorOnboardingBusinessProfile = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1AuthDistributorOnboardingBusinessProfile>>, TError,{data: BusinessProfileRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putV1AuthDistributorOnboardingBusinessProfile>>,
+        TError,
+        {data: BusinessProfileRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1AuthDistributorOnboardingBusinessProfileMutationOptions(options));
+    }
+    /**
+ * Lists KYC documents attached to the distributor identified by the Bearer JWT. Cross-distributor access is impossible because no distributor ID or onboarding token is accepted.
+
+**Frontend usage:**
+Use this operation to populate the **List authenticated distributor onboarding documents** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary List authenticated distributor onboarding documents
+ */
+export type getV1AuthDistributorOnboardingDocumentsResponse200 = {
+  data: DocumentListEnvelope
+  status: 200
+}
+
+export type getV1AuthDistributorOnboardingDocumentsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1AuthDistributorOnboardingDocumentsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1AuthDistributorOnboardingDocumentsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1AuthDistributorOnboardingDocumentsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1AuthDistributorOnboardingDocumentsResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1AuthDistributorOnboardingDocumentsResponseSuccess = (getV1AuthDistributorOnboardingDocumentsResponse200) & {
+  headers: Headers;
+};
+export type getV1AuthDistributorOnboardingDocumentsResponseError = (getV1AuthDistributorOnboardingDocumentsResponse400 | getV1AuthDistributorOnboardingDocumentsResponse401 | getV1AuthDistributorOnboardingDocumentsResponse403 | getV1AuthDistributorOnboardingDocumentsResponse429 | getV1AuthDistributorOnboardingDocumentsResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1AuthDistributorOnboardingDocumentsUrl = () => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding/documents`
+}
+
+export const getV1AuthDistributorOnboardingDocuments = async ( options?: RequestInit): Promise<getV1AuthDistributorOnboardingDocumentsResponseSuccess> => {
+
+  return fetcher<getV1AuthDistributorOnboardingDocumentsResponseSuccess>(getGetV1AuthDistributorOnboardingDocumentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1AuthDistributorOnboardingDocumentsQueryKey = () => {
+    return [
+    `/v1/auth/distributor-onboarding/documents`
+    ] as const;
+    }
+
+
+export const getGetV1AuthDistributorOnboardingDocumentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1AuthDistributorOnboardingDocumentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>> = ({ signal }) => getV1AuthDistributorOnboardingDocuments({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1AuthDistributorOnboardingDocumentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>>
+export type GetV1AuthDistributorOnboardingDocumentsQueryError = ErrorResponse
+
+
+/**
+ * @summary List authenticated distributor onboarding documents
+ */
+
+export function useGetV1AuthDistributorOnboardingDocuments<TData = Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>, TError = ErrorResponse>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1AuthDistributorOnboardingDocuments>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1AuthDistributorOnboardingDocumentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Registers KYC document metadata for the authenticated distributor while onboarding is incomplete. The file must come from that distributor's presign path and satisfy the configured KYC document type, MIME, and size rules.
+
+**Frontend usage:**
+Call this operation when the user submits the **Upload distributor onboarding document** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `document_type` — string; minimum length 2; maximum length 100
+- `file_name` — string; minimum length 2; maximum length 255
+- `file_size` — integer
+- `file_url` — string; maximum length 500
+- `mime_type` — string; maximum length 100
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Upload distributor onboarding document
+ */
+export type postV1AuthDistributorOnboardingDocumentsResponse201 = {
+  data: DocumentEnvelope
+  status: 201
+}
+
+export type postV1AuthDistributorOnboardingDocumentsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1AuthDistributorOnboardingDocumentsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1AuthDistributorOnboardingDocumentsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1AuthDistributorOnboardingDocumentsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1AuthDistributorOnboardingDocumentsResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1AuthDistributorOnboardingDocumentsResponseSuccess = (postV1AuthDistributorOnboardingDocumentsResponse201) & {
+  headers: Headers;
+};
+export type postV1AuthDistributorOnboardingDocumentsResponseError = (postV1AuthDistributorOnboardingDocumentsResponse400 | postV1AuthDistributorOnboardingDocumentsResponse401 | postV1AuthDistributorOnboardingDocumentsResponse403 | postV1AuthDistributorOnboardingDocumentsResponse429 | postV1AuthDistributorOnboardingDocumentsResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1AuthDistributorOnboardingDocumentsUrl = () => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding/documents`
+}
+
+export const postV1AuthDistributorOnboardingDocuments = async (distributorOnboardingDocumentRequest: DistributorOnboardingDocumentRequest, options?: RequestInit): Promise<postV1AuthDistributorOnboardingDocumentsResponseSuccess> => {
+
+  return fetcher<postV1AuthDistributorOnboardingDocumentsResponseSuccess>(getPostV1AuthDistributorOnboardingDocumentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      distributorOnboardingDocumentRequest,)
+  }
+);}
+
+
+
+
+export const getPostV1AuthDistributorOnboardingDocumentsMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocuments>>, TError,{data: DistributorOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocuments>>, TError,{data: DistributorOnboardingDocumentRequest}, TContext> => {
+
+const mutationKey = ['postV1AuthDistributorOnboardingDocuments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocuments>>, {data: DistributorOnboardingDocumentRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1AuthDistributorOnboardingDocuments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1AuthDistributorOnboardingDocumentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocuments>>>
+    export type PostV1AuthDistributorOnboardingDocumentsMutationBody = DistributorOnboardingDocumentRequest
+    export type PostV1AuthDistributorOnboardingDocumentsMutationError = ErrorResponse
+
+    /**
+ * @summary Upload distributor onboarding document
+ */
+export const usePostV1AuthDistributorOnboardingDocuments = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocuments>>, TError,{data: DistributorOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocuments>>,
+        TError,
+        {data: DistributorOnboardingDocumentRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1AuthDistributorOnboardingDocumentsMutationOptions(options));
+    }
+    /**
+ * Creates a short-lived S3 PUT URL scoped to the authenticated distributor.
+
+**Frontend usage:** call after login returns next_action=complete_onboarding, upload with the returned method/headers, then submit public_url to the authenticated document endpoint. No registration or onboarding token is accepted.
+
+**Required inputs:**
+- `content_type` — string; maximum length 100
+- `file_name` — string; minimum length 2; maximum length 255
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Presign distributor onboarding upload
+ */
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse200 = {
+  data: PostV1AuthDistributorOnboardingDocumentsPresignedUrl200
+  status: 200
+}
+
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponseSuccess = (postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthDistributorOnboardingDocumentsPresignedUrlResponseError = (postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse400 | postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse401 | postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse403 | postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse429 | postV1AuthDistributorOnboardingDocumentsPresignedUrlResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1AuthDistributorOnboardingDocumentsPresignedUrlUrl = () => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding/documents/presigned-url`
+}
+
+export const postV1AuthDistributorOnboardingDocumentsPresignedUrl = async (distributorOnboardingPresignRequest: DistributorOnboardingPresignRequest, options?: RequestInit): Promise<postV1AuthDistributorOnboardingDocumentsPresignedUrlResponseSuccess> => {
+
+  return fetcher<postV1AuthDistributorOnboardingDocumentsPresignedUrlResponseSuccess>(getPostV1AuthDistributorOnboardingDocumentsPresignedUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      distributorOnboardingPresignRequest,)
+  }
+);}
+
+
+
+
+export const getPostV1AuthDistributorOnboardingDocumentsPresignedUrlMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocumentsPresignedUrl>>, TError,{data: DistributorOnboardingPresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocumentsPresignedUrl>>, TError,{data: DistributorOnboardingPresignRequest}, TContext> => {
+
+const mutationKey = ['postV1AuthDistributorOnboardingDocumentsPresignedUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocumentsPresignedUrl>>, {data: DistributorOnboardingPresignRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1AuthDistributorOnboardingDocumentsPresignedUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1AuthDistributorOnboardingDocumentsPresignedUrlMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocumentsPresignedUrl>>>
+    export type PostV1AuthDistributorOnboardingDocumentsPresignedUrlMutationBody = DistributorOnboardingPresignRequest
+    export type PostV1AuthDistributorOnboardingDocumentsPresignedUrlMutationError = ErrorResponse
+
+    /**
+ * @summary Presign distributor onboarding upload
+ */
+export const usePostV1AuthDistributorOnboardingDocumentsPresignedUrl = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocumentsPresignedUrl>>, TError,{data: DistributorOnboardingPresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1AuthDistributorOnboardingDocumentsPresignedUrl>>,
+        TError,
+        {data: DistributorOnboardingPresignRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1AuthDistributorOnboardingDocumentsPresignedUrlMutationOptions(options));
+    }
+    /**
+ * Deletes a pending KYC document owned by the authenticated distributor. Cross-distributor IDs are rejected by repository scope.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete authenticated distributor onboarding document**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Document ID; Document ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Delete authenticated distributor onboarding document
+ */
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponse200 = {
+  data: EmptyResponse
+  status: 200
+}
+
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponseSuccess = (deleteV1AuthDistributorOnboardingDocumentsIdResponse200) & {
+  headers: Headers;
+};
+export type deleteV1AuthDistributorOnboardingDocumentsIdResponseError = (deleteV1AuthDistributorOnboardingDocumentsIdResponse400 | deleteV1AuthDistributorOnboardingDocumentsIdResponse401 | deleteV1AuthDistributorOnboardingDocumentsIdResponse403 | deleteV1AuthDistributorOnboardingDocumentsIdResponse429 | deleteV1AuthDistributorOnboardingDocumentsIdResponse500) & {
+  headers: Headers;
+};
+
+export const getDeleteV1AuthDistributorOnboardingDocumentsIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding/documents/${id}`
+}
+
+export const deleteV1AuthDistributorOnboardingDocumentsId = async (id: string, options?: RequestInit): Promise<deleteV1AuthDistributorOnboardingDocumentsIdResponseSuccess> => {
+
+  return fetcher<deleteV1AuthDistributorOnboardingDocumentsIdResponseSuccess>(getDeleteV1AuthDistributorOnboardingDocumentsIdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteV1AuthDistributorOnboardingDocumentsIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1AuthDistributorOnboardingDocumentsId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteV1AuthDistributorOnboardingDocumentsId>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteV1AuthDistributorOnboardingDocumentsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1AuthDistributorOnboardingDocumentsId>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteV1AuthDistributorOnboardingDocumentsId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteV1AuthDistributorOnboardingDocumentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1AuthDistributorOnboardingDocumentsId>>>
+
+    export type DeleteV1AuthDistributorOnboardingDocumentsIdMutationError = ErrorResponse
+
+    /**
+ * @summary Delete authenticated distributor onboarding document
+ */
+export const useDeleteV1AuthDistributorOnboardingDocumentsId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1AuthDistributorOnboardingDocumentsId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteV1AuthDistributorOnboardingDocumentsId>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteV1AuthDistributorOnboardingDocumentsIdMutationOptions(options));
+    }
+    /**
+ * Validates the authenticated distributor's verified email, complete business profile, and required KYC documents, then moves the account to pending_review. The JWT identity is the only ownership input.
+
+**Frontend usage:**
+Call this operation from the **Submit authenticated distributor onboarding** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Submit authenticated distributor onboarding
+ */
+export type postV1AuthDistributorOnboardingSubmitResponse200 = {
+  data: DistributorEnvelope
+  status: 200
+}
+
+export type postV1AuthDistributorOnboardingSubmitResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1AuthDistributorOnboardingSubmitResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1AuthDistributorOnboardingSubmitResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1AuthDistributorOnboardingSubmitResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1AuthDistributorOnboardingSubmitResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1AuthDistributorOnboardingSubmitResponseSuccess = (postV1AuthDistributorOnboardingSubmitResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthDistributorOnboardingSubmitResponseError = (postV1AuthDistributorOnboardingSubmitResponse400 | postV1AuthDistributorOnboardingSubmitResponse401 | postV1AuthDistributorOnboardingSubmitResponse403 | postV1AuthDistributorOnboardingSubmitResponse429 | postV1AuthDistributorOnboardingSubmitResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1AuthDistributorOnboardingSubmitUrl = () => {
+
+
+
+
+  return `/v1/auth/distributor-onboarding/submit`
+}
+
+export const postV1AuthDistributorOnboardingSubmit = async ( options?: RequestInit): Promise<postV1AuthDistributorOnboardingSubmitResponseSuccess> => {
+
+  return fetcher<postV1AuthDistributorOnboardingSubmitResponseSuccess>(getPostV1AuthDistributorOnboardingSubmitUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPostV1AuthDistributorOnboardingSubmitMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingSubmit>>, TError,void, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingSubmit>>, TError,void, TContext> => {
+
+const mutationKey = ['postV1AuthDistributorOnboardingSubmit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingSubmit>>, void> = () => {
+
+
+          return  postV1AuthDistributorOnboardingSubmit(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1AuthDistributorOnboardingSubmitMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingSubmit>>>
+
+    export type PostV1AuthDistributorOnboardingSubmitMutationError = ErrorResponse
+
+    /**
+ * @summary Submit authenticated distributor onboarding
+ */
+export const usePostV1AuthDistributorOnboardingSubmit = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthDistributorOnboardingSubmit>>, TError,void, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1AuthDistributorOnboardingSubmit>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostV1AuthDistributorOnboardingSubmitMutationOptions(options));
+    }
+    /**
  * Creates an invitation token that starts the distributor onboarding flow for a supplier's prospective distributor.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create distributor invitation** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `contact_person` — string; minimum length 2; maximum length 255
+- `distributor_name` — string; minimum length 2; maximum length 255
+- `email` — string
+- `location` — string; minimum length 2; maximum length 500
+- `phone` — string
+
+**Optional inputs:**
+- `assurance_amount` — number; minimum 0
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create distributor invitation
  */
 export type postV1InvitationCreateResponse201 = {
-  data: HttpInvitationEnvelope
+  data: InvitationEnvelope
   status: 201
 }
 
 export type postV1InvitationCreateResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
+export type postV1InvitationCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1InvitationCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1InvitationCreateResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1InvitationCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1InvitationCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1InvitationCreateResponseSuccess = (postV1InvitationCreateResponse201) & {
   headers: Headers;
 };
-export type postV1InvitationCreateResponseError = (postV1InvitationCreateResponse400 | postV1InvitationCreateResponse409) & {
+export type postV1InvitationCreateResponseError = (postV1InvitationCreateResponse400 | postV1InvitationCreateResponse401 | postV1InvitationCreateResponse403 | postV1InvitationCreateResponse409 | postV1InvitationCreateResponse429 | postV1InvitationCreateResponse500) & {
   headers: Headers;
 };
-
-export type postV1InvitationCreateResponse = (postV1InvitationCreateResponseSuccess | postV1InvitationCreateResponseError)
 
 export const getPostV1InvitationCreateUrl = () => {
 
@@ -85,24 +1057,24 @@ export const getPostV1InvitationCreateUrl = () => {
   return `/v1/invitation/create`
 }
 
-export const postV1InvitationCreate = async (httpCreateInvitationRequest: HttpCreateInvitationRequest, options?: RequestInit): Promise<postV1InvitationCreateResponse> => {
+export const postV1InvitationCreate = async (createInvitationRequest: CreateInvitationRequest, options?: RequestInit): Promise<postV1InvitationCreateResponseSuccess> => {
 
-  return fetcher<postV1InvitationCreateResponse>(getPostV1InvitationCreateUrl(),
+  return fetcher<postV1InvitationCreateResponseSuccess>(getPostV1InvitationCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpCreateInvitationRequest,)
+      createInvitationRequest,)
   }
 );}
 
 
 
 
-export const getPostV1InvitationCreateMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationCreate>>, TError,{data: HttpCreateInvitationRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationCreate>>, TError,{data: HttpCreateInvitationRequest}, TContext> => {
+export const getPostV1InvitationCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationCreate>>, TError,{data: CreateInvitationRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationCreate>>, TError,{data: CreateInvitationRequest}, TContext> => {
 
 const mutationKey = ['postV1InvitationCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -114,7 +1086,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1InvitationCreate>>, {data: HttpCreateInvitationRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1InvitationCreate>>, {data: CreateInvitationRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1InvitationCreate(data,requestOptions)
@@ -128,44 +1100,227 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1InvitationCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1InvitationCreate>>>
-    export type PostV1InvitationCreateMutationBody = HttpCreateInvitationRequest
-    export type PostV1InvitationCreateMutationError = ResponseErrorResponse
+    export type PostV1InvitationCreateMutationBody = CreateInvitationRequest
+    export type PostV1InvitationCreateMutationError = ErrorResponse
 
     /**
  * @summary Create distributor invitation
  */
-export const usePostV1InvitationCreate = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationCreate>>, TError,{data: HttpCreateInvitationRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1InvitationCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationCreate>>, TError,{data: CreateInvitationRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1InvitationCreate>>,
         TError,
-        {data: HttpCreateInvitationRequest},
+        {data: CreateInvitationRequest},
         TContext
       > => {
       return useMutation(getPostV1InvitationCreateMutationOptions(options));
     }
     /**
+ * Returns one supplier-owned invitation, including its delivery status and linked distributor ID after registration. Cross-supplier IDs return 404.
+
+**Frontend usage:**
+Call this operation when opening the **Get distributor invitation** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Invitation ID; Invitation ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get distributor invitation
+ */
+export type getV1InvitationGetIdResponse200 = {
+  data: InvitationEnvelope
+  status: 200
+}
+
+export type getV1InvitationGetIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1InvitationGetIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1InvitationGetIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1InvitationGetIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1InvitationGetIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1InvitationGetIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1InvitationGetIdResponseSuccess = (getV1InvitationGetIdResponse200) & {
+  headers: Headers;
+};
+export type getV1InvitationGetIdResponseError = (getV1InvitationGetIdResponse400 | getV1InvitationGetIdResponse401 | getV1InvitationGetIdResponse403 | getV1InvitationGetIdResponse404 | getV1InvitationGetIdResponse429 | getV1InvitationGetIdResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1InvitationGetIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/invitation/get/${id}`
+}
+
+export const getV1InvitationGetId = async (id: string, options?: RequestInit): Promise<getV1InvitationGetIdResponseSuccess> => {
+
+  return fetcher<getV1InvitationGetIdResponseSuccess>(getGetV1InvitationGetIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1InvitationGetIdQueryKey = (id: string,) => {
+    return [
+    `/v1/invitation/get/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1InvitationGetIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1InvitationGetId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1InvitationGetId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1InvitationGetIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1InvitationGetId>>> = ({ signal }) => getV1InvitationGetId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1InvitationGetId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1InvitationGetIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1InvitationGetId>>>
+export type GetV1InvitationGetIdQueryError = ErrorResponse
+
+
+/**
+ * @summary Get distributor invitation
+ */
+
+export function useGetV1InvitationGetId<TData = Awaited<ReturnType<typeof getV1InvitationGetId>>, TError = ErrorResponse>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1InvitationGetId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1InvitationGetIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
  * Lists supplier-issued distributor invitations for invite management screens.
+
+**Frontend usage:**
+Use this operation to populate the **List distributor invitations** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size; Page size
+- `offset` (query) — integer; Offset; Offset
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List distributor invitations
  */
 export type getV1InvitationListResponse200 = {
-  data: HttpInvitationListEnvelope
+  data: InvitationListEnvelope
   status: 200
 }
 
 export type getV1InvitationListResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type getV1InvitationListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1InvitationListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1InvitationListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1InvitationListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1InvitationListResponseSuccess = (getV1InvitationListResponse200) & {
   headers: Headers;
 };
-export type getV1InvitationListResponseError = (getV1InvitationListResponse400) & {
+export type getV1InvitationListResponseError = (getV1InvitationListResponse400 | getV1InvitationListResponse401 | getV1InvitationListResponse403 | getV1InvitationListResponse429 | getV1InvitationListResponse500) & {
   headers: Headers;
 };
-
-export type getV1InvitationListResponse = (getV1InvitationListResponseSuccess | getV1InvitationListResponseError)
 
 export const getGetV1InvitationListUrl = (params?: GetV1InvitationListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -182,9 +1337,9 @@ export const getGetV1InvitationListUrl = (params?: GetV1InvitationListParams,) =
   return stringifiedParams.length > 0 ? `/v1/invitation/list?${stringifiedParams}` : `/v1/invitation/list`
 }
 
-export const getV1InvitationList = async (params?: GetV1InvitationListParams, options?: RequestInit): Promise<getV1InvitationListResponse> => {
+export const getV1InvitationList = async (params?: GetV1InvitationListParams, options?: RequestInit): Promise<getV1InvitationListResponseSuccess> => {
 
-  return fetcher<getV1InvitationListResponse>(getGetV1InvitationListUrl(params),
+  return fetcher<getV1InvitationListResponseSuccess>(getGetV1InvitationListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -204,7 +1359,7 @@ export const getGetV1InvitationListQueryKey = (params?: GetV1InvitationListParam
     }
 
 
-export const getGetV1InvitationListQueryOptions = <TData = Awaited<ReturnType<typeof getV1InvitationList>>, TError = ResponseErrorResponse>(params?: GetV1InvitationListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1InvitationList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1InvitationListQueryOptions = <TData = Awaited<ReturnType<typeof getV1InvitationList>>, TError = ErrorResponse>(params?: GetV1InvitationListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1InvitationList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -223,14 +1378,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1InvitationListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1InvitationList>>>
-export type GetV1InvitationListQueryError = ResponseErrorResponse
+export type GetV1InvitationListQueryError = ErrorResponse
 
 
 /**
  * @summary List distributor invitations
  */
 
-export function useGetV1InvitationList<TData = Awaited<ReturnType<typeof getV1InvitationList>>, TError = ResponseErrorResponse>(
+export function useGetV1InvitationList<TData = Awaited<ReturnType<typeof getV1InvitationList>>, TError = ErrorResponse>(
  params?: GetV1InvitationListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1InvitationList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -248,32 +1403,214 @@ export function useGetV1InvitationList<TData = Awaited<ReturnType<typeof getV1In
 
 
 /**
+ * Rotates the link for an unclaimed pending or expired supplier-owned invitation, extends its expiry, and emails it again. The previous link becomes invalid immediately. A resend cooldown prevents repeated email delivery. Registered, revoked, or accepted invitations cannot be resent.
+
+**Frontend usage:**
+Call this operation from the **Resend pending distributor invitation** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Invitation ID; Invitation ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Resend pending distributor invitation
+ */
+export type postV1InvitationResendIdResponse200 = {
+  data: InvitationEnvelope
+  status: 200
+}
+
+export type postV1InvitationResendIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1InvitationResendIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1InvitationResendIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1InvitationResendIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1InvitationResendIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1InvitationResendIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1InvitationResendIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1InvitationResendIdResponseSuccess = (postV1InvitationResendIdResponse200) & {
+  headers: Headers;
+};
+export type postV1InvitationResendIdResponseError = (postV1InvitationResendIdResponse400 | postV1InvitationResendIdResponse401 | postV1InvitationResendIdResponse403 | postV1InvitationResendIdResponse404 | postV1InvitationResendIdResponse409 | postV1InvitationResendIdResponse429 | postV1InvitationResendIdResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1InvitationResendIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/invitation/resend/${id}`
+}
+
+export const postV1InvitationResendId = async (id: string, options?: RequestInit): Promise<postV1InvitationResendIdResponseSuccess> => {
+
+  return fetcher<postV1InvitationResendIdResponseSuccess>(getPostV1InvitationResendIdUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPostV1InvitationResendIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationResendId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationResendId>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['postV1InvitationResendId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1InvitationResendId>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postV1InvitationResendId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1InvitationResendIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1InvitationResendId>>>
+
+    export type PostV1InvitationResendIdMutationError = ErrorResponse
+
+    /**
+ * @summary Resend pending distributor invitation
+ */
+export const usePostV1InvitationResendId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1InvitationResendId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1InvitationResendId>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getPostV1InvitationResendIdMutationOptions(options));
+    }
+    /**
  * Revokes a pending invitation so its token can no longer be used for distributor onboarding.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Revoke distributor invitation**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Invitation ID; Invitation ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Revoke distributor invitation
  */
 export type deleteV1InvitationRevokeIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type deleteV1InvitationRevokeIdResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
+export type deleteV1InvitationRevokeIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1InvitationRevokeIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type deleteV1InvitationRevokeIdResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
+}
+
+export type deleteV1InvitationRevokeIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1InvitationRevokeIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1InvitationRevokeIdResponseSuccess = (deleteV1InvitationRevokeIdResponse200) & {
   headers: Headers;
 };
-export type deleteV1InvitationRevokeIdResponseError = (deleteV1InvitationRevokeIdResponse400 | deleteV1InvitationRevokeIdResponse404) & {
+export type deleteV1InvitationRevokeIdResponseError = (deleteV1InvitationRevokeIdResponse400 | deleteV1InvitationRevokeIdResponse401 | deleteV1InvitationRevokeIdResponse403 | deleteV1InvitationRevokeIdResponse404 | deleteV1InvitationRevokeIdResponse429 | deleteV1InvitationRevokeIdResponse500) & {
   headers: Headers;
 };
-
-export type deleteV1InvitationRevokeIdResponse = (deleteV1InvitationRevokeIdResponseSuccess | deleteV1InvitationRevokeIdResponseError)
 
 export const getDeleteV1InvitationRevokeIdUrl = (id: string,) => {
 
@@ -283,9 +1620,9 @@ export const getDeleteV1InvitationRevokeIdUrl = (id: string,) => {
   return `/v1/invitation/revoke/${id}`
 }
 
-export const deleteV1InvitationRevokeId = async (id: string, options?: RequestInit): Promise<deleteV1InvitationRevokeIdResponse> => {
+export const deleteV1InvitationRevokeId = async (id: string, options?: RequestInit): Promise<deleteV1InvitationRevokeIdResponseSuccess> => {
 
-  return fetcher<deleteV1InvitationRevokeIdResponse>(getDeleteV1InvitationRevokeIdUrl(id),
+  return fetcher<deleteV1InvitationRevokeIdResponseSuccess>(getDeleteV1InvitationRevokeIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -297,7 +1634,7 @@ export const deleteV1InvitationRevokeId = async (id: string, options?: RequestIn
 
 
 
-export const getDeleteV1InvitationRevokeIdMutationOptions = <TError = ResponseErrorResponse,
+export const getDeleteV1InvitationRevokeIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvitationRevokeId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvitationRevokeId>>, TError,{id: string}, TContext> => {
 
@@ -326,12 +1663,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1InvitationRevokeIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1InvitationRevokeId>>>
 
-    export type DeleteV1InvitationRevokeIdMutationError = ResponseErrorResponse
+    export type DeleteV1InvitationRevokeIdMutationError = ErrorResponse
 
     /**
  * @summary Revoke distributor invitation
  */
-export const useDeleteV1InvitationRevokeId = <TError = ResponseErrorResponse,
+export const useDeleteV1InvitationRevokeId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1InvitationRevokeId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1InvitationRevokeId>>,
@@ -342,494 +1679,64 @@ export const useDeleteV1InvitationRevokeId = <TError = ResponseErrorResponse,
       return useMutation(getDeleteV1InvitationRevokeIdMutationOptions(options));
     }
     /**
- * Finalizes distributor onboarding after OTP verification, business profile setup, and document upload checks.
- * @summary Activate distributor account
- */
-export type postV1PublicDistributorActivateResponse200 = {
-  data: HttpDistributorEnvelope
-  status: 200
-}
-
-export type postV1PublicDistributorActivateResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type postV1PublicDistributorActivateResponse403 = {
-  data: ResponseErrorResponse
-  status: 403
-}
-
-export type postV1PublicDistributorActivateResponseSuccess = (postV1PublicDistributorActivateResponse200) & {
-  headers: Headers;
-};
-export type postV1PublicDistributorActivateResponseError = (postV1PublicDistributorActivateResponse400 | postV1PublicDistributorActivateResponse403) & {
-  headers: Headers;
-};
-
-export type postV1PublicDistributorActivateResponse = (postV1PublicDistributorActivateResponseSuccess | postV1PublicDistributorActivateResponseError)
-
-export const getPostV1PublicDistributorActivateUrl = () => {
-
-
-
-
-  return `/v1/public/distributor/activate`
-}
-
-export const postV1PublicDistributorActivate = async (httpActivateRequest: HttpActivateRequest, options?: RequestInit): Promise<postV1PublicDistributorActivateResponse> => {
-
-  return fetcher<postV1PublicDistributorActivateResponse>(getPostV1PublicDistributorActivateUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpActivateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1PublicDistributorActivateMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorActivate>>, TError,{data: HttpActivateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorActivate>>, TError,{data: HttpActivateRequest}, TContext> => {
-
-const mutationKey = ['postV1PublicDistributorActivate'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorActivate>>, {data: HttpActivateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1PublicDistributorActivate(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1PublicDistributorActivateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicDistributorActivate>>>
-    export type PostV1PublicDistributorActivateMutationBody = HttpActivateRequest
-    export type PostV1PublicDistributorActivateMutationError = ResponseErrorResponse
-
-    /**
- * @summary Activate distributor account
- */
-export const usePostV1PublicDistributorActivate = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorActivate>>, TError,{data: HttpActivateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicDistributorActivate>>,
-        TError,
-        {data: HttpActivateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1PublicDistributorActivateMutationOptions(options));
-    }
-    /**
- * Persists the distributor business profile collected after OTP verification.
- * @summary Save distributor business profile
- */
-export type putV1PublicDistributorBusinessProfileResponse200 = {
-  data: HttpDistributorEnvelope
-  status: 200
-}
-
-export type putV1PublicDistributorBusinessProfileResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type putV1PublicDistributorBusinessProfileResponseSuccess = (putV1PublicDistributorBusinessProfileResponse200) & {
-  headers: Headers;
-};
-export type putV1PublicDistributorBusinessProfileResponseError = (putV1PublicDistributorBusinessProfileResponse400) & {
-  headers: Headers;
-};
-
-export type putV1PublicDistributorBusinessProfileResponse = (putV1PublicDistributorBusinessProfileResponseSuccess | putV1PublicDistributorBusinessProfileResponseError)
-
-export const getPutV1PublicDistributorBusinessProfileUrl = () => {
-
-
-
-
-  return `/v1/public/distributor/business-profile`
-}
-
-export const putV1PublicDistributorBusinessProfile = async (httpBusinessProfileRequest: HttpBusinessProfileRequest, options?: RequestInit): Promise<putV1PublicDistributorBusinessProfileResponse> => {
-
-  return fetcher<putV1PublicDistributorBusinessProfileResponse>(getPutV1PublicDistributorBusinessProfileUrl(),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpBusinessProfileRequest,)
-  }
-);}
-
-
-
-
-export const getPutV1PublicDistributorBusinessProfileMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1PublicDistributorBusinessProfile>>, TError,{data: HttpBusinessProfileRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1PublicDistributorBusinessProfile>>, TError,{data: HttpBusinessProfileRequest}, TContext> => {
-
-const mutationKey = ['putV1PublicDistributorBusinessProfile'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1PublicDistributorBusinessProfile>>, {data: HttpBusinessProfileRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  putV1PublicDistributorBusinessProfile(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1PublicDistributorBusinessProfileMutationResult = NonNullable<Awaited<ReturnType<typeof putV1PublicDistributorBusinessProfile>>>
-    export type PutV1PublicDistributorBusinessProfileMutationBody = HttpBusinessProfileRequest
-    export type PutV1PublicDistributorBusinessProfileMutationError = ResponseErrorResponse
-
-    /**
- * @summary Save distributor business profile
- */
-export const usePutV1PublicDistributorBusinessProfile = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1PublicDistributorBusinessProfile>>, TError,{data: HttpBusinessProfileRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof putV1PublicDistributorBusinessProfile>>,
-        TError,
-        {data: HttpBusinessProfileRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1PublicDistributorBusinessProfileMutationOptions(options));
-    }
-    /**
- * Registers document metadata for a distributor account that is still in the public onboarding flow.
- * @summary Upload distributor onboarding document
- */
-export type postV1PublicDistributorOnboardingDocumentsResponse201 = {
-  data: HttpDocumentEnvelope
-  status: 201
-}
-
-export type postV1PublicDistributorOnboardingDocumentsResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type postV1PublicDistributorOnboardingDocumentsResponseSuccess = (postV1PublicDistributorOnboardingDocumentsResponse201) & {
-  headers: Headers;
-};
-export type postV1PublicDistributorOnboardingDocumentsResponseError = (postV1PublicDistributorOnboardingDocumentsResponse400) & {
-  headers: Headers;
-};
-
-export type postV1PublicDistributorOnboardingDocumentsResponse = (postV1PublicDistributorOnboardingDocumentsResponseSuccess | postV1PublicDistributorOnboardingDocumentsResponseError)
-
-export const getPostV1PublicDistributorOnboardingDocumentsUrl = () => {
-
-
-
-
-  return `/v1/public/distributor/onboarding-documents`
-}
-
-export const postV1PublicDistributorOnboardingDocuments = async (internalDistributorAdaptersHttpOnboardingDocumentRequest: InternalDistributorAdaptersHttpOnboardingDocumentRequest, options?: RequestInit): Promise<postV1PublicDistributorOnboardingDocumentsResponse> => {
-
-  return fetcher<postV1PublicDistributorOnboardingDocumentsResponse>(getPostV1PublicDistributorOnboardingDocumentsUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalDistributorAdaptersHttpOnboardingDocumentRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1PublicDistributorOnboardingDocumentsMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorOnboardingDocuments>>, TError,{data: InternalDistributorAdaptersHttpOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorOnboardingDocuments>>, TError,{data: InternalDistributorAdaptersHttpOnboardingDocumentRequest}, TContext> => {
-
-const mutationKey = ['postV1PublicDistributorOnboardingDocuments'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorOnboardingDocuments>>, {data: InternalDistributorAdaptersHttpOnboardingDocumentRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1PublicDistributorOnboardingDocuments(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1PublicDistributorOnboardingDocumentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicDistributorOnboardingDocuments>>>
-    export type PostV1PublicDistributorOnboardingDocumentsMutationBody = InternalDistributorAdaptersHttpOnboardingDocumentRequest
-    export type PostV1PublicDistributorOnboardingDocumentsMutationError = ResponseErrorResponse
-
-    /**
- * @summary Upload distributor onboarding document
- */
-export const usePostV1PublicDistributorOnboardingDocuments = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorOnboardingDocuments>>, TError,{data: InternalDistributorAdaptersHttpOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicDistributorOnboardingDocuments>>,
-        TError,
-        {data: InternalDistributorAdaptersHttpOnboardingDocumentRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1PublicDistributorOnboardingDocumentsMutationOptions(options));
-    }
-    /**
- * Deletes a pending onboarding document for the active distributor registration token.
- * @summary Delete distributor onboarding document
- */
-export type deleteV1PublicDistributorOnboardingDocumentsIdResponse200 = {
-  data: ResponseEmptyResponse
-  status: 200
-}
-
-export type deleteV1PublicDistributorOnboardingDocumentsIdResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type deleteV1PublicDistributorOnboardingDocumentsIdResponseSuccess = (deleteV1PublicDistributorOnboardingDocumentsIdResponse200) & {
-  headers: Headers;
-};
-export type deleteV1PublicDistributorOnboardingDocumentsIdResponseError = (deleteV1PublicDistributorOnboardingDocumentsIdResponse400) & {
-  headers: Headers;
-};
-
-export type deleteV1PublicDistributorOnboardingDocumentsIdResponse = (deleteV1PublicDistributorOnboardingDocumentsIdResponseSuccess | deleteV1PublicDistributorOnboardingDocumentsIdResponseError)
-
-export const getDeleteV1PublicDistributorOnboardingDocumentsIdUrl = (id: string,) => {
-
-
-
-
-  return `/v1/public/distributor/onboarding-documents/${id}`
-}
-
-export const deleteV1PublicDistributorOnboardingDocumentsId = async (id: string,
-    httpDeleteDocumentRequest: HttpDeleteDocumentRequest, options?: RequestInit): Promise<deleteV1PublicDistributorOnboardingDocumentsIdResponse> => {
-
-  return fetcher<deleteV1PublicDistributorOnboardingDocumentsIdResponse>(getDeleteV1PublicDistributorOnboardingDocumentsIdUrl(id),
-  {
-    ...options,
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpDeleteDocumentRequest,)
-  }
-);}
-
-
-
-
-export const getDeleteV1PublicDistributorOnboardingDocumentsIdMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1PublicDistributorOnboardingDocumentsId>>, TError,{id: string;data: HttpDeleteDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1PublicDistributorOnboardingDocumentsId>>, TError,{id: string;data: HttpDeleteDocumentRequest}, TContext> => {
-
-const mutationKey = ['deleteV1PublicDistributorOnboardingDocumentsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1PublicDistributorOnboardingDocumentsId>>, {id: string;data: HttpDeleteDocumentRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  deleteV1PublicDistributorOnboardingDocumentsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteV1PublicDistributorOnboardingDocumentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1PublicDistributorOnboardingDocumentsId>>>
-    export type DeleteV1PublicDistributorOnboardingDocumentsIdMutationBody = HttpDeleteDocumentRequest
-    export type DeleteV1PublicDistributorOnboardingDocumentsIdMutationError = ResponseErrorResponse
-
-    /**
- * @summary Delete distributor onboarding document
- */
-export const useDeleteV1PublicDistributorOnboardingDocumentsId = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1PublicDistributorOnboardingDocumentsId>>, TError,{id: string;data: HttpDeleteDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1PublicDistributorOnboardingDocumentsId>>,
-        TError,
-        {id: string;data: HttpDeleteDocumentRequest},
-        TContext
-      > => {
-      return useMutation(getDeleteV1PublicDistributorOnboardingDocumentsIdMutationOptions(options));
-    }
-    /**
- * Lists public onboarding documents already attached to the current distributor registration token.
- * @summary List distributor onboarding documents
- */
-export type getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse200 = {
-  data: HttpDocumentListEnvelope
-  status: 200
-}
-
-export type getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponseSuccess = (getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse200) & {
-  headers: Headers;
-};
-export type getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponseError = (getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse400) & {
-  headers: Headers;
-};
-
-export type getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse = (getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponseSuccess | getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponseError)
-
-export const getGetV1PublicDistributorOnboardingDocumentsRegistrationTokenUrl = (registrationToken: string,) => {
-
-
-
-
-  return `/v1/public/distributor/onboarding-documents/${registrationToken}`
-}
-
-export const getV1PublicDistributorOnboardingDocumentsRegistrationToken = async (registrationToken: string, options?: RequestInit): Promise<getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse> => {
-
-  return fetcher<getV1PublicDistributorOnboardingDocumentsRegistrationTokenResponse>(getGetV1PublicDistributorOnboardingDocumentsRegistrationTokenUrl(registrationToken),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1PublicDistributorOnboardingDocumentsRegistrationTokenQueryKey = (registrationToken: string,) => {
-    return [
-    `/v1/public/distributor/onboarding-documents/${registrationToken}`
-    ] as const;
-    }
-
-
-export const getGetV1PublicDistributorOnboardingDocumentsRegistrationTokenQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>, TError = ResponseErrorResponse>(registrationToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetV1PublicDistributorOnboardingDocumentsRegistrationTokenQueryKey(registrationToken);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>> = ({ signal }) => getV1PublicDistributorOnboardingDocumentsRegistrationToken(registrationToken, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(registrationToken), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetV1PublicDistributorOnboardingDocumentsRegistrationTokenQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>>
-export type GetV1PublicDistributorOnboardingDocumentsRegistrationTokenQueryError = ResponseErrorResponse
-
-
-/**
- * @summary List distributor onboarding documents
- */
-
-export function useGetV1PublicDistributorOnboardingDocumentsRegistrationToken<TData = Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>, TError = ResponseErrorResponse>(
- registrationToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicDistributorOnboardingDocumentsRegistrationToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetV1PublicDistributorOnboardingDocumentsRegistrationTokenQueryOptions(registrationToken,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-/**
  * Creates a draft distributor account from a verified invitation and sends an OTP to the invited email address.
+
+**Frontend usage:** call with credentials: include, then show the OTP view from next_action=verify_email; the response sets the short-lived HttpOnly login challenge required by /v1/public/distributor/verify-otp.
+
+**Expected outcomes:** returns no registration token and exposes otp_resend_after_seconds for the resend timer.
+
+**Required inputs:**
+- `confirm_password` — string
+- `email` — string
+- `full_name` — string; minimum length 2; maximum length 255
+- `invitation_token` — string
+- `password` — string; minimum length 12
+- `phone` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Start distributor registration
  */
 export type postV1PublicDistributorRegisterResponse201 = {
-  data: HttpRegisterEnvelope
+  data: RegisterEnvelope
   status: 201
 }
 
 export type postV1PublicDistributorRegisterResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1PublicDistributorRegisterResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1PublicDistributorRegisterResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1PublicDistributorRegisterResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1PublicDistributorRegisterResponseSuccess = (postV1PublicDistributorRegisterResponse201) & {
   headers: Headers;
 };
-export type postV1PublicDistributorRegisterResponseError = (postV1PublicDistributorRegisterResponse400 | postV1PublicDistributorRegisterResponse409) & {
+export type postV1PublicDistributorRegisterResponseError = (postV1PublicDistributorRegisterResponse400 | postV1PublicDistributorRegisterResponse409 | postV1PublicDistributorRegisterResponse429 | postV1PublicDistributorRegisterResponse500) & {
   headers: Headers;
 };
-
-export type postV1PublicDistributorRegisterResponse = (postV1PublicDistributorRegisterResponseSuccess | postV1PublicDistributorRegisterResponseError)
 
 export const getPostV1PublicDistributorRegisterUrl = () => {
 
@@ -839,24 +1746,24 @@ export const getPostV1PublicDistributorRegisterUrl = () => {
   return `/v1/public/distributor/register`
 }
 
-export const postV1PublicDistributorRegister = async (httpRegisterRequest: HttpRegisterRequest, options?: RequestInit): Promise<postV1PublicDistributorRegisterResponse> => {
+export const postV1PublicDistributorRegister = async (registerRequest: RegisterRequest, options?: RequestInit): Promise<postV1PublicDistributorRegisterResponseSuccess> => {
 
-  return fetcher<postV1PublicDistributorRegisterResponse>(getPostV1PublicDistributorRegisterUrl(),
+  return fetcher<postV1PublicDistributorRegisterResponseSuccess>(getPostV1PublicDistributorRegisterUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpRegisterRequest,)
+      registerRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicDistributorRegisterMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, TError,{data: HttpRegisterRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, TError,{data: HttpRegisterRequest}, TContext> => {
+export const getPostV1PublicDistributorRegisterMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, TError,{data: RegisterRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, TError,{data: RegisterRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicDistributorRegister'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -868,7 +1775,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, {data: HttpRegisterRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, {data: RegisterRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicDistributorRegister(data,requestOptions)
@@ -882,134 +1789,72 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicDistributorRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>>
-    export type PostV1PublicDistributorRegisterMutationBody = HttpRegisterRequest
-    export type PostV1PublicDistributorRegisterMutationError = ResponseErrorResponse
+    export type PostV1PublicDistributorRegisterMutationBody = RegisterRequest
+    export type PostV1PublicDistributorRegisterMutationError = ErrorResponse
 
     /**
  * @summary Start distributor registration
  */
-export const usePostV1PublicDistributorRegister = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, TError,{data: HttpRegisterRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicDistributorRegister = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorRegister>>, TError,{data: RegisterRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicDistributorRegister>>,
         TError,
-        {data: HttpRegisterRequest},
+        {data: RegisterRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicDistributorRegisterMutationOptions(options));
     }
     /**
- * Regenerates and resends the distributor onboarding OTP for the current registration token.
- * @summary Resend distributor OTP
- */
-export type postV1PublicDistributorResendOtpResponse200 = {
-  data: InternalDistributorAdaptersHttpResendOTPEnvelope
-  status: 200
-}
+ * Completes the password-bound distributor login challenge with the emailed OTP.
 
-export type postV1PublicDistributorResendOtpResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
+**Frontend usage:** call from the OTP screen with credentials: include so the browser sends the short-lived HttpOnly challenge cookie created by /v1/public/auth/login.
 
-export type postV1PublicDistributorResendOtpResponseSuccess = (postV1PublicDistributorResendOtpResponse200) & {
-  headers: Headers;
-};
-export type postV1PublicDistributorResendOtpResponseError = (postV1PublicDistributorResendOtpResponse400) & {
-  headers: Headers;
-};
+**Expected outcomes:** marks the email verified and immediately returns access_token, refresh_token, account_status, kyc_status, and next_action=complete_onboarding; no second login is required.
 
-export type postV1PublicDistributorResendOtpResponse = (postV1PublicDistributorResendOtpResponseSuccess | postV1PublicDistributorResendOtpResponseError)
+**Authorization:** email and OTP alone cannot create a session—the matching HttpOnly challenge cookie is mandatory, single-purpose, short-lived, and consumed on success.
 
-export const getPostV1PublicDistributorResendOtpUrl = () => {
+**Edge cases:** expired or reused challenges return 401; invalid, expired, reused, or attempt-limited OTPs are rejected.
 
+**Required inputs:**
+- `email` — string
+- `otp_code` — string
 
-
-
-  return `/v1/public/distributor/resend-otp`
-}
-
-export const postV1PublicDistributorResendOtp = async (internalDistributorAdaptersHttpResendOTPRequest: InternalDistributorAdaptersHttpResendOTPRequest, options?: RequestInit): Promise<postV1PublicDistributorResendOtpResponse> => {
-
-  return fetcher<postV1PublicDistributorResendOtpResponse>(getPostV1PublicDistributorResendOtpUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      internalDistributorAdaptersHttpResendOTPRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1PublicDistributorResendOtpMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorResendOtp>>, TError,{data: InternalDistributorAdaptersHttpResendOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorResendOtp>>, TError,{data: InternalDistributorAdaptersHttpResendOTPRequest}, TContext> => {
-
-const mutationKey = ['postV1PublicDistributorResendOtp'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorResendOtp>>, {data: InternalDistributorAdaptersHttpResendOTPRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1PublicDistributorResendOtp(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1PublicDistributorResendOtpMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicDistributorResendOtp>>>
-    export type PostV1PublicDistributorResendOtpMutationBody = InternalDistributorAdaptersHttpResendOTPRequest
-    export type PostV1PublicDistributorResendOtpMutationError = ResponseErrorResponse
-
-    /**
- * @summary Resend distributor OTP
- */
-export const usePostV1PublicDistributorResendOtp = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorResendOtp>>, TError,{data: InternalDistributorAdaptersHttpResendOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicDistributorResendOtp>>,
-        TError,
-        {data: InternalDistributorAdaptersHttpResendOTPRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1PublicDistributorResendOtpMutationOptions(options));
-    }
-    /**
- * Verifies the distributor onboarding OTP before business-profile and document submission steps continue.
- * @summary Verify distributor OTP
+**Optional inputs:**
+None.
+ * @summary Verify distributor email and complete login
  */
 export type postV1PublicDistributorVerifyOtpResponse200 = {
-  data: ResponseEmptyResponse
+  data: LoginEnvelope
   status: 200
 }
 
 export type postV1PublicDistributorVerifyOtpResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type postV1PublicDistributorVerifyOtpResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1PublicDistributorVerifyOtpResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1PublicDistributorVerifyOtpResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1PublicDistributorVerifyOtpResponseSuccess = (postV1PublicDistributorVerifyOtpResponse200) & {
   headers: Headers;
 };
-export type postV1PublicDistributorVerifyOtpResponseError = (postV1PublicDistributorVerifyOtpResponse400) & {
+export type postV1PublicDistributorVerifyOtpResponseError = (postV1PublicDistributorVerifyOtpResponse400 | postV1PublicDistributorVerifyOtpResponse401 | postV1PublicDistributorVerifyOtpResponse429 | postV1PublicDistributorVerifyOtpResponse500) & {
   headers: Headers;
 };
-
-export type postV1PublicDistributorVerifyOtpResponse = (postV1PublicDistributorVerifyOtpResponseSuccess | postV1PublicDistributorVerifyOtpResponseError)
 
 export const getPostV1PublicDistributorVerifyOtpUrl = () => {
 
@@ -1019,24 +1864,24 @@ export const getPostV1PublicDistributorVerifyOtpUrl = () => {
   return `/v1/public/distributor/verify-otp`
 }
 
-export const postV1PublicDistributorVerifyOtp = async (httpVerifyOTPRequest: HttpVerifyOTPRequest, options?: RequestInit): Promise<postV1PublicDistributorVerifyOtpResponse> => {
+export const postV1PublicDistributorVerifyOtp = async (distributorVerifyOTPRequest: DistributorVerifyOTPRequest, options?: RequestInit): Promise<postV1PublicDistributorVerifyOtpResponseSuccess> => {
 
-  return fetcher<postV1PublicDistributorVerifyOtpResponse>(getPostV1PublicDistributorVerifyOtpUrl(),
+  return fetcher<postV1PublicDistributorVerifyOtpResponseSuccess>(getPostV1PublicDistributorVerifyOtpUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpVerifyOTPRequest,)
+      distributorVerifyOTPRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicDistributorVerifyOtpMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, TError,{data: HttpVerifyOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, TError,{data: HttpVerifyOTPRequest}, TContext> => {
+export const getPostV1PublicDistributorVerifyOtpMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, TError,{data: DistributorVerifyOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, TError,{data: DistributorVerifyOTPRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicDistributorVerifyOtp'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1048,7 +1893,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, {data: HttpVerifyOTPRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, {data: DistributorVerifyOTPRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicDistributorVerifyOtp(data,requestOptions)
@@ -1062,49 +1907,78 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicDistributorVerifyOtpMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>>
-    export type PostV1PublicDistributorVerifyOtpMutationBody = HttpVerifyOTPRequest
-    export type PostV1PublicDistributorVerifyOtpMutationError = ResponseErrorResponse
+    export type PostV1PublicDistributorVerifyOtpMutationBody = DistributorVerifyOTPRequest
+    export type PostV1PublicDistributorVerifyOtpMutationError = ErrorResponse
 
     /**
- * @summary Verify distributor OTP
+ * @summary Verify distributor email and complete login
  */
-export const usePostV1PublicDistributorVerifyOtp = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, TError,{data: HttpVerifyOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicDistributorVerifyOtp = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>, TError,{data: DistributorVerifyOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicDistributorVerifyOtp>>,
         TError,
-        {data: HttpVerifyOTPRequest},
+        {data: DistributorVerifyOTPRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicDistributorVerifyOtpMutationOptions(options));
     }
     /**
- * Validates a supplier-issued distributor invitation token before the signup form is shown.
+ * Validates a supplier-issued distributor invitation token before the signup form is shown. An invitation does not create a distributor login or password; those are created when the invitee submits distributor registration.
+
+**Frontend usage:**
+Call this operation when opening the **Verify distributor invitation** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `token` (query) — string; Invitation token; Invitation token
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Verify distributor invitation
  */
 export type getV1PublicInvitationVerifyResponse200 = {
-  data: HttpVerifyEnvelope
+  data: VerifyEnvelope
   status: 200
 }
 
 export type getV1PublicInvitationVerifyResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1PublicInvitationVerifyResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
+}
+
+export type getV1PublicInvitationVerifyResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1PublicInvitationVerifyResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1PublicInvitationVerifyResponseSuccess = (getV1PublicInvitationVerifyResponse200) & {
   headers: Headers;
 };
-export type getV1PublicInvitationVerifyResponseError = (getV1PublicInvitationVerifyResponse400 | getV1PublicInvitationVerifyResponse404) & {
+export type getV1PublicInvitationVerifyResponseError = (getV1PublicInvitationVerifyResponse400 | getV1PublicInvitationVerifyResponse404 | getV1PublicInvitationVerifyResponse429 | getV1PublicInvitationVerifyResponse500) & {
   headers: Headers;
 };
-
-export type getV1PublicInvitationVerifyResponse = (getV1PublicInvitationVerifyResponseSuccess | getV1PublicInvitationVerifyResponseError)
 
 export const getGetV1PublicInvitationVerifyUrl = (params: GetV1PublicInvitationVerifyParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -1121,9 +1995,9 @@ export const getGetV1PublicInvitationVerifyUrl = (params: GetV1PublicInvitationV
   return stringifiedParams.length > 0 ? `/v1/public/invitation/verify?${stringifiedParams}` : `/v1/public/invitation/verify`
 }
 
-export const getV1PublicInvitationVerify = async (params: GetV1PublicInvitationVerifyParams, options?: RequestInit): Promise<getV1PublicInvitationVerifyResponse> => {
+export const getV1PublicInvitationVerify = async (params: GetV1PublicInvitationVerifyParams, options?: RequestInit): Promise<getV1PublicInvitationVerifyResponseSuccess> => {
 
-  return fetcher<getV1PublicInvitationVerifyResponse>(getGetV1PublicInvitationVerifyUrl(params),
+  return fetcher<getV1PublicInvitationVerifyResponseSuccess>(getGetV1PublicInvitationVerifyUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1143,7 +2017,7 @@ export const getGetV1PublicInvitationVerifyQueryKey = (params?: GetV1PublicInvit
     }
 
 
-export const getGetV1PublicInvitationVerifyQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError = ResponseErrorResponse>(params: GetV1PublicInvitationVerifyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1PublicInvitationVerifyQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError = ErrorResponse>(params: GetV1PublicInvitationVerifyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1162,14 +2036,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1PublicInvitationVerifyQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PublicInvitationVerify>>>
-export type GetV1PublicInvitationVerifyQueryError = ResponseErrorResponse
+export type GetV1PublicInvitationVerifyQueryError = ErrorResponse
 
 
 /**
  * @summary Verify distributor invitation
  */
 
-export function useGetV1PublicInvitationVerify<TData = Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError = ResponseErrorResponse>(
+export function useGetV1PublicInvitationVerify<TData = Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError = ErrorResponse>(
  params: GetV1PublicInvitationVerifyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicInvitationVerify>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

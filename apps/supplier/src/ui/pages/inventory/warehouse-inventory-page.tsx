@@ -38,7 +38,7 @@ export function WarehouseInventoryPage() {
   const [deleting, setDeleting] = useState<Warehouse | null>(null);
 
   const rows = useMemo<Warehouse[]>(() => {
-    return (listResult?.items ?? []).map(toWarehouseViewModel);
+    return (listResult ?? []).map(toWarehouseViewModel);
   }, [listResult]);
 
   const summary = useMemo(

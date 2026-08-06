@@ -477,15 +477,9 @@ function automationOptionFromStatus(status: string | undefined): AutomationOptio
 /**
  * Maps a fetched product (GET /products/:id response) onto the wizard's draft shape,
  * so editing an existing product starts pre-filled instead of blank.
- *
- * Known gap, intentionally not fabricated: the product response only exposes
- * `warehouse_ids` (no per-warehouse quantity/storage location), since
- * `warehouse_allocations` is a write-only field on the upsert request. Each
- * known warehouse is restored with an empty quantity/storage location for the
- * user to re-enter.
  */
 export function productToDraft(product: productApi.Product): NewProductDraft {
-  const warehouseIds = product.warehouse_ids?.length ? product.warehouse_ids : product.warehouse_id ? [product.warehouse_id] : [];
+  const warehouseAllocations = product.warehouse_allocations ?? [];
 
   return {
     name: product.name ?? '',
@@ -494,7 +488,7 @@ export function productToDraft(product: productApi.Product): NewProductDraft {
     measuringUnit: product.unit ?? '',
     packagingType: product.packaging_type ?? '',
     description: product.description ?? '',
-    variants: (product.product_variants ?? []).map((variant, index) => ({
+    variants: (product.variants ?? []).map((variant, index) => ({
       id: draftRowId('var', index),
       name: variant.display_name,
       displayName: variant.display_name,
@@ -515,12 +509,12 @@ export function productToDraft(product: productApi.Product): NewProductDraft {
     taxEnabled: Boolean(product.tax_configuration),
     taxType: product.tax_configuration && product.tax_configuration.tax_type !== 'None' ? product.tax_configuration.tax_type : '',
     taxRate: product.tax_configuration ? String(product.tax_configuration.tax_rate) : '',
-    warehouseAllocations: warehouseIds.length
-      ? warehouseIds.map((warehouseId, index) => ({
+    warehouseAllocations: warehouseAllocations.length
+      ? warehouseAllocations.map((allocation, index) => ({
           id: draftRowId('wa', index),
-          warehouseId,
-          allocatedQuantity: '',
-          storageLocation: '',
+          warehouseId: allocation.warehouse_id,
+          allocatedQuantity: allocation.quantity != null ? String(allocation.quantity) : '',
+          storageLocation: allocation.storage_location ?? '',
         }))
       : [{ id: 'wa-1', warehouseId: '', allocatedQuantity: '', storageLocation: '' }],
     visibility: VISIBILITY_FROM_API[product.distributor_visibility ?? ''] ?? 'all',

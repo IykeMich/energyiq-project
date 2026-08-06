@@ -1,7 +1,6 @@
 import type {
   Warehouse,
   WarehouseListParams,
-  WarehouseListResult,
   WarehouseStats,
   WarehouseCreateRequest,
   WarehouseUpdateRequest,
@@ -25,7 +24,7 @@ export interface WarehouseApi {
   getWarehouse(id: string): Promise<Warehouse>;
   updateWarehouse(id: string, req: WarehouseUpdateRequest): Promise<Warehouse>;
   deleteWarehouse(id: string): Promise<void>;
-  listWarehouses(params?: WarehouseListParams): Promise<WarehouseListResult>;
+  listWarehouses(params?: WarehouseListParams): Promise<Warehouse[]>;
   getWarehouseStats(): Promise<WarehouseStats>;
   listWarehouseProducts(
     id: string,

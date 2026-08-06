@@ -12,6 +12,6 @@ export type GetV1DistributorOrderListStatsPaymentStatus = typeof GetV1Distributo
 export const GetV1DistributorOrderListStatsPaymentStatus = {
   pending: 'pending',
   paid: 'paid',
+  refunded: 'refunded',
   cancelled: 'cancelled',
-  disputed: 'disputed',
 } as const;

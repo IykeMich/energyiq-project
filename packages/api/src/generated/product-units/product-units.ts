@@ -20,13 +20,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  EmptyResponse,
+  ErrorResponse,
   GetV1ProductUnitsParams,
-  HttpProductUnitListResponse,
-  HttpProductUnitResponse,
-  HttpUnitCreateRequest,
-  HttpUnitUpdateRequest,
-  ResponseEmptyResponse,
-  ResponseErrorResponse
+  ProductUnitListResponse,
+  ProductUnitResponse,
+  UnitCreateRequest,
+  UnitUpdateRequest
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -37,32 +37,73 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Returns supplier-scoped product units for product creation forms and catalog filters. Filters: status accepts active or inactive; type matches values like Volume; search matches unit_name, short_code or type. Expected outcomes: data is always an array, empty when no units match. Product create/update should pass unit as the selected active unit short_code.
+ * Returns supplier-scoped product units for product creation forms and catalog filters.
+
+**Filters:** status accepts active or inactive; type matches values like Volume; search matches unit_name, short_code or type.
+
+**Expected outcomes:** data is always an array, empty when no units match. Product create/update should pass unit as the selected active unit short_code.
+
+**Frontend usage:**
+Use this operation to populate the **List product units** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `search` (query) — string; Search by unit name, short code, or type; Search by unit name, short code, or type
+- `status` (query) — string; allowed: `active`, `inactive`; Filter by unit status; Filter by unit status
+- `type` (query) — string; Filter by unit type, for example Volume; Filter by unit type, for example Volume
+
+**Enum values:**
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List product units
  */
 export type getV1ProductUnitsResponse200 = {
-  data: HttpProductUnitListResponse
+  data: ProductUnitListResponse
   status: 200
 }
 
 export type getV1ProductUnitsResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1ProductUnitsResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
+}
+
+export type getV1ProductUnitsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductUnitsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductUnitsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ProductUnitsResponseSuccess = (getV1ProductUnitsResponse200) & {
   headers: Headers;
 };
-export type getV1ProductUnitsResponseError = (getV1ProductUnitsResponse400 | getV1ProductUnitsResponse401) & {
+export type getV1ProductUnitsResponseError = (getV1ProductUnitsResponse400 | getV1ProductUnitsResponse401 | getV1ProductUnitsResponse403 | getV1ProductUnitsResponse429 | getV1ProductUnitsResponse500) & {
   headers: Headers;
 };
-
-export type getV1ProductUnitsResponse = (getV1ProductUnitsResponseSuccess | getV1ProductUnitsResponseError)
 
 export const getGetV1ProductUnitsUrl = (params?: GetV1ProductUnitsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -79,9 +120,9 @@ export const getGetV1ProductUnitsUrl = (params?: GetV1ProductUnitsParams,) => {
   return stringifiedParams.length > 0 ? `/v1/product/units?${stringifiedParams}` : `/v1/product/units`
 }
 
-export const getV1ProductUnits = async (params?: GetV1ProductUnitsParams, options?: RequestInit): Promise<getV1ProductUnitsResponse> => {
+export const getV1ProductUnits = async (params?: GetV1ProductUnitsParams, options?: RequestInit): Promise<getV1ProductUnitsResponseSuccess> => {
 
-  return fetcher<getV1ProductUnitsResponse>(getGetV1ProductUnitsUrl(params),
+  return fetcher<getV1ProductUnitsResponseSuccess>(getGetV1ProductUnitsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -101,7 +142,7 @@ export const getGetV1ProductUnitsQueryKey = (params?: GetV1ProductUnitsParams,) 
     }
 
 
-export const getGetV1ProductUnitsQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductUnits>>, TError = ResponseErrorResponse>(params?: GetV1ProductUnitsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnits>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ProductUnitsQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductUnits>>, TError = ErrorResponse>(params?: GetV1ProductUnitsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnits>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -120,14 +161,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ProductUnitsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductUnits>>>
-export type GetV1ProductUnitsQueryError = ResponseErrorResponse
+export type GetV1ProductUnitsQueryError = ErrorResponse
 
 
 /**
  * @summary List product units
  */
 
-export function useGetV1ProductUnits<TData = Awaited<ReturnType<typeof getV1ProductUnits>>, TError = ResponseErrorResponse>(
+export function useGetV1ProductUnits<TData = Awaited<ReturnType<typeof getV1ProductUnits>>, TError = ErrorResponse>(
  params?: GetV1ProductUnitsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnits>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -146,36 +187,78 @@ export function useGetV1ProductUnits<TData = Awaited<ReturnType<typeof getV1Prod
 
 /**
  * Creates a supplier-scoped unit of measure. Its active short_code is passed as unit during product creation; duplicate codes return 409.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create product unit** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `short_code` — string; minimum length 1; maximum length 20
+- `type` — string; minimum length 1; maximum length 80
+- `unit_name` — string; minimum length 1; maximum length 120
+
+**Optional inputs:**
+- `description` — string; maximum length 500
+- `status` — string; allowed: `active`, `inactive`
+
+**Enum values:**
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create product unit
  */
 export type postV1ProductUnitsResponse201 = {
-  data: HttpProductUnitResponse
+  data: ProductUnitResponse
   status: 201
 }
 
 export type postV1ProductUnitsResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1ProductUnitsResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1ProductUnitsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1ProductUnitsResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1ProductUnitsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ProductUnitsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1ProductUnitsResponseSuccess = (postV1ProductUnitsResponse201) & {
   headers: Headers;
 };
-export type postV1ProductUnitsResponseError = (postV1ProductUnitsResponse400 | postV1ProductUnitsResponse401 | postV1ProductUnitsResponse409) & {
+export type postV1ProductUnitsResponseError = (postV1ProductUnitsResponse400 | postV1ProductUnitsResponse401 | postV1ProductUnitsResponse403 | postV1ProductUnitsResponse409 | postV1ProductUnitsResponse429 | postV1ProductUnitsResponse500) & {
   headers: Headers;
 };
-
-export type postV1ProductUnitsResponse = (postV1ProductUnitsResponseSuccess | postV1ProductUnitsResponseError)
 
 export const getPostV1ProductUnitsUrl = () => {
 
@@ -185,24 +268,24 @@ export const getPostV1ProductUnitsUrl = () => {
   return `/v1/product/units`
 }
 
-export const postV1ProductUnits = async (httpUnitCreateRequest: HttpUnitCreateRequest, options?: RequestInit): Promise<postV1ProductUnitsResponse> => {
+export const postV1ProductUnits = async (unitCreateRequest: UnitCreateRequest, options?: RequestInit): Promise<postV1ProductUnitsResponseSuccess> => {
 
-  return fetcher<postV1ProductUnitsResponse>(getPostV1ProductUnitsUrl(),
+  return fetcher<postV1ProductUnitsResponseSuccess>(getPostV1ProductUnitsUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpUnitCreateRequest,)
+      unitCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1ProductUnitsMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductUnits>>, TError,{data: HttpUnitCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductUnits>>, TError,{data: HttpUnitCreateRequest}, TContext> => {
+export const getPostV1ProductUnitsMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductUnits>>, TError,{data: UnitCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductUnits>>, TError,{data: UnitCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1ProductUnits'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -214,7 +297,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductUnits>>, {data: HttpUnitCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductUnits>>, {data: UnitCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1ProductUnits(data,requestOptions)
@@ -228,271 +311,92 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1ProductUnitsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ProductUnits>>>
-    export type PostV1ProductUnitsMutationBody = HttpUnitCreateRequest
-    export type PostV1ProductUnitsMutationError = ResponseErrorResponse
+    export type PostV1ProductUnitsMutationBody = UnitCreateRequest
+    export type PostV1ProductUnitsMutationError = ErrorResponse
 
     /**
  * @summary Create product unit
  */
-export const usePostV1ProductUnits = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductUnits>>, TError,{data: HttpUnitCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1ProductUnits = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductUnits>>, TError,{data: UnitCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ProductUnits>>,
         TError,
-        {data: HttpUnitCreateRequest},
+        {data: UnitCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1ProductUnitsMutationOptions(options));
     }
     /**
- * Returns one supplier-owned product unit. Expected outcomes: response includes unit_name, type, short_code and status for edit screens. Unknown or cross-supplier IDs return 404/403.
- * @summary Get product unit
- */
-export type getV1ProductUnitsIdResponse200 = {
-  data: HttpProductUnitResponse
-  status: 200
-}
+ * Deletes a supplier-owned unit of measure.
 
-export type getV1ProductUnitsIdResponse401 = {
-  data: ResponseErrorResponse
-  status: 401
-}
+**Prerequisites:** unit must not be needed by new product creation flows. Existing products retain their string unit value; prefer inactivating a unit when historical reporting matters.
 
-export type getV1ProductUnitsIdResponse403 = {
-  data: ResponseErrorResponse
-  status: 403
-}
+**Frontend usage:**
+Call this operation only after confirmation of **Delete product unit**; remove or refresh the affected item after success.
 
-export type getV1ProductUnitsIdResponse404 = {
-  data: ResponseErrorResponse
-  status: 404
-}
+**Required inputs:**
+- `id` (path) — string; Product unit ID; Product unit ID
 
-export type getV1ProductUnitsIdResponseSuccess = (getV1ProductUnitsIdResponse200) & {
-  headers: Headers;
-};
-export type getV1ProductUnitsIdResponseError = (getV1ProductUnitsIdResponse401 | getV1ProductUnitsIdResponse403 | getV1ProductUnitsIdResponse404) & {
-  headers: Headers;
-};
+**Optional inputs:**
+None.
 
-export type getV1ProductUnitsIdResponse = (getV1ProductUnitsIdResponseSuccess | getV1ProductUnitsIdResponseError)
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
 
-export const getGetV1ProductUnitsIdUrl = (id: string,) => {
+**Expected outcomes:**
+- `200` — OK.
 
-
-
-
-  return `/v1/product/units/${id}`
-}
-
-export const getV1ProductUnitsId = async (id: string, options?: RequestInit): Promise<getV1ProductUnitsIdResponse> => {
-
-  return fetcher<getV1ProductUnitsIdResponse>(getGetV1ProductUnitsIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1ProductUnitsIdQueryKey = (id: string,) => {
-    return [
-    `/v1/product/units/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1ProductUnitsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError = ResponseErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ProductUnitsIdQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ProductUnitsId>>> = ({ signal }) => getV1ProductUnitsId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetV1ProductUnitsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductUnitsId>>>
-export type GetV1ProductUnitsIdQueryError = ResponseErrorResponse
-
-
-/**
- * @summary Get product unit
- */
-
-export function useGetV1ProductUnitsId<TData = Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError = ResponseErrorResponse>(
- id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetV1ProductUnitsIdQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-/**
- * Updates a unit of measure. Prerequisites: unit must belong to the authenticated supplier. Enum values: status must be active or inactive. Edge cases: setting status to inactive prevents future product create/update calls from using this short_code; existing products retain their stored unit value for history.
- * @summary Update product unit
- */
-export type putV1ProductUnitsIdResponse200 = {
-  data: HttpProductUnitResponse
-  status: 200
-}
-
-export type putV1ProductUnitsIdResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type putV1ProductUnitsIdResponse401 = {
-  data: ResponseErrorResponse
-  status: 401
-}
-
-export type putV1ProductUnitsIdResponse403 = {
-  data: ResponseErrorResponse
-  status: 403
-}
-
-export type putV1ProductUnitsIdResponse404 = {
-  data: ResponseErrorResponse
-  status: 404
-}
-
-export type putV1ProductUnitsIdResponse409 = {
-  data: ResponseErrorResponse
-  status: 409
-}
-
-export type putV1ProductUnitsIdResponseSuccess = (putV1ProductUnitsIdResponse200) & {
-  headers: Headers;
-};
-export type putV1ProductUnitsIdResponseError = (putV1ProductUnitsIdResponse400 | putV1ProductUnitsIdResponse401 | putV1ProductUnitsIdResponse403 | putV1ProductUnitsIdResponse404 | putV1ProductUnitsIdResponse409) & {
-  headers: Headers;
-};
-
-export type putV1ProductUnitsIdResponse = (putV1ProductUnitsIdResponseSuccess | putV1ProductUnitsIdResponseError)
-
-export const getPutV1ProductUnitsIdUrl = (id: string,) => {
-
-
-
-
-  return `/v1/product/units/${id}`
-}
-
-export const putV1ProductUnitsId = async (id: string,
-    httpUnitUpdateRequest: HttpUnitUpdateRequest, options?: RequestInit): Promise<putV1ProductUnitsIdResponse> => {
-
-  return fetcher<putV1ProductUnitsIdResponse>(getPutV1ProductUnitsIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpUnitUpdateRequest,)
-  }
-);}
-
-
-
-
-export const getPutV1ProductUnitsIdMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUnitsId>>, TError,{id: string;data: HttpUnitUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUnitsId>>, TError,{id: string;data: HttpUnitUpdateRequest}, TContext> => {
-
-const mutationKey = ['putV1ProductUnitsId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductUnitsId>>, {id: string;data: HttpUnitUpdateRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1ProductUnitsId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1ProductUnitsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ProductUnitsId>>>
-    export type PutV1ProductUnitsIdMutationBody = HttpUnitUpdateRequest
-    export type PutV1ProductUnitsIdMutationError = ResponseErrorResponse
-
-    /**
- * @summary Update product unit
- */
-export const usePutV1ProductUnitsId = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUnitsId>>, TError,{id: string;data: HttpUnitUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof putV1ProductUnitsId>>,
-        TError,
-        {id: string;data: HttpUnitUpdateRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1ProductUnitsIdMutationOptions(options));
-    }
-    /**
- * Deletes a supplier-owned unit of measure. Prerequisites: unit must not be needed by new product creation flows. Existing products retain their string unit value; prefer inactivating a unit when historical reporting matters.
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete product unit
  */
 export type deleteV1ProductUnitsIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
+export type deleteV1ProductUnitsIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
 export type deleteV1ProductUnitsIdResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
 export type deleteV1ProductUnitsIdResponse403 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 403
 }
 
 export type deleteV1ProductUnitsIdResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
+}
+
+export type deleteV1ProductUnitsIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1ProductUnitsIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1ProductUnitsIdResponseSuccess = (deleteV1ProductUnitsIdResponse200) & {
   headers: Headers;
 };
-export type deleteV1ProductUnitsIdResponseError = (deleteV1ProductUnitsIdResponse401 | deleteV1ProductUnitsIdResponse403 | deleteV1ProductUnitsIdResponse404) & {
+export type deleteV1ProductUnitsIdResponseError = (deleteV1ProductUnitsIdResponse400 | deleteV1ProductUnitsIdResponse401 | deleteV1ProductUnitsIdResponse403 | deleteV1ProductUnitsIdResponse404 | deleteV1ProductUnitsIdResponse429 | deleteV1ProductUnitsIdResponse500) & {
   headers: Headers;
 };
-
-export type deleteV1ProductUnitsIdResponse = (deleteV1ProductUnitsIdResponseSuccess | deleteV1ProductUnitsIdResponseError)
 
 export const getDeleteV1ProductUnitsIdUrl = (id: string,) => {
 
@@ -502,9 +406,9 @@ export const getDeleteV1ProductUnitsIdUrl = (id: string,) => {
   return `/v1/product/units/${id}`
 }
 
-export const deleteV1ProductUnitsId = async (id: string, options?: RequestInit): Promise<deleteV1ProductUnitsIdResponse> => {
+export const deleteV1ProductUnitsId = async (id: string, options?: RequestInit): Promise<deleteV1ProductUnitsIdResponseSuccess> => {
 
-  return fetcher<deleteV1ProductUnitsIdResponse>(getDeleteV1ProductUnitsIdUrl(id),
+  return fetcher<deleteV1ProductUnitsIdResponseSuccess>(getDeleteV1ProductUnitsIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -516,7 +420,7 @@ export const deleteV1ProductUnitsId = async (id: string, options?: RequestInit):
 
 
 
-export const getDeleteV1ProductUnitsIdMutationOptions = <TError = ResponseErrorResponse,
+export const getDeleteV1ProductUnitsIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductUnitsId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductUnitsId>>, TError,{id: string}, TContext> => {
 
@@ -545,12 +449,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1ProductUnitsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1ProductUnitsId>>>
 
-    export type DeleteV1ProductUnitsIdMutationError = ResponseErrorResponse
+    export type DeleteV1ProductUnitsIdMutationError = ErrorResponse
 
     /**
  * @summary Delete product unit
  */
-export const useDeleteV1ProductUnitsId = <TError = ResponseErrorResponse,
+export const useDeleteV1ProductUnitsId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductUnitsId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1ProductUnitsId>>,
@@ -559,4 +463,289 @@ export const useDeleteV1ProductUnitsId = <TError = ResponseErrorResponse,
         TContext
       > => {
       return useMutation(getDeleteV1ProductUnitsIdMutationOptions(options));
+    }
+    /**
+ * Returns one supplier-owned product unit.
+
+**Expected outcomes:** response includes unit_name, type, short_code and status for edit screens. Unknown or cross-supplier IDs return 404/403.
+
+**Frontend usage:**
+Call this operation when opening the **Get product unit** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Product unit ID; Product unit ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get product unit
+ */
+export type getV1ProductUnitsIdResponse200 = {
+  data: ProductUnitResponse
+  status: 200
+}
+
+export type getV1ProductUnitsIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1ProductUnitsIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ProductUnitsIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductUnitsIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1ProductUnitsIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductUnitsIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1ProductUnitsIdResponseSuccess = (getV1ProductUnitsIdResponse200) & {
+  headers: Headers;
+};
+export type getV1ProductUnitsIdResponseError = (getV1ProductUnitsIdResponse400 | getV1ProductUnitsIdResponse401 | getV1ProductUnitsIdResponse403 | getV1ProductUnitsIdResponse404 | getV1ProductUnitsIdResponse429 | getV1ProductUnitsIdResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1ProductUnitsIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/product/units/${id}`
+}
+
+export const getV1ProductUnitsId = async (id: string, options?: RequestInit): Promise<getV1ProductUnitsIdResponseSuccess> => {
+
+  return fetcher<getV1ProductUnitsIdResponseSuccess>(getGetV1ProductUnitsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ProductUnitsIdQueryKey = (id: string,) => {
+    return [
+    `/v1/product/units/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1ProductUnitsIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ProductUnitsIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ProductUnitsId>>> = ({ signal }) => getV1ProductUnitsId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1ProductUnitsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductUnitsId>>>
+export type GetV1ProductUnitsIdQueryError = ErrorResponse
+
+
+/**
+ * @summary Get product unit
+ */
+
+export function useGetV1ProductUnitsId<TData = Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError = ErrorResponse>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductUnitsId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1ProductUnitsIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Updates a unit of measure.
+
+**Prerequisites:** unit must belong to the authenticated supplier.
+
+**Enum values:** status must be active or inactive.
+
+**Edge cases:** setting status to inactive prevents future product create/update calls from using this short_code; existing products retain their stored unit value for history.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update product unit** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `id` (path) — string; Product unit ID; Product unit ID
+- `short_code` — string; minimum length 1; maximum length 20
+- `status` — string; allowed: `active`, `inactive`
+- `type` — string; minimum length 1; maximum length 80
+- `unit_name` — string; minimum length 1; maximum length 120
+
+**Optional inputs:**
+- `description` — string; maximum length 500
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+ * @summary Update product unit
+ */
+export type putV1ProductUnitsIdResponse200 = {
+  data: ProductUnitResponse
+  status: 200
+}
+
+export type putV1ProductUnitsIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1ProductUnitsIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1ProductUnitsIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1ProductUnitsIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type putV1ProductUnitsIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type putV1ProductUnitsIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1ProductUnitsIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type putV1ProductUnitsIdResponseSuccess = (putV1ProductUnitsIdResponse200) & {
+  headers: Headers;
+};
+export type putV1ProductUnitsIdResponseError = (putV1ProductUnitsIdResponse400 | putV1ProductUnitsIdResponse401 | putV1ProductUnitsIdResponse403 | putV1ProductUnitsIdResponse404 | putV1ProductUnitsIdResponse409 | putV1ProductUnitsIdResponse429 | putV1ProductUnitsIdResponse500) & {
+  headers: Headers;
+};
+
+export const getPutV1ProductUnitsIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/product/units/${id}`
+}
+
+export const putV1ProductUnitsId = async (id: string,
+    unitUpdateRequest: UnitUpdateRequest, options?: RequestInit): Promise<putV1ProductUnitsIdResponseSuccess> => {
+
+  return fetcher<putV1ProductUnitsIdResponseSuccess>(getPutV1ProductUnitsIdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      unitUpdateRequest,)
+  }
+);}
+
+
+
+
+export const getPutV1ProductUnitsIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUnitsId>>, TError,{id: string;data: UnitUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUnitsId>>, TError,{id: string;data: UnitUpdateRequest}, TContext> => {
+
+const mutationKey = ['putV1ProductUnitsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductUnitsId>>, {id: string;data: UnitUpdateRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putV1ProductUnitsId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1ProductUnitsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ProductUnitsId>>>
+    export type PutV1ProductUnitsIdMutationBody = UnitUpdateRequest
+    export type PutV1ProductUnitsIdMutationError = ErrorResponse
+
+    /**
+ * @summary Update product unit
+ */
+export const usePutV1ProductUnitsId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductUnitsId>>, TError,{id: string;data: UnitUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putV1ProductUnitsId>>,
+        TError,
+        {id: string;data: UnitUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1ProductUnitsIdMutationOptions(options));
     }

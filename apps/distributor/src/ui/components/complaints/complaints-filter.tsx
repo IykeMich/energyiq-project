@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@energyiq/ui';
-import type { AppDistributorComplaintFilterOption } from '@energyiq/api/generated/schemas';
+import type { DistributorComplaintFilterOption as AppDistributorComplaintFilterOption } from '@energyiq/api/generated/schemas';
 import { ALL_STATUSES } from './complaints-mocks';
 
 interface ComplaintsFilterProps {

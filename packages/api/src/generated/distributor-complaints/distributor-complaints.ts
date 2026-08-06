@@ -20,14 +20,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ComplaintDashboardResponse,
+  ComplaintListResponse,
+  ComplaintResponse,
+  ErrorResponse,
+  EscalateRequest,
   GetV1DistributorComplaintListParams,
   GetV1DistributorComplaintOverviewParams,
-  HttpComplaintDashboardResponse,
-  HttpComplaintListResponse,
-  HttpComplaintResponse,
-  HttpEscalateRequest,
-  HttpRaiseRequest,
-  ResponseErrorResponse
+  RaiseRequest
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -39,19 +39,66 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Closes a resolved complaint from the distributor side and returns the updated distributor-facing detail payload.
+
+**Frontend usage:**
+Call this operation from the **Close distributor complaint** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Complaint ID; Complaint ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Close distributor complaint
  */
 export type postV1DistributorComplaintCloseIdResponse200 = {
-  data: HttpComplaintResponse
+  data: ComplaintResponse
   status: 200
+}
+
+export type postV1DistributorComplaintCloseIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DistributorComplaintCloseIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DistributorComplaintCloseIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DistributorComplaintCloseIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DistributorComplaintCloseIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DistributorComplaintCloseIdResponseSuccess = (postV1DistributorComplaintCloseIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1DistributorComplaintCloseIdResponse = (postV1DistributorComplaintCloseIdResponseSuccess)
+export type postV1DistributorComplaintCloseIdResponseError = (postV1DistributorComplaintCloseIdResponse400 | postV1DistributorComplaintCloseIdResponse401 | postV1DistributorComplaintCloseIdResponse403 | postV1DistributorComplaintCloseIdResponse429 | postV1DistributorComplaintCloseIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1DistributorComplaintCloseIdUrl = (id: string,) => {
 
@@ -61,9 +108,9 @@ export const getPostV1DistributorComplaintCloseIdUrl = (id: string,) => {
   return `/v1/distributor/complaint/close/${id}`
 }
 
-export const postV1DistributorComplaintCloseId = async (id: string, options?: RequestInit): Promise<postV1DistributorComplaintCloseIdResponse> => {
+export const postV1DistributorComplaintCloseId = async (id: string, options?: RequestInit): Promise<postV1DistributorComplaintCloseIdResponseSuccess> => {
 
-  return fetcher<postV1DistributorComplaintCloseIdResponse>(getPostV1DistributorComplaintCloseIdUrl(id),
+  return fetcher<postV1DistributorComplaintCloseIdResponseSuccess>(getPostV1DistributorComplaintCloseIdUrl(id),
   {
     ...options,
     method: 'POST'
@@ -75,7 +122,7 @@ export const postV1DistributorComplaintCloseId = async (id: string, options?: Re
 
 
 
-export const getPostV1DistributorComplaintCloseIdMutationOptions = <TError = unknown,
+export const getPostV1DistributorComplaintCloseIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCloseId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCloseId>>, TError,{id: string}, TContext> => {
 
@@ -104,12 +151,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1DistributorComplaintCloseIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DistributorComplaintCloseId>>>
 
-    export type PostV1DistributorComplaintCloseIdMutationError = unknown
+    export type PostV1DistributorComplaintCloseIdMutationError = ErrorResponse
 
     /**
  * @summary Close distributor complaint
  */
-export const usePostV1DistributorComplaintCloseId = <TError = unknown,
+export const usePostV1DistributorComplaintCloseId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCloseId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DistributorComplaintCloseId>>,
@@ -121,26 +168,78 @@ export const usePostV1DistributorComplaintCloseId = <TError = unknown,
     }
     /**
  * Creates a distributor-side complaint that matches the Figma add-complaint and detail flow. The request is scoped to the authenticated distributor identity and order, and the response returns the UI-ready complaint detail payload.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create distributor complaint** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `complaint_category` — string; allowed: `quality`, `quantity`, `incomplete_delivery`, `wrong_product`, `delivery`, `pricing`, `documentation`
+- `complaint_title` — string; minimum length 3; maximum length 255
+- `description` — string; minimum length 5; maximum length 2000
+- `estimated_amount` — number; minimum 0
+- `order_id` — string
+- `quantity_affected` — string; minimum length 2; maximum length 255
+
+**Optional inputs:**
+- `evidence[].file_name` — string; minimum length 2; maximum length 255
+- `evidence[].file_size_bytes` — integer; minimum 0
+- `evidence[].file_url` — string; maximum length 500
+- `evidence[].mime_type` — string; maximum length 100
+- `product_name` — string; maximum length 255
+
+**Enum values:**
+- `complaint_category`: `quality`, `quantity`, `incomplete_delivery`, `wrong_product`, `delivery`, `pricing`, `documentation`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create distributor complaint
  */
 export type postV1DistributorComplaintCreateResponse201 = {
-  data: HttpComplaintResponse
+  data: ComplaintResponse
   status: 201
 }
 
 export type postV1DistributorComplaintCreateResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type postV1DistributorComplaintCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DistributorComplaintCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DistributorComplaintCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DistributorComplaintCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DistributorComplaintCreateResponseSuccess = (postV1DistributorComplaintCreateResponse201) & {
   headers: Headers;
 };
-export type postV1DistributorComplaintCreateResponseError = (postV1DistributorComplaintCreateResponse400) & {
+export type postV1DistributorComplaintCreateResponseError = (postV1DistributorComplaintCreateResponse400 | postV1DistributorComplaintCreateResponse401 | postV1DistributorComplaintCreateResponse403 | postV1DistributorComplaintCreateResponse429 | postV1DistributorComplaintCreateResponse500) & {
   headers: Headers;
 };
-
-export type postV1DistributorComplaintCreateResponse = (postV1DistributorComplaintCreateResponseSuccess | postV1DistributorComplaintCreateResponseError)
 
 export const getPostV1DistributorComplaintCreateUrl = () => {
 
@@ -150,24 +249,24 @@ export const getPostV1DistributorComplaintCreateUrl = () => {
   return `/v1/distributor/complaint/create`
 }
 
-export const postV1DistributorComplaintCreate = async (httpRaiseRequest: HttpRaiseRequest, options?: RequestInit): Promise<postV1DistributorComplaintCreateResponse> => {
+export const postV1DistributorComplaintCreate = async (raiseRequest: RaiseRequest, options?: RequestInit): Promise<postV1DistributorComplaintCreateResponseSuccess> => {
 
-  return fetcher<postV1DistributorComplaintCreateResponse>(getPostV1DistributorComplaintCreateUrl(),
+  return fetcher<postV1DistributorComplaintCreateResponseSuccess>(getPostV1DistributorComplaintCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpRaiseRequest,)
+      raiseRequest,)
   }
 );}
 
 
 
 
-export const getPostV1DistributorComplaintCreateMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, TError,{data: HttpRaiseRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, TError,{data: HttpRaiseRequest}, TContext> => {
+export const getPostV1DistributorComplaintCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, TError,{data: RaiseRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, TError,{data: RaiseRequest}, TContext> => {
 
 const mutationKey = ['postV1DistributorComplaintCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -179,7 +278,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, {data: HttpRaiseRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, {data: RaiseRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1DistributorComplaintCreate(data,requestOptions)
@@ -193,37 +292,84 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1DistributorComplaintCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>>
-    export type PostV1DistributorComplaintCreateMutationBody = HttpRaiseRequest
-    export type PostV1DistributorComplaintCreateMutationError = ResponseErrorResponse
+    export type PostV1DistributorComplaintCreateMutationBody = RaiseRequest
+    export type PostV1DistributorComplaintCreateMutationError = ErrorResponse
 
     /**
  * @summary Create distributor complaint
  */
-export const usePostV1DistributorComplaintCreate = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, TError,{data: HttpRaiseRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1DistributorComplaintCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>, TError,{data: RaiseRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DistributorComplaintCreate>>,
         TError,
-        {data: HttpRaiseRequest},
+        {data: RaiseRequest},
         TContext
       > => {
       return useMutation(getPostV1DistributorComplaintCreateMutationOptions(options));
     }
     /**
  * Escalates an open or in-review complaint from the distributor side and returns the updated distributor-facing detail payload.
+
+**Frontend usage:**
+Call this operation from the **Escalate distributor complaint** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Complaint ID; Complaint ID
+
+**Optional inputs:**
+- `escalation_note` — string; maximum length 2000
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Escalate distributor complaint
  */
 export type postV1DistributorComplaintEscalateIdResponse200 = {
-  data: HttpComplaintResponse
+  data: ComplaintResponse
   status: 200
+}
+
+export type postV1DistributorComplaintEscalateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DistributorComplaintEscalateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DistributorComplaintEscalateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DistributorComplaintEscalateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DistributorComplaintEscalateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DistributorComplaintEscalateIdResponseSuccess = (postV1DistributorComplaintEscalateIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1DistributorComplaintEscalateIdResponse = (postV1DistributorComplaintEscalateIdResponseSuccess)
+export type postV1DistributorComplaintEscalateIdResponseError = (postV1DistributorComplaintEscalateIdResponse400 | postV1DistributorComplaintEscalateIdResponse401 | postV1DistributorComplaintEscalateIdResponse403 | postV1DistributorComplaintEscalateIdResponse429 | postV1DistributorComplaintEscalateIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1DistributorComplaintEscalateIdUrl = (id: string,) => {
 
@@ -234,24 +380,24 @@ export const getPostV1DistributorComplaintEscalateIdUrl = (id: string,) => {
 }
 
 export const postV1DistributorComplaintEscalateId = async (id: string,
-    httpEscalateRequest: HttpEscalateRequest, options?: RequestInit): Promise<postV1DistributorComplaintEscalateIdResponse> => {
+    escalateRequest: EscalateRequest, options?: RequestInit): Promise<postV1DistributorComplaintEscalateIdResponseSuccess> => {
 
-  return fetcher<postV1DistributorComplaintEscalateIdResponse>(getPostV1DistributorComplaintEscalateIdUrl(id),
+  return fetcher<postV1DistributorComplaintEscalateIdResponseSuccess>(getPostV1DistributorComplaintEscalateIdUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpEscalateRequest,)
+      escalateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1DistributorComplaintEscalateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, TError,{id: string;data: HttpEscalateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, TError,{id: string;data: HttpEscalateRequest}, TContext> => {
+export const getPostV1DistributorComplaintEscalateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, TError,{id: string;data: EscalateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, TError,{id: string;data: EscalateRequest}, TContext> => {
 
 const mutationKey = ['postV1DistributorComplaintEscalateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -263,7 +409,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, {id: string;data: HttpEscalateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, {id: string;data: EscalateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1DistributorComplaintEscalateId(id,data,requestOptions)
@@ -277,37 +423,90 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1DistributorComplaintEscalateIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>>
-    export type PostV1DistributorComplaintEscalateIdMutationBody = HttpEscalateRequest
-    export type PostV1DistributorComplaintEscalateIdMutationError = unknown
+    export type PostV1DistributorComplaintEscalateIdMutationBody = EscalateRequest
+    export type PostV1DistributorComplaintEscalateIdMutationError = ErrorResponse
 
     /**
  * @summary Escalate distributor complaint
  */
-export const usePostV1DistributorComplaintEscalateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, TError,{id: string;data: HttpEscalateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1DistributorComplaintEscalateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>, TError,{id: string;data: EscalateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DistributorComplaintEscalateId>>,
         TError,
-        {id: string;data: HttpEscalateRequest},
+        {id: string;data: EscalateRequest},
         TContext
       > => {
       return useMutation(getPostV1DistributorComplaintEscalateIdMutationOptions(options));
     }
     /**
  * Returns the distributor complaint table rows with pagination metadata for the complaint list area in Figma.
+
+**Frontend usage:**
+Use this operation to populate the **List distributor complaints** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `search` (query) — string; Complaint ID or title search; Complaint ID or title search
+- `status` (query) — string; allowed: `open`, `under_review`, `resolved`, `closed`, `escalated`; Complaint status; Complaint status
+
+**Enum values:**
+- `status`: `open`, `under_review`, `resolved`, `closed`, `escalated`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List distributor complaints
  */
 export type getV1DistributorComplaintListResponse200 = {
-  data: HttpComplaintListResponse
+  data: ComplaintListResponse
   status: 200
+}
+
+export type getV1DistributorComplaintListResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DistributorComplaintListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DistributorComplaintListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DistributorComplaintListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DistributorComplaintListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DistributorComplaintListResponseSuccess = (getV1DistributorComplaintListResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DistributorComplaintListResponse = (getV1DistributorComplaintListResponseSuccess)
+export type getV1DistributorComplaintListResponseError = (getV1DistributorComplaintListResponse400 | getV1DistributorComplaintListResponse401 | getV1DistributorComplaintListResponse403 | getV1DistributorComplaintListResponse429 | getV1DistributorComplaintListResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DistributorComplaintListUrl = (params?: GetV1DistributorComplaintListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -324,9 +523,9 @@ export const getGetV1DistributorComplaintListUrl = (params?: GetV1DistributorCom
   return stringifiedParams.length > 0 ? `/v1/distributor/complaint/list?${stringifiedParams}` : `/v1/distributor/complaint/list`
 }
 
-export const getV1DistributorComplaintList = async (params?: GetV1DistributorComplaintListParams, options?: RequestInit): Promise<getV1DistributorComplaintListResponse> => {
+export const getV1DistributorComplaintList = async (params?: GetV1DistributorComplaintListParams, options?: RequestInit): Promise<getV1DistributorComplaintListResponseSuccess> => {
 
-  return fetcher<getV1DistributorComplaintListResponse>(getGetV1DistributorComplaintListUrl(params),
+  return fetcher<getV1DistributorComplaintListResponseSuccess>(getGetV1DistributorComplaintListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -346,7 +545,7 @@ export const getGetV1DistributorComplaintListQueryKey = (params?: GetV1Distribut
     }
 
 
-export const getGetV1DistributorComplaintListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError = unknown>(params?: GetV1DistributorComplaintListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DistributorComplaintListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError = ErrorResponse>(params?: GetV1DistributorComplaintListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -365,14 +564,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DistributorComplaintListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DistributorComplaintList>>>
-export type GetV1DistributorComplaintListQueryError = unknown
+export type GetV1DistributorComplaintListQueryError = ErrorResponse
 
 
 /**
  * @summary List distributor complaints
  */
 
-export function useGetV1DistributorComplaintList<TData = Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError = unknown>(
+export function useGetV1DistributorComplaintList<TData = Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError = ErrorResponse>(
  params?: GetV1DistributorComplaintListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -391,19 +590,72 @@ export function useGetV1DistributorComplaintList<TData = Awaited<ReturnType<type
 
 /**
  * Returns the Figma-ready distributor complaint dashboard payload: alert banner, summary cards, status filter options, primary action label, and paginated complaint table.
+
+**Frontend usage:**
+Use this operation to populate the **Distributor complaint dashboard** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Page offset; Page offset
+- `search` (query) — string; Complaint ID or title search; Complaint ID or title search
+- `status` (query) — string; allowed: `open`, `under_review`, `resolved`, `closed`, `escalated`; Complaint status; Complaint status
+
+**Enum values:**
+- `status`: `open`, `under_review`, `resolved`, `closed`, `escalated`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Distributor complaint dashboard
  */
 export type getV1DistributorComplaintOverviewResponse200 = {
-  data: HttpComplaintDashboardResponse
+  data: ComplaintDashboardResponse
   status: 200
+}
+
+export type getV1DistributorComplaintOverviewResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DistributorComplaintOverviewResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DistributorComplaintOverviewResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DistributorComplaintOverviewResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DistributorComplaintOverviewResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DistributorComplaintOverviewResponseSuccess = (getV1DistributorComplaintOverviewResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DistributorComplaintOverviewResponse = (getV1DistributorComplaintOverviewResponseSuccess)
+export type getV1DistributorComplaintOverviewResponseError = (getV1DistributorComplaintOverviewResponse400 | getV1DistributorComplaintOverviewResponse401 | getV1DistributorComplaintOverviewResponse403 | getV1DistributorComplaintOverviewResponse429 | getV1DistributorComplaintOverviewResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DistributorComplaintOverviewUrl = (params?: GetV1DistributorComplaintOverviewParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -420,9 +672,9 @@ export const getGetV1DistributorComplaintOverviewUrl = (params?: GetV1Distributo
   return stringifiedParams.length > 0 ? `/v1/distributor/complaint/overview?${stringifiedParams}` : `/v1/distributor/complaint/overview`
 }
 
-export const getV1DistributorComplaintOverview = async (params?: GetV1DistributorComplaintOverviewParams, options?: RequestInit): Promise<getV1DistributorComplaintOverviewResponse> => {
+export const getV1DistributorComplaintOverview = async (params?: GetV1DistributorComplaintOverviewParams, options?: RequestInit): Promise<getV1DistributorComplaintOverviewResponseSuccess> => {
 
-  return fetcher<getV1DistributorComplaintOverviewResponse>(getGetV1DistributorComplaintOverviewUrl(params),
+  return fetcher<getV1DistributorComplaintOverviewResponseSuccess>(getGetV1DistributorComplaintOverviewUrl(params),
   {
     ...options,
     method: 'GET'
@@ -442,7 +694,7 @@ export const getGetV1DistributorComplaintOverviewQueryKey = (params?: GetV1Distr
     }
 
 
-export const getGetV1DistributorComplaintOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError = unknown>(params?: GetV1DistributorComplaintOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DistributorComplaintOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError = ErrorResponse>(params?: GetV1DistributorComplaintOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -461,14 +713,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DistributorComplaintOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>>
-export type GetV1DistributorComplaintOverviewQueryError = unknown
+export type GetV1DistributorComplaintOverviewQueryError = ErrorResponse
 
 
 /**
  * @summary Distributor complaint dashboard
  */
 
-export function useGetV1DistributorComplaintOverview<TData = Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError = unknown>(
+export function useGetV1DistributorComplaintOverview<TData = Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError = ErrorResponse>(
  params?: GetV1DistributorComplaintOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintOverview>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -487,19 +739,66 @@ export function useGetV1DistributorComplaintOverview<TData = Awaited<ReturnType<
 
 /**
  * Returns the UI-ready complaint detail payload that matches the distributor complaint detail modal in Figma, including evidence files and activity timeline.
+
+**Frontend usage:**
+Call this operation when opening the **Get distributor complaint detail** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Complaint ID; Complaint ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get distributor complaint detail
  */
 export type getV1DistributorComplaintReadIdResponse200 = {
-  data: HttpComplaintResponse
+  data: ComplaintResponse
   status: 200
+}
+
+export type getV1DistributorComplaintReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DistributorComplaintReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DistributorComplaintReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DistributorComplaintReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DistributorComplaintReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DistributorComplaintReadIdResponseSuccess = (getV1DistributorComplaintReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DistributorComplaintReadIdResponse = (getV1DistributorComplaintReadIdResponseSuccess)
+export type getV1DistributorComplaintReadIdResponseError = (getV1DistributorComplaintReadIdResponse400 | getV1DistributorComplaintReadIdResponse401 | getV1DistributorComplaintReadIdResponse403 | getV1DistributorComplaintReadIdResponse429 | getV1DistributorComplaintReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DistributorComplaintReadIdUrl = (id: string,) => {
 
@@ -509,9 +808,9 @@ export const getGetV1DistributorComplaintReadIdUrl = (id: string,) => {
   return `/v1/distributor/complaint/read/${id}`
 }
 
-export const getV1DistributorComplaintReadId = async (id: string, options?: RequestInit): Promise<getV1DistributorComplaintReadIdResponse> => {
+export const getV1DistributorComplaintReadId = async (id: string, options?: RequestInit): Promise<getV1DistributorComplaintReadIdResponseSuccess> => {
 
-  return fetcher<getV1DistributorComplaintReadIdResponse>(getGetV1DistributorComplaintReadIdUrl(id),
+  return fetcher<getV1DistributorComplaintReadIdResponseSuccess>(getGetV1DistributorComplaintReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -531,7 +830,7 @@ export const getGetV1DistributorComplaintReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1DistributorComplaintReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DistributorComplaintReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -550,14 +849,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DistributorComplaintReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>>
-export type GetV1DistributorComplaintReadIdQueryError = unknown
+export type GetV1DistributorComplaintReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get distributor complaint detail
  */
 
-export function useGetV1DistributorComplaintReadId<TData = Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError = unknown>(
+export function useGetV1DistributorComplaintReadId<TData = Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorComplaintReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

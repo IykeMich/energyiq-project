@@ -26,7 +26,7 @@ export function OrdersOverview() {
   );
   const { data: stats } = useOrderStatsQuery();
 
-  const orders = useMemo(() => (listResult?.items ?? []).map(toOrderRow), [listResult]);
+  const orders = useMemo(() => (listResult ?? []).map(toOrderRow), [listResult]);
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();

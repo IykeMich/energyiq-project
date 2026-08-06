@@ -101,12 +101,6 @@ export interface OrderListParams {
   offset?: number;
 }
 
-export interface OrderListResult {
-  items?: Order[];
-  limit?: number;
-  offset?: number;
-  total?: number;
-}
 
 export interface OrderStats {
   total?: number;

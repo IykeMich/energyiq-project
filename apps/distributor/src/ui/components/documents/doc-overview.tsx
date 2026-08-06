@@ -6,6 +6,7 @@ import { DocumentManagementCard } from './document-management-card';
 import { DocumentDetails } from './document-details';
 import { DocumentUploadModal } from './document-upload-modal';
 import { DocumentSubmittedModal } from './document-submitted-modal';
+import { opensReuploadFlow } from './document-mappers';
 
 export function DocumentsOverview() {
   const { data, isLoading } = useGetV1DocumentList();
@@ -16,7 +17,7 @@ export function DocumentsOverview() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleAction = (document: DomainDocument) => {
-    if (document.status === 'rejected' || document.status === 'pending') {
+    if (opensReuploadFlow(document)) {
       setUploadDocument(document);
       return;
     }

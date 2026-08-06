@@ -25,7 +25,7 @@ interface ProductDetailsInfoProps {
 
 /** "Product Info" section: default price, unit measured, and total stock across warehouses. */
 export function ProductDetailsInfo({ product }: ProductDetailsInfoProps) {
-  const warehouseCount = product.warehouse_ids?.length ?? 0;
+  const warehouseCount = product.warehouse_allocations?.length ?? 0;
   const warehouseLabel = `${warehouseCount} Warehouse${warehouseCount === 1 ? '' : 's'}`;
   const price = Number(product.base_price ?? 0);
   const quantity = PRODUCT_STOCK_MOCK_QUANTITY;

@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 import { KycDocumentsDocumentRow } from './kyc-documents-document-row';
-import type { PendingReviewItem } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { PendingReviewItem } from './kyc-documents-types';
 
 interface KycDocumentsPendingReviewListProps {
   title: string;
@@ -8,6 +8,8 @@ interface KycDocumentsPendingReviewListProps {
   items: PendingReviewItem[];
   onViewAll: () => void;
   onReview: (itemId: string) => void;
+  /** Navigates to the document's detail page — clicking anywhere on the row. */
+  onViewDocument: (itemId: string) => void;
 }
 
 /** Left dashboard column: distributor documents awaiting review, each with a Review action. */
@@ -17,6 +19,7 @@ export function KycDocumentsPendingReviewList({
   items,
   onViewAll,
   onReview,
+  onViewDocument,
 }: KycDocumentsPendingReviewListProps) {
   return (
     <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
@@ -40,11 +43,15 @@ export function KycDocumentsPendingReviewList({
             key={item.id}
             distributor={item.distributor}
             fileName={item.fileName}
+            onClick={() => onViewDocument(item.id)}
             topRight={<span className="text-xs text-gray-400">{item.submittedAgo}</span>}
             bottomRight={
               <button
                 type="button"
-                onClick={() => onReview(item.id)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onReview(item.id);
+                }}
                 className="tap-effect rounded-full border border-[#FBC02D] px-4 py-1 text-xs font-medium text-[#FBC02D]"
               >
                 Review

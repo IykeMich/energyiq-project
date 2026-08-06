@@ -10,13 +10,18 @@ export type GetV1DistributorOrderListStatus = typeof GetV1DistributorOrderListSt
 
 
 export const GetV1DistributorOrderListStatus = {
-  draft: 'draft',
-  submitted: 'submitted',
+  pending: 'pending',
+  awaiting_approval: 'awaiting_approval',
   approved: 'approved',
-  rejected: 'rejected',
+  awaiting_payment: 'awaiting_payment',
+  paid: 'paid',
+  processing: 'processing',
   dispatched: 'dispatched',
-  received: 'received',
+  delivered: 'delivered',
   completed: 'completed',
+  rejected: 'rejected',
   cancelled: 'cancelled',
-  disputed: 'disputed',
+  partially_returned: 'partially_returned',
+  returned: 'returned',
+  refunded: 'refunded',
 } as const;

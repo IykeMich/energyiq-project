@@ -2,7 +2,6 @@ import type {
   Distributor,
   DistributorUpsertRequest,
   DistributorListParams,
-  DistributorListResult,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════
@@ -15,6 +14,6 @@ export interface DistributorApi {
   getDistributor(id: string): Promise<Distributor>;
   updateDistributor(id: string, req: DistributorUpsertRequest): Promise<Distributor>;
   deleteDistributor(id: string): Promise<void>;
-  listDistributors(params?: DistributorListParams): Promise<DistributorListResult>;
+  listDistributors(params?: DistributorListParams): Promise<Distributor[]>;
   activateDistributor(id: string): Promise<Distributor>;
 }

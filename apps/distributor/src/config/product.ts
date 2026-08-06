@@ -25,8 +25,8 @@ export class ProductApiAdapter implements product.ProductApi {
     await apiDelete(`v1/product/delete/${id}`);
   }
 
-  async listProducts(params?: product.ProductListParams): Promise<product.ProductListResult> {
-    return apiGet<product.ProductListResult>('v1/product/list', { searchParams: toSearchParams(params) });
+  async listProducts(params?: product.ProductListParams): Promise<product.Product[]> {
+    return apiGet<product.Product[]>('v1/product/list', { searchParams: toSearchParams(params) });
   }
 
   async getProductStats(): Promise<product.ProductStats> {

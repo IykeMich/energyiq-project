@@ -20,6 +20,8 @@ export interface Warehouse {
    * assignment. Optional: older backend responses simply omit it.
    */
   products?: WarehouseProductAssignment[];
+  /** The field name GET /v1/warehouses (list) actually returns for "last updated"; detail reads may still send `updated_at`/`created_at`. */
+  last_updated_at?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -29,13 +31,6 @@ export interface WarehouseListParams {
   search?: string;
   limit?: number;
   offset?: number;
-}
-
-export interface WarehouseListResult {
-  items?: Warehouse[];
-  limit?: number;
-  offset?: number;
-  total?: number;
 }
 
 export interface WarehouseStats {

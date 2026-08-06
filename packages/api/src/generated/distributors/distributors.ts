@@ -6,20 +6,24 @@
  * OpenAPI spec version: 1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
-  GetV1DistributorListParams,
-  HttpDistributorEnvelope,
-  HttpDistributorListEnvelope,
-  ResponseErrorResponse
+  DistributorEnvelope,
+  DistributorListEnvelope,
+  ErrorResponse,
+  GetV1DistributorListParams
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -30,37 +34,197 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
+ * Approves a tenant-owned distributor in pending_review after the required profile and documents have been submitted. Requires distributor:activate permission.
+
+**Frontend usage:**
+Call this operation from the **Approve distributor onboarding** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Distributor ID; Distributor ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Approve distributor onboarding
+ */
+export type postV1DistributorActivateIdResponse200 = {
+  data: DistributorEnvelope
+  status: 200
+}
+
+export type postV1DistributorActivateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DistributorActivateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DistributorActivateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DistributorActivateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DistributorActivateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1DistributorActivateIdResponseSuccess = (postV1DistributorActivateIdResponse200) & {
+  headers: Headers;
+};
+export type postV1DistributorActivateIdResponseError = (postV1DistributorActivateIdResponse400 | postV1DistributorActivateIdResponse401 | postV1DistributorActivateIdResponse403 | postV1DistributorActivateIdResponse429 | postV1DistributorActivateIdResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1DistributorActivateIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/distributor/activate/${id}`
+}
+
+export const postV1DistributorActivateId = async (id: string, options?: RequestInit): Promise<postV1DistributorActivateIdResponseSuccess> => {
+
+  return fetcher<postV1DistributorActivateIdResponseSuccess>(getPostV1DistributorActivateIdUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPostV1DistributorActivateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorActivateId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorActivateId>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['postV1DistributorActivateId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DistributorActivateId>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postV1DistributorActivateId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1DistributorActivateIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DistributorActivateId>>>
+
+    export type PostV1DistributorActivateIdMutationError = ErrorResponse
+
+    /**
+ * @summary Approve distributor onboarding
+ */
+export const usePostV1DistributorActivateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DistributorActivateId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1DistributorActivateId>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getPostV1DistributorActivateIdMutationOptions(options));
+    }
+    /**
  * Returns order-eligible distributors for the authenticated supplier. Order-eligible means the distributor belongs to this supplier and has active status; pending, suspended, terminated, and cross-supplier distributors are excluded. Supplier staff use data.items[].id as distributor_id in POST /v1/order/create. Distributor-authenticated users should omit distributor_id because the API derives it from their JWT and rejects attempts to submit another distributor's ID. Results are tenant-isolated and the caller must hold distributor:list permission.
+
+**Frontend usage:**
+Use this operation to populate the **List order-eligible distributors** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Offset; Offset
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List order-eligible distributors
  */
 export type getV1DistributorListResponse200 = {
-  data: HttpDistributorListEnvelope
+  data: DistributorListEnvelope
   status: 200
 }
 
 export type getV1DistributorListResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1DistributorListResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
 export type getV1DistributorListResponse403 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 403
+}
+
+export type getV1DistributorListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DistributorListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DistributorListResponseSuccess = (getV1DistributorListResponse200) & {
   headers: Headers;
 };
-export type getV1DistributorListResponseError = (getV1DistributorListResponse400 | getV1DistributorListResponse401 | getV1DistributorListResponse403) & {
+export type getV1DistributorListResponseError = (getV1DistributorListResponse400 | getV1DistributorListResponse401 | getV1DistributorListResponse403 | getV1DistributorListResponse429 | getV1DistributorListResponse500) & {
   headers: Headers;
 };
-
-export type getV1DistributorListResponse = (getV1DistributorListResponseSuccess | getV1DistributorListResponseError)
 
 export const getGetV1DistributorListUrl = (params?: GetV1DistributorListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -77,9 +241,9 @@ export const getGetV1DistributorListUrl = (params?: GetV1DistributorListParams,)
   return stringifiedParams.length > 0 ? `/v1/distributor/list?${stringifiedParams}` : `/v1/distributor/list`
 }
 
-export const getV1DistributorList = async (params?: GetV1DistributorListParams, options?: RequestInit): Promise<getV1DistributorListResponse> => {
+export const getV1DistributorList = async (params?: GetV1DistributorListParams, options?: RequestInit): Promise<getV1DistributorListResponseSuccess> => {
 
-  return fetcher<getV1DistributorListResponse>(getGetV1DistributorListUrl(params),
+  return fetcher<getV1DistributorListResponseSuccess>(getGetV1DistributorListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -99,7 +263,7 @@ export const getGetV1DistributorListQueryKey = (params?: GetV1DistributorListPar
     }
 
 
-export const getGetV1DistributorListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorList>>, TError = ResponseErrorResponse>(params?: GetV1DistributorListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DistributorListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorList>>, TError = ErrorResponse>(params?: GetV1DistributorListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -118,14 +282,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DistributorListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DistributorList>>>
-export type GetV1DistributorListQueryError = ResponseErrorResponse
+export type GetV1DistributorListQueryError = ErrorResponse
 
 
 /**
  * @summary List order-eligible distributors
  */
 
-export function useGetV1DistributorList<TData = Awaited<ReturnType<typeof getV1DistributorList>>, TError = ResponseErrorResponse>(
+export function useGetV1DistributorList<TData = Awaited<ReturnType<typeof getV1DistributorList>>, TError = ErrorResponse>(
  params?: GetV1DistributorListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -144,41 +308,72 @@ export function useGetV1DistributorList<TData = Awaited<ReturnType<typeof getV1D
 
 /**
  * Returns a distributor belonging to the authenticated supplier, including pending or suspended records for management screens. Cross-supplier IDs return 404 and the caller must hold distributor:read permission.
+
+**Frontend usage:**
+Call this operation when opening the **Get distributor details** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Distributor ID; Distributor ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get distributor details
  */
 export type getV1DistributorReadIdResponse200 = {
-  data: HttpDistributorEnvelope
+  data: DistributorEnvelope
   status: 200
 }
 
 export type getV1DistributorReadIdResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1DistributorReadIdResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
 export type getV1DistributorReadIdResponse403 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 403
 }
 
 export type getV1DistributorReadIdResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
+}
+
+export type getV1DistributorReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DistributorReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DistributorReadIdResponseSuccess = (getV1DistributorReadIdResponse200) & {
   headers: Headers;
 };
-export type getV1DistributorReadIdResponseError = (getV1DistributorReadIdResponse400 | getV1DistributorReadIdResponse401 | getV1DistributorReadIdResponse403 | getV1DistributorReadIdResponse404) & {
+export type getV1DistributorReadIdResponseError = (getV1DistributorReadIdResponse400 | getV1DistributorReadIdResponse401 | getV1DistributorReadIdResponse403 | getV1DistributorReadIdResponse404 | getV1DistributorReadIdResponse429 | getV1DistributorReadIdResponse500) & {
   headers: Headers;
 };
-
-export type getV1DistributorReadIdResponse = (getV1DistributorReadIdResponseSuccess | getV1DistributorReadIdResponseError)
 
 export const getGetV1DistributorReadIdUrl = (id: string,) => {
 
@@ -188,9 +383,9 @@ export const getGetV1DistributorReadIdUrl = (id: string,) => {
   return `/v1/distributor/read/${id}`
 }
 
-export const getV1DistributorReadId = async (id: string, options?: RequestInit): Promise<getV1DistributorReadIdResponse> => {
+export const getV1DistributorReadId = async (id: string, options?: RequestInit): Promise<getV1DistributorReadIdResponseSuccess> => {
 
-  return fetcher<getV1DistributorReadIdResponse>(getGetV1DistributorReadIdUrl(id),
+  return fetcher<getV1DistributorReadIdResponseSuccess>(getGetV1DistributorReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -210,7 +405,7 @@ export const getGetV1DistributorReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1DistributorReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorReadId>>, TError = ResponseErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DistributorReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DistributorReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -229,14 +424,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DistributorReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DistributorReadId>>>
-export type GetV1DistributorReadIdQueryError = ResponseErrorResponse
+export type GetV1DistributorReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get distributor details
  */
 
-export function useGetV1DistributorReadId<TData = Awaited<ReturnType<typeof getV1DistributorReadId>>, TError = ResponseErrorResponse>(
+export function useGetV1DistributorReadId<TData = Awaited<ReturnType<typeof getV1DistributorReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DistributorReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

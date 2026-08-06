@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { FileText } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@energyiq/ui';
-import { getInitials } from '@energyiq/shared';
+import { getInitials, cn } from '@energyiq/shared';
 
 interface KycDocumentsDocumentRowProps {
   distributor: string;
@@ -10,6 +10,8 @@ interface KycDocumentsDocumentRowProps {
   topRight: ReactNode;
   /** Action or meta shown at the bottom-right (e.g. a Review button or a date). */
   bottomRight: ReactNode;
+  /** Navigates to the document's detail page when provided; the row becomes clickable. */
+  onClick?: () => void;
 }
 
 /** Shared list row used by both the Pending review and Expiring soon columns. */
@@ -18,9 +20,16 @@ export function KycDocumentsDocumentRow({
   fileName,
   topRight,
   bottomRight,
+  onClick,
 }: KycDocumentsDocumentRowProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-[#27272A] pb-4 last:border-b-0 last:pb-0">
+    <div
+      onClick={onClick}
+      className={cn(
+        'flex flex-col gap-3 border-b border-[#27272A] pb-4 last:border-b-0 last:pb-0',
+        onClick && 'tap-effect cursor-pointer rounded-lg hover:bg-[#FFFFFF08]',
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <Avatar className="h-8 w-8">

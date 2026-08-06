@@ -1,4 +1,4 @@
-import type { HttpRaiseRequestComplaintCategory } from '@energyiq/api/generated/schemas';
+import type { RaiseRequestComplaintCategory as HttpRaiseRequestComplaintCategory } from '@energyiq/api/generated/schemas';
 import { ComplaintSelectCard } from './complaint-select-card';
 import { ComplaintOrderSelect } from './complaint-order-select';
 import { ComplaintTextField } from './complaint-text-field';

@@ -65,7 +65,7 @@ function GeoChip({ label, selected, onClick }: { label: string; selected: boolea
 export function ProductAccessControlCard({ draft, onChange, onCancel, onNext }: ProductAccessControlCardProps) {
   const [distributorSearchQuery, setDistributorSearchQuery] = useState('');
   const distributorsQuery = useDistributorsQuery({ search: distributorSearchQuery || undefined });
-  const distributors = distributorsQuery.data?.items ?? [];
+  const distributors = distributorsQuery.data ?? [];
 
   const toggleTier = (tier: string) =>
     onChange({

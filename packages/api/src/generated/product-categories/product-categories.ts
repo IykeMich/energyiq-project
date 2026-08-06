@@ -20,13 +20,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CategoryCreateRequest,
+  CategoryUpdateRequest,
+  EmptyResponse,
+  ErrorResponse,
   GetV1ProductCategoriesParams,
-  HttpCategoryCreateRequest,
-  HttpCategoryUpdateRequest,
-  HttpProductCategoryListResponse,
-  HttpProductCategoryResponse,
-  ResponseEmptyResponse,
-  ResponseErrorResponse
+  ProductCategoryListResponse,
+  ProductCategoryResponse
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -37,27 +37,71 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Returns the supplier's product categories for catalog filters and product creation forms. Filters: status can be active or inactive. Expected outcome: each category includes status so clients can hide inactive options from creation forms while still showing them in historical filters; when no category matches, data is an empty list rather than null. The response is sorted by category name.
+ * Returns the supplier's product categories for catalog filters and product creation forms.
+
+**Filters:** status can be active or inactive.
+
+**Expected outcomes:** each category includes status so clients can hide inactive options from creation forms while still showing them in historical filters; when no category matches, data is an empty list rather than null. The response is sorted by category name.
+
+**Frontend usage:**
+Use this operation to populate the **List product categories** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `status` (query) — string; allowed: `active`, `inactive`; Filter by category status; Filter by category status
+
+**Enum values:**
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List product categories
  */
 export type getV1ProductCategoriesResponse200 = {
-  data: HttpProductCategoryListResponse
+  data: ProductCategoryListResponse
   status: 200
 }
 
 export type getV1ProductCategoriesResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
+}
+
+export type getV1ProductCategoriesResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ProductCategoriesResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductCategoriesResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductCategoriesResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ProductCategoriesResponseSuccess = (getV1ProductCategoriesResponse200) & {
   headers: Headers;
 };
-export type getV1ProductCategoriesResponseError = (getV1ProductCategoriesResponse400) & {
+export type getV1ProductCategoriesResponseError = (getV1ProductCategoriesResponse400 | getV1ProductCategoriesResponse401 | getV1ProductCategoriesResponse403 | getV1ProductCategoriesResponse429 | getV1ProductCategoriesResponse500) & {
   headers: Headers;
 };
-
-export type getV1ProductCategoriesResponse = (getV1ProductCategoriesResponseSuccess | getV1ProductCategoriesResponseError)
 
 export const getGetV1ProductCategoriesUrl = (params?: GetV1ProductCategoriesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -74,9 +118,9 @@ export const getGetV1ProductCategoriesUrl = (params?: GetV1ProductCategoriesPara
   return stringifiedParams.length > 0 ? `/v1/product/categories?${stringifiedParams}` : `/v1/product/categories`
 }
 
-export const getV1ProductCategories = async (params?: GetV1ProductCategoriesParams, options?: RequestInit): Promise<getV1ProductCategoriesResponse> => {
+export const getV1ProductCategories = async (params?: GetV1ProductCategoriesParams, options?: RequestInit): Promise<getV1ProductCategoriesResponseSuccess> => {
 
-  return fetcher<getV1ProductCategoriesResponse>(getGetV1ProductCategoriesUrl(params),
+  return fetcher<getV1ProductCategoriesResponseSuccess>(getGetV1ProductCategoriesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -96,7 +140,7 @@ export const getGetV1ProductCategoriesQueryKey = (params?: GetV1ProductCategorie
     }
 
 
-export const getGetV1ProductCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductCategories>>, TError = ResponseErrorResponse>(params?: GetV1ProductCategoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategories>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ProductCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductCategories>>, TError = ErrorResponse>(params?: GetV1ProductCategoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategories>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -115,14 +159,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ProductCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductCategories>>>
-export type GetV1ProductCategoriesQueryError = ResponseErrorResponse
+export type GetV1ProductCategoriesQueryError = ErrorResponse
 
 
 /**
  * @summary List product categories
  */
 
-export function useGetV1ProductCategories<TData = Awaited<ReturnType<typeof getV1ProductCategories>>, TError = ResponseErrorResponse>(
+export function useGetV1ProductCategories<TData = Awaited<ReturnType<typeof getV1ProductCategories>>, TError = ErrorResponse>(
  params?: GetV1ProductCategoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategories>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -141,36 +185,76 @@ export function useGetV1ProductCategories<TData = Awaited<ReturnType<typeof getV
 
 /**
  * Creates a supplier-scoped active or inactive category. Only active categories can be assigned during product creation; duplicate names return 409.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create product category** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `name` — string; minimum length 2; maximum length 255
+
+**Optional inputs:**
+- `description` — string
+- `status` — string; allowed: `active`, `inactive`
+
+**Enum values:**
+- `status`: `active`, `inactive`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create product category
  */
 export type postV1ProductCategoriesResponse201 = {
-  data: HttpProductCategoryResponse
+  data: ProductCategoryResponse
   status: 201
 }
 
 export type postV1ProductCategoriesResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1ProductCategoriesResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1ProductCategoriesResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1ProductCategoriesResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1ProductCategoriesResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ProductCategoriesResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1ProductCategoriesResponseSuccess = (postV1ProductCategoriesResponse201) & {
   headers: Headers;
 };
-export type postV1ProductCategoriesResponseError = (postV1ProductCategoriesResponse400 | postV1ProductCategoriesResponse401 | postV1ProductCategoriesResponse409) & {
+export type postV1ProductCategoriesResponseError = (postV1ProductCategoriesResponse400 | postV1ProductCategoriesResponse401 | postV1ProductCategoriesResponse403 | postV1ProductCategoriesResponse409 | postV1ProductCategoriesResponse429 | postV1ProductCategoriesResponse500) & {
   headers: Headers;
 };
-
-export type postV1ProductCategoriesResponse = (postV1ProductCategoriesResponseSuccess | postV1ProductCategoriesResponseError)
 
 export const getPostV1ProductCategoriesUrl = () => {
 
@@ -180,24 +264,24 @@ export const getPostV1ProductCategoriesUrl = () => {
   return `/v1/product/categories`
 }
 
-export const postV1ProductCategories = async (httpCategoryCreateRequest: HttpCategoryCreateRequest, options?: RequestInit): Promise<postV1ProductCategoriesResponse> => {
+export const postV1ProductCategories = async (categoryCreateRequest: CategoryCreateRequest, options?: RequestInit): Promise<postV1ProductCategoriesResponseSuccess> => {
 
-  return fetcher<postV1ProductCategoriesResponse>(getPostV1ProductCategoriesUrl(),
+  return fetcher<postV1ProductCategoriesResponseSuccess>(getPostV1ProductCategoriesUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpCategoryCreateRequest,)
+      categoryCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1ProductCategoriesMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCategories>>, TError,{data: HttpCategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCategories>>, TError,{data: HttpCategoryCreateRequest}, TContext> => {
+export const getPostV1ProductCategoriesMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCategories>>, TError,{data: CategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCategories>>, TError,{data: CategoryCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1ProductCategories'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -209,7 +293,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductCategories>>, {data: HttpCategoryCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ProductCategories>>, {data: CategoryCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1ProductCategories(data,requestOptions)
@@ -223,236 +307,90 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1ProductCategoriesMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ProductCategories>>>
-    export type PostV1ProductCategoriesMutationBody = HttpCategoryCreateRequest
-    export type PostV1ProductCategoriesMutationError = ResponseErrorResponse
+    export type PostV1ProductCategoriesMutationBody = CategoryCreateRequest
+    export type PostV1ProductCategoriesMutationError = ErrorResponse
 
     /**
  * @summary Create product category
  */
-export const usePostV1ProductCategories = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCategories>>, TError,{data: HttpCategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1ProductCategories = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ProductCategories>>, TError,{data: CategoryCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ProductCategories>>,
         TError,
-        {data: HttpCategoryCreateRequest},
+        {data: CategoryCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1ProductCategoriesMutationOptions(options));
     }
     /**
- * Returns one product category by ID. Use for edit screens and category detail views. Expected outcome: response includes active/inactive status for activation toggles. Unknown category IDs return 404.
- * @summary Get product category
- */
-export type getV1ProductCategoriesIdResponse200 = {
-  data: HttpProductCategoryResponse
-  status: 200
-}
-
-export type getV1ProductCategoriesIdResponse404 = {
-  data: ResponseErrorResponse
-  status: 404
-}
-
-export type getV1ProductCategoriesIdResponseSuccess = (getV1ProductCategoriesIdResponse200) & {
-  headers: Headers;
-};
-export type getV1ProductCategoriesIdResponseError = (getV1ProductCategoriesIdResponse404) & {
-  headers: Headers;
-};
-
-export type getV1ProductCategoriesIdResponse = (getV1ProductCategoriesIdResponseSuccess | getV1ProductCategoriesIdResponseError)
-
-export const getGetV1ProductCategoriesIdUrl = (id: string,) => {
-
-
-
-
-  return `/v1/product/categories/${id}`
-}
-
-export const getV1ProductCategoriesId = async (id: string, options?: RequestInit): Promise<getV1ProductCategoriesIdResponse> => {
-
-  return fetcher<getV1ProductCategoriesIdResponse>(getGetV1ProductCategoriesIdUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1ProductCategoriesIdQueryKey = (id: string,) => {
-    return [
-    `/v1/product/categories/${id}`
-    ] as const;
-    }
-
-
-export const getGetV1ProductCategoriesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError = ResponseErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ProductCategoriesIdQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ProductCategoriesId>>> = ({ signal }) => getV1ProductCategoriesId(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetV1ProductCategoriesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductCategoriesId>>>
-export type GetV1ProductCategoriesIdQueryError = ResponseErrorResponse
-
-
-/**
- * @summary Get product category
- */
-
-export function useGetV1ProductCategoriesId<TData = Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError = ResponseErrorResponse>(
- id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetV1ProductCategoriesIdQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-/**
- * Updates a category name, description, and active/inactive status. Enum values: status must be active or inactive. Prerequisites: category must belong to the authenticated supplier. Edge cases: setting status to inactive prevents future product create/update calls from using this category; existing products keep their category_id for reporting and history.
- * @summary Update product category
- */
-export type putV1ProductCategoriesIdResponse200 = {
-  data: HttpProductCategoryResponse
-  status: 200
-}
-
-export type putV1ProductCategoriesIdResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type putV1ProductCategoriesIdResponse404 = {
-  data: ResponseErrorResponse
-  status: 404
-}
-
-export type putV1ProductCategoriesIdResponseSuccess = (putV1ProductCategoriesIdResponse200) & {
-  headers: Headers;
-};
-export type putV1ProductCategoriesIdResponseError = (putV1ProductCategoriesIdResponse400 | putV1ProductCategoriesIdResponse404) & {
-  headers: Headers;
-};
-
-export type putV1ProductCategoriesIdResponse = (putV1ProductCategoriesIdResponseSuccess | putV1ProductCategoriesIdResponseError)
-
-export const getPutV1ProductCategoriesIdUrl = (id: string,) => {
-
-
-
-
-  return `/v1/product/categories/${id}`
-}
-
-export const putV1ProductCategoriesId = async (id: string,
-    httpCategoryUpdateRequest: HttpCategoryUpdateRequest, options?: RequestInit): Promise<putV1ProductCategoriesIdResponse> => {
-
-  return fetcher<putV1ProductCategoriesIdResponse>(getPutV1ProductCategoriesIdUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpCategoryUpdateRequest,)
-  }
-);}
-
-
-
-
-export const getPutV1ProductCategoriesIdMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, TError,{id: string;data: HttpCategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, TError,{id: string;data: HttpCategoryUpdateRequest}, TContext> => {
-
-const mutationKey = ['putV1ProductCategoriesId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, {id: string;data: HttpCategoryUpdateRequest}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  putV1ProductCategoriesId(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PutV1ProductCategoriesIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ProductCategoriesId>>>
-    export type PutV1ProductCategoriesIdMutationBody = HttpCategoryUpdateRequest
-    export type PutV1ProductCategoriesIdMutationError = ResponseErrorResponse
-
-    /**
- * @summary Update product category
- */
-export const usePutV1ProductCategoriesId = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, TError,{id: string;data: HttpCategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof putV1ProductCategoriesId>>,
-        TError,
-        {id: string;data: HttpCategoryUpdateRequest},
-        TContext
-      > => {
-      return useMutation(getPutV1ProductCategoriesIdMutationOptions(options));
-    }
-    /**
  * Deletes a category. Products referencing it are retained with category_id set to null by the database, so create/update product still requires selecting a valid category afterward.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete product category..**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Category ID; Category ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete product category..
  */
 export type deleteV1ProductCategoriesIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
+export type deleteV1ProductCategoriesIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1ProductCategoriesIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1ProductCategoriesIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type deleteV1ProductCategoriesIdResponse404 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 404
+}
+
+export type deleteV1ProductCategoriesIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1ProductCategoriesIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1ProductCategoriesIdResponseSuccess = (deleteV1ProductCategoriesIdResponse200) & {
   headers: Headers;
 };
-export type deleteV1ProductCategoriesIdResponseError = (deleteV1ProductCategoriesIdResponse404) & {
+export type deleteV1ProductCategoriesIdResponseError = (deleteV1ProductCategoriesIdResponse400 | deleteV1ProductCategoriesIdResponse401 | deleteV1ProductCategoriesIdResponse403 | deleteV1ProductCategoriesIdResponse404 | deleteV1ProductCategoriesIdResponse429 | deleteV1ProductCategoriesIdResponse500) & {
   headers: Headers;
 };
-
-export type deleteV1ProductCategoriesIdResponse = (deleteV1ProductCategoriesIdResponseSuccess | deleteV1ProductCategoriesIdResponseError)
 
 export const getDeleteV1ProductCategoriesIdUrl = (id: string,) => {
 
@@ -462,9 +400,9 @@ export const getDeleteV1ProductCategoriesIdUrl = (id: string,) => {
   return `/v1/product/categories/${id}`
 }
 
-export const deleteV1ProductCategoriesId = async (id: string, options?: RequestInit): Promise<deleteV1ProductCategoriesIdResponse> => {
+export const deleteV1ProductCategoriesId = async (id: string, options?: RequestInit): Promise<deleteV1ProductCategoriesIdResponseSuccess> => {
 
-  return fetcher<deleteV1ProductCategoriesIdResponse>(getDeleteV1ProductCategoriesIdUrl(id),
+  return fetcher<deleteV1ProductCategoriesIdResponseSuccess>(getDeleteV1ProductCategoriesIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -476,7 +414,7 @@ export const deleteV1ProductCategoriesId = async (id: string, options?: RequestI
 
 
 
-export const getDeleteV1ProductCategoriesIdMutationOptions = <TError = ResponseErrorResponse,
+export const getDeleteV1ProductCategoriesIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductCategoriesId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductCategoriesId>>, TError,{id: string}, TContext> => {
 
@@ -505,12 +443,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1ProductCategoriesIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1ProductCategoriesId>>>
 
-    export type DeleteV1ProductCategoriesIdMutationError = ResponseErrorResponse
+    export type DeleteV1ProductCategoriesIdMutationError = ErrorResponse
 
     /**
  * @summary Delete product category..
  */
-export const useDeleteV1ProductCategoriesId = <TError = ResponseErrorResponse,
+export const useDeleteV1ProductCategoriesId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1ProductCategoriesId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1ProductCategoriesId>>,
@@ -519,4 +457,282 @@ export const useDeleteV1ProductCategoriesId = <TError = ResponseErrorResponse,
         TContext
       > => {
       return useMutation(getDeleteV1ProductCategoriesIdMutationOptions(options));
+    }
+    /**
+ * Returns one product category by ID. Use for edit screens and category detail views.
+
+**Expected outcomes:** response includes active/inactive status for activation toggles. Unknown category IDs return 404.
+
+**Frontend usage:**
+Call this operation when opening the **Get product category** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Category ID; Category ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Get product category
+ */
+export type getV1ProductCategoriesIdResponse200 = {
+  data: ProductCategoryResponse
+  status: 200
+}
+
+export type getV1ProductCategoriesIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1ProductCategoriesIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ProductCategoriesIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ProductCategoriesIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1ProductCategoriesIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ProductCategoriesIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1ProductCategoriesIdResponseSuccess = (getV1ProductCategoriesIdResponse200) & {
+  headers: Headers;
+};
+export type getV1ProductCategoriesIdResponseError = (getV1ProductCategoriesIdResponse400 | getV1ProductCategoriesIdResponse401 | getV1ProductCategoriesIdResponse403 | getV1ProductCategoriesIdResponse404 | getV1ProductCategoriesIdResponse429 | getV1ProductCategoriesIdResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1ProductCategoriesIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/product/categories/${id}`
+}
+
+export const getV1ProductCategoriesId = async (id: string, options?: RequestInit): Promise<getV1ProductCategoriesIdResponseSuccess> => {
+
+  return fetcher<getV1ProductCategoriesIdResponseSuccess>(getGetV1ProductCategoriesIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ProductCategoriesIdQueryKey = (id: string,) => {
+    return [
+    `/v1/product/categories/${id}`
+    ] as const;
+    }
+
+
+export const getGetV1ProductCategoriesIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ProductCategoriesIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ProductCategoriesId>>> = ({ signal }) => getV1ProductCategoriesId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1ProductCategoriesIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ProductCategoriesId>>>
+export type GetV1ProductCategoriesIdQueryError = ErrorResponse
+
+
+/**
+ * @summary Get product category
+ */
+
+export function useGetV1ProductCategoriesId<TData = Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError = ErrorResponse>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ProductCategoriesId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1ProductCategoriesIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Updates a category name, description, and active/inactive status.
+
+**Enum values:** status must be active or inactive.
+
+**Prerequisites:** category must belong to the authenticated supplier.
+
+**Edge cases:** setting status to inactive prevents future product create/update calls from using this category; existing products keep their category_id for reporting and history.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update product category** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `id` (path) — string; Category ID; Category ID
+- `name` — string; minimum length 2; maximum length 255
+- `status` — string; allowed: `active`, `inactive`
+
+**Optional inputs:**
+- `description` — string
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+ * @summary Update product category
+ */
+export type putV1ProductCategoriesIdResponse200 = {
+  data: ProductCategoryResponse
+  status: 200
+}
+
+export type putV1ProductCategoriesIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1ProductCategoriesIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1ProductCategoriesIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1ProductCategoriesIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type putV1ProductCategoriesIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1ProductCategoriesIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type putV1ProductCategoriesIdResponseSuccess = (putV1ProductCategoriesIdResponse200) & {
+  headers: Headers;
+};
+export type putV1ProductCategoriesIdResponseError = (putV1ProductCategoriesIdResponse400 | putV1ProductCategoriesIdResponse401 | putV1ProductCategoriesIdResponse403 | putV1ProductCategoriesIdResponse404 | putV1ProductCategoriesIdResponse429 | putV1ProductCategoriesIdResponse500) & {
+  headers: Headers;
+};
+
+export const getPutV1ProductCategoriesIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/product/categories/${id}`
+}
+
+export const putV1ProductCategoriesId = async (id: string,
+    categoryUpdateRequest: CategoryUpdateRequest, options?: RequestInit): Promise<putV1ProductCategoriesIdResponseSuccess> => {
+
+  return fetcher<putV1ProductCategoriesIdResponseSuccess>(getPutV1ProductCategoriesIdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      categoryUpdateRequest,)
+  }
+);}
+
+
+
+
+export const getPutV1ProductCategoriesIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, TError,{id: string;data: CategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, TError,{id: string;data: CategoryUpdateRequest}, TContext> => {
+
+const mutationKey = ['putV1ProductCategoriesId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, {id: string;data: CategoryUpdateRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putV1ProductCategoriesId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1ProductCategoriesIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1ProductCategoriesId>>>
+    export type PutV1ProductCategoriesIdMutationBody = CategoryUpdateRequest
+    export type PutV1ProductCategoriesIdMutationError = ErrorResponse
+
+    /**
+ * @summary Update product category
+ */
+export const usePutV1ProductCategoriesId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1ProductCategoriesId>>, TError,{id: string;data: CategoryUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putV1ProductCategoriesId>>,
+        TError,
+        {id: string;data: CategoryUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1ProductCategoriesIdMutationOptions(options));
     }

@@ -1,4 +1,4 @@
-import type { DocumentTypeSummary } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentTypeSummary } from './kyc-documents-types';
 
 interface KycDocumentTypeSummaryCardProps {
   summary: DocumentTypeSummary;

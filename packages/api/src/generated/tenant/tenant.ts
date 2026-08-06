@@ -19,6 +19,10 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query';
 
+import type {
+  ErrorResponse
+} from '../schemas';
+
 import { fetcher } from '../../fetcher';
 
 
@@ -27,19 +31,68 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
+ * Decommission BYOD database.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Decommission BYOD database**; remove or refresh the affected item after success.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Decommission BYOD database
  */
-export type deleteV1TenantDecommissionIdResponse200 = {
-  data: void
-  status: 200
+export type deleteV1TenantDecommissionIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type deleteV1TenantDecommissionIdResponseSuccess = (deleteV1TenantDecommissionIdResponse200) & {
+export type deleteV1TenantDecommissionIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1TenantDecommissionIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1TenantDecommissionIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteV1TenantDecommissionIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1TenantDecommissionIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type deleteV1TenantDecommissionIdResponseError = (deleteV1TenantDecommissionIdResponse400 | deleteV1TenantDecommissionIdResponse401 | deleteV1TenantDecommissionIdResponse403 | deleteV1TenantDecommissionIdResponse404 | deleteV1TenantDecommissionIdResponse429 | deleteV1TenantDecommissionIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type deleteV1TenantDecommissionIdResponse = (deleteV1TenantDecommissionIdResponseSuccess)
+export type deleteV1TenantDecommissionIdResponse = (deleteV1TenantDecommissionIdResponseError)
 
 export const getDeleteV1TenantDecommissionIdUrl = (id: string,) => {
 
@@ -63,7 +116,7 @@ export const deleteV1TenantDecommissionId = async (id: string, options?: Request
 
 
 
-export const getDeleteV1TenantDecommissionIdMutationOptions = <TError = unknown,
+export const getDeleteV1TenantDecommissionIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1TenantDecommissionId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1TenantDecommissionId>>, TError,{id: string}, TContext> => {
 
@@ -92,12 +145,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1TenantDecommissionIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1TenantDecommissionId>>>
 
-    export type DeleteV1TenantDecommissionIdMutationError = unknown
+    export type DeleteV1TenantDecommissionIdMutationError = ErrorResponse
 
     /**
  * @summary Decommission BYOD database
  */
-export const useDeleteV1TenantDecommissionId = <TError = unknown,
+export const useDeleteV1TenantDecommissionId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1TenantDecommissionId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1TenantDecommissionId>>,
@@ -108,19 +161,68 @@ export const useDeleteV1TenantDecommissionId = <TError = unknown,
       return useMutation(getDeleteV1TenantDecommissionIdMutationOptions(options));
     }
     /**
+ * BYOD health (live connection test).
+
+**Frontend usage:**
+Call this operation when opening the **BYOD health (live connection test)** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary BYOD health (live connection test)
  */
-export type getV1TenantHealthIdResponse200 = {
-  data: void
-  status: 200
+export type getV1TenantHealthIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type getV1TenantHealthIdResponseSuccess = (getV1TenantHealthIdResponse200) & {
+export type getV1TenantHealthIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1TenantHealthIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1TenantHealthIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1TenantHealthIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1TenantHealthIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type getV1TenantHealthIdResponseError = (getV1TenantHealthIdResponse400 | getV1TenantHealthIdResponse401 | getV1TenantHealthIdResponse403 | getV1TenantHealthIdResponse404 | getV1TenantHealthIdResponse429 | getV1TenantHealthIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type getV1TenantHealthIdResponse = (getV1TenantHealthIdResponseSuccess)
+export type getV1TenantHealthIdResponse = (getV1TenantHealthIdResponseError)
 
 export const getGetV1TenantHealthIdUrl = (id: string,) => {
 
@@ -152,7 +254,7 @@ export const getGetV1TenantHealthIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1TenantHealthIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1TenantHealthId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1TenantHealthId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1TenantHealthIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1TenantHealthId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1TenantHealthId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -171,14 +273,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1TenantHealthIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1TenantHealthId>>>
-export type GetV1TenantHealthIdQueryError = unknown
+export type GetV1TenantHealthIdQueryError = ErrorResponse
 
 
 /**
  * @summary BYOD health (live connection test)
  */
 
-export function useGetV1TenantHealthId<TData = Awaited<ReturnType<typeof getV1TenantHealthId>>, TError = unknown>(
+export function useGetV1TenantHealthId<TData = Awaited<ReturnType<typeof getV1TenantHealthId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1TenantHealthId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -196,19 +298,68 @@ export function useGetV1TenantHealthId<TData = Awaited<ReturnType<typeof getV1Te
 
 
 /**
+ * Run schema migrations on BYOD database.
+
+**Frontend usage:**
+Call this operation from the **Run schema migrations on BYOD database** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Run schema migrations on BYOD database
  */
-export type postV1TenantMigrateIdResponse200 = {
-  data: void
-  status: 200
+export type postV1TenantMigrateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1TenantMigrateIdResponseSuccess = (postV1TenantMigrateIdResponse200) & {
+export type postV1TenantMigrateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1TenantMigrateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1TenantMigrateIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1TenantMigrateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1TenantMigrateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1TenantMigrateIdResponseError = (postV1TenantMigrateIdResponse400 | postV1TenantMigrateIdResponse401 | postV1TenantMigrateIdResponse403 | postV1TenantMigrateIdResponse404 | postV1TenantMigrateIdResponse429 | postV1TenantMigrateIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1TenantMigrateIdResponse = (postV1TenantMigrateIdResponseSuccess)
+export type postV1TenantMigrateIdResponse = (postV1TenantMigrateIdResponseError)
 
 export const getPostV1TenantMigrateIdUrl = (id: string,) => {
 
@@ -232,7 +383,7 @@ export const postV1TenantMigrateId = async (id: string, options?: RequestInit): 
 
 
 
-export const getPostV1TenantMigrateIdMutationOptions = <TError = unknown,
+export const getPostV1TenantMigrateIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1TenantMigrateId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1TenantMigrateId>>, TError,{id: string}, TContext> => {
 
@@ -261,12 +412,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1TenantMigrateIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1TenantMigrateId>>>
 
-    export type PostV1TenantMigrateIdMutationError = unknown
+    export type PostV1TenantMigrateIdMutationError = ErrorResponse
 
     /**
  * @summary Run schema migrations on BYOD database
  */
-export const usePostV1TenantMigrateId = <TError = unknown,
+export const usePostV1TenantMigrateId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1TenantMigrateId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1TenantMigrateId>>,
@@ -277,19 +428,68 @@ export const usePostV1TenantMigrateId = <TError = unknown,
       return useMutation(getPostV1TenantMigrateIdMutationOptions(options));
     }
     /**
+ * Provision BYOD database (Enterprise only).
+
+**Frontend usage:**
+Call this operation from the **Provision BYOD database (Enterprise only)** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Provision BYOD database (Enterprise only)
  */
-export type postV1TenantProvisionIdResponse200 = {
-  data: void
-  status: 200
+export type postV1TenantProvisionIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1TenantProvisionIdResponseSuccess = (postV1TenantProvisionIdResponse200) & {
+export type postV1TenantProvisionIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1TenantProvisionIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1TenantProvisionIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1TenantProvisionIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1TenantProvisionIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1TenantProvisionIdResponseError = (postV1TenantProvisionIdResponse400 | postV1TenantProvisionIdResponse401 | postV1TenantProvisionIdResponse403 | postV1TenantProvisionIdResponse409 | postV1TenantProvisionIdResponse429 | postV1TenantProvisionIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1TenantProvisionIdResponse = (postV1TenantProvisionIdResponseSuccess)
+export type postV1TenantProvisionIdResponse = (postV1TenantProvisionIdResponseError)
 
 export const getPostV1TenantProvisionIdUrl = (id: string,) => {
 
@@ -313,7 +513,7 @@ export const postV1TenantProvisionId = async (id: string, options?: RequestInit)
 
 
 
-export const getPostV1TenantProvisionIdMutationOptions = <TError = unknown,
+export const getPostV1TenantProvisionIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1TenantProvisionId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1TenantProvisionId>>, TError,{id: string}, TContext> => {
 
@@ -342,12 +542,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1TenantProvisionIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1TenantProvisionId>>>
 
-    export type PostV1TenantProvisionIdMutationError = unknown
+    export type PostV1TenantProvisionIdMutationError = ErrorResponse
 
     /**
  * @summary Provision BYOD database (Enterprise only)
  */
-export const usePostV1TenantProvisionId = <TError = unknown,
+export const usePostV1TenantProvisionId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1TenantProvisionId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1TenantProvisionId>>,
@@ -358,19 +558,68 @@ export const usePostV1TenantProvisionId = <TError = unknown,
       return useMutation(getPostV1TenantProvisionIdMutationOptions(options));
     }
     /**
+ * Rotate BYOD credentials.
+
+**Frontend usage:**
+Call this operation from the **Rotate BYOD credentials** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Rotate BYOD credentials
  */
-export type postV1TenantRotateCredentialsIdResponse200 = {
-  data: void
-  status: 200
+export type postV1TenantRotateCredentialsIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1TenantRotateCredentialsIdResponseSuccess = (postV1TenantRotateCredentialsIdResponse200) & {
+export type postV1TenantRotateCredentialsIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1TenantRotateCredentialsIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1TenantRotateCredentialsIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1TenantRotateCredentialsIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1TenantRotateCredentialsIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1TenantRotateCredentialsIdResponseError = (postV1TenantRotateCredentialsIdResponse400 | postV1TenantRotateCredentialsIdResponse401 | postV1TenantRotateCredentialsIdResponse403 | postV1TenantRotateCredentialsIdResponse404 | postV1TenantRotateCredentialsIdResponse429 | postV1TenantRotateCredentialsIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1TenantRotateCredentialsIdResponse = (postV1TenantRotateCredentialsIdResponseSuccess)
+export type postV1TenantRotateCredentialsIdResponse = (postV1TenantRotateCredentialsIdResponseError)
 
 export const getPostV1TenantRotateCredentialsIdUrl = (id: string,) => {
 
@@ -394,7 +643,7 @@ export const postV1TenantRotateCredentialsId = async (id: string, options?: Requ
 
 
 
-export const getPostV1TenantRotateCredentialsIdMutationOptions = <TError = unknown,
+export const getPostV1TenantRotateCredentialsIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1TenantRotateCredentialsId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1TenantRotateCredentialsId>>, TError,{id: string}, TContext> => {
 
@@ -423,12 +672,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1TenantRotateCredentialsIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1TenantRotateCredentialsId>>>
 
-    export type PostV1TenantRotateCredentialsIdMutationError = unknown
+    export type PostV1TenantRotateCredentialsIdMutationError = ErrorResponse
 
     /**
  * @summary Rotate BYOD credentials
  */
-export const usePostV1TenantRotateCredentialsId = <TError = unknown,
+export const usePostV1TenantRotateCredentialsId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1TenantRotateCredentialsId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1TenantRotateCredentialsId>>,
@@ -439,19 +688,68 @@ export const usePostV1TenantRotateCredentialsId = <TError = unknown,
       return useMutation(getPostV1TenantRotateCredentialsIdMutationOptions(options));
     }
     /**
+ * BYOD status (fast, no connection test).
+
+**Frontend usage:**
+Call this operation when opening the **BYOD status (fast, no connection test)** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary BYOD status (fast, no connection test)
  */
-export type getV1TenantStatusIdResponse200 = {
-  data: void
-  status: 200
+export type getV1TenantStatusIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type getV1TenantStatusIdResponseSuccess = (getV1TenantStatusIdResponse200) & {
+export type getV1TenantStatusIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1TenantStatusIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1TenantStatusIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1TenantStatusIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1TenantStatusIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type getV1TenantStatusIdResponseError = (getV1TenantStatusIdResponse400 | getV1TenantStatusIdResponse401 | getV1TenantStatusIdResponse403 | getV1TenantStatusIdResponse404 | getV1TenantStatusIdResponse429 | getV1TenantStatusIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type getV1TenantStatusIdResponse = (getV1TenantStatusIdResponseSuccess)
+export type getV1TenantStatusIdResponse = (getV1TenantStatusIdResponseError)
 
 export const getGetV1TenantStatusIdUrl = (id: string,) => {
 
@@ -483,7 +781,7 @@ export const getGetV1TenantStatusIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1TenantStatusIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1TenantStatusId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1TenantStatusId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1TenantStatusIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1TenantStatusId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1TenantStatusId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -502,14 +800,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1TenantStatusIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1TenantStatusId>>>
-export type GetV1TenantStatusIdQueryError = unknown
+export type GetV1TenantStatusIdQueryError = ErrorResponse
 
 
 /**
  * @summary BYOD status (fast, no connection test)
  */
 
-export function useGetV1TenantStatusId<TData = Awaited<ReturnType<typeof getV1TenantStatusId>>, TError = unknown>(
+export function useGetV1TenantStatusId<TData = Awaited<ReturnType<typeof getV1TenantStatusId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1TenantStatusId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

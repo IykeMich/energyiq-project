@@ -2,7 +2,6 @@ import type { OrderApi } from './ports';
 import type {
   Order,
   OrderListParams,
-  OrderListResult,
   OrderStats,
   OrderStatsParams,
   OrderCreateRequest,
@@ -55,7 +54,7 @@ export class OrderUseCases {
     return this.api.deliverOrder(id);
   }
 
-  async listOrders(params?: OrderListParams): Promise<OrderListResult> {
+  async listOrders(params?: OrderListParams): Promise<Order[]> {
     return this.api.listOrders(params);
   }
 

@@ -1,7 +1,6 @@
 import type {
   Order,
   OrderListParams,
-  OrderListResult,
   OrderStats,
   OrderStatsParams,
   OrderCreateRequest,
@@ -24,6 +23,6 @@ export interface OrderApi {
   cancelOrder(id: string): Promise<Order>;
   dispatchOrder(id: string, req: OrderDispatchRequest): Promise<Order>;
   deliverOrder(id: string): Promise<Order>;
-  listOrders(params?: OrderListParams): Promise<OrderListResult>;
+  listOrders(params?: OrderListParams): Promise<Order[]>;
   getOrderStats(params?: OrderStatsParams): Promise<OrderStats>;
 }

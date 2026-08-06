@@ -42,7 +42,7 @@ export function WarehouseStockTransfer({
 
   const productsQuery = useProductsQuery();
 
-  const products = productsQuery.data?.items ?? [];
+  const products = productsQuery.data ?? [];
 
   const productOptions = useMemo(
     () =>

@@ -1,4 +1,4 @@
-import type { DocumentTypeConfig } from '@/ui/pages/kyc-documents/kyc-documents-mocks';
+import type { DocumentTypeConfig } from './kyc-documents-types';
 
 interface KycDocumentTypeConfigCardProps {
   config: DocumentTypeConfig;

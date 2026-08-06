@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock } from 'lucide-react';
 import { cn } from '@energyiq/shared';
-import type { AppDistributorComplaintTimelineItem } from '@energyiq/api/generated/schemas';
+import type { DistributorComplaintTimelineItem as AppDistributorComplaintTimelineItem } from '@energyiq/api/generated/schemas';
 
 interface ComplaintTimelineItemProps {
   entry: AppDistributorComplaintTimelineItem;

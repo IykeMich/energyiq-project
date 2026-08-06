@@ -15,8 +15,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  HttpComplaintResponse,
-  HttpResolveRequest
+  ComplaintResponse,
+  ErrorResponse,
+  ResolveRequest
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -28,19 +29,71 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Resolves a complaint with the supplier-selected resolution type and notes, then returns the updated distributor-facing complaint detail payload.
+
+**Frontend usage:**
+Call this operation from the **Resolve supplier complaint** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Complaint ID; Complaint ID
+- `resolution_notes` — string; minimum length 5; maximum length 2000
+- `resolution_type` — string; allowed: `replacement`, `partial_replacement`, `full_refund`, `partial_refund`, `credit_note`, `rejection`
+
+**Optional inputs:**
+None.
+
+**Enum values:**
+- `resolution_type`: `replacement`, `partial_replacement`, `full_refund`, `partial_refund`, `credit_note`, `rejection`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Resolve supplier complaint
  */
 export type postV1ComplaintResolveIdResponse200 = {
-  data: HttpComplaintResponse
+  data: ComplaintResponse
   status: 200
+}
+
+export type postV1ComplaintResolveIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1ComplaintResolveIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1ComplaintResolveIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ComplaintResolveIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ComplaintResolveIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1ComplaintResolveIdResponseSuccess = (postV1ComplaintResolveIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1ComplaintResolveIdResponse = (postV1ComplaintResolveIdResponseSuccess)
+export type postV1ComplaintResolveIdResponseError = (postV1ComplaintResolveIdResponse400 | postV1ComplaintResolveIdResponse401 | postV1ComplaintResolveIdResponse403 | postV1ComplaintResolveIdResponse429 | postV1ComplaintResolveIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1ComplaintResolveIdUrl = (id: string,) => {
 
@@ -51,24 +104,24 @@ export const getPostV1ComplaintResolveIdUrl = (id: string,) => {
 }
 
 export const postV1ComplaintResolveId = async (id: string,
-    httpResolveRequest: HttpResolveRequest, options?: RequestInit): Promise<postV1ComplaintResolveIdResponse> => {
+    resolveRequest: ResolveRequest, options?: RequestInit): Promise<postV1ComplaintResolveIdResponseSuccess> => {
 
-  return fetcher<postV1ComplaintResolveIdResponse>(getPostV1ComplaintResolveIdUrl(id),
+  return fetcher<postV1ComplaintResolveIdResponseSuccess>(getPostV1ComplaintResolveIdUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpResolveRequest,)
+      resolveRequest,)
   }
 );}
 
 
 
 
-export const getPostV1ComplaintResolveIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, TError,{id: string;data: HttpResolveRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, TError,{id: string;data: HttpResolveRequest}, TContext> => {
+export const getPostV1ComplaintResolveIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, TError,{id: string;data: ResolveRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, TError,{id: string;data: ResolveRequest}, TContext> => {
 
 const mutationKey = ['postV1ComplaintResolveId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -80,7 +133,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, {id: string;data: HttpResolveRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, {id: string;data: ResolveRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1ComplaintResolveId(id,data,requestOptions)
@@ -94,37 +147,84 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1ComplaintResolveIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ComplaintResolveId>>>
-    export type PostV1ComplaintResolveIdMutationBody = HttpResolveRequest
-    export type PostV1ComplaintResolveIdMutationError = unknown
+    export type PostV1ComplaintResolveIdMutationBody = ResolveRequest
+    export type PostV1ComplaintResolveIdMutationError = ErrorResponse
 
     /**
  * @summary Resolve supplier complaint
  */
-export const usePostV1ComplaintResolveId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, TError,{id: string;data: HttpResolveRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1ComplaintResolveId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintResolveId>>, TError,{id: string;data: ResolveRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ComplaintResolveId>>,
         TError,
-        {id: string;data: HttpResolveRequest},
+        {id: string;data: ResolveRequest},
         TContext
       > => {
       return useMutation(getPostV1ComplaintResolveIdMutationOptions(options));
     }
     /**
  * Moves a submitted or escalated complaint into supplier review and records an activity entry for the distributor complaint timeline.
+
+**Frontend usage:**
+Call this operation from the **Start supplier complaint review** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Complaint ID; Complaint ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Start supplier complaint review
  */
 export type postV1ComplaintReviewIdResponse200 = {
-  data: HttpComplaintResponse
+  data: ComplaintResponse
   status: 200
+}
+
+export type postV1ComplaintReviewIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1ComplaintReviewIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1ComplaintReviewIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ComplaintReviewIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ComplaintReviewIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1ComplaintReviewIdResponseSuccess = (postV1ComplaintReviewIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1ComplaintReviewIdResponse = (postV1ComplaintReviewIdResponseSuccess)
+export type postV1ComplaintReviewIdResponseError = (postV1ComplaintReviewIdResponse400 | postV1ComplaintReviewIdResponse401 | postV1ComplaintReviewIdResponse403 | postV1ComplaintReviewIdResponse429 | postV1ComplaintReviewIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1ComplaintReviewIdUrl = (id: string,) => {
 
@@ -134,9 +234,9 @@ export const getPostV1ComplaintReviewIdUrl = (id: string,) => {
   return `/v1/complaint/review/${id}`
 }
 
-export const postV1ComplaintReviewId = async (id: string, options?: RequestInit): Promise<postV1ComplaintReviewIdResponse> => {
+export const postV1ComplaintReviewId = async (id: string, options?: RequestInit): Promise<postV1ComplaintReviewIdResponseSuccess> => {
 
-  return fetcher<postV1ComplaintReviewIdResponse>(getPostV1ComplaintReviewIdUrl(id),
+  return fetcher<postV1ComplaintReviewIdResponseSuccess>(getPostV1ComplaintReviewIdUrl(id),
   {
     ...options,
     method: 'POST'
@@ -148,7 +248,7 @@ export const postV1ComplaintReviewId = async (id: string, options?: RequestInit)
 
 
 
-export const getPostV1ComplaintReviewIdMutationOptions = <TError = unknown,
+export const getPostV1ComplaintReviewIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintReviewId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintReviewId>>, TError,{id: string}, TContext> => {
 
@@ -177,12 +277,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1ComplaintReviewIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ComplaintReviewId>>>
 
-    export type PostV1ComplaintReviewIdMutationError = unknown
+    export type PostV1ComplaintReviewIdMutationError = ErrorResponse
 
     /**
  * @summary Start supplier complaint review
  */
-export const usePostV1ComplaintReviewId = <TError = unknown,
+export const usePostV1ComplaintReviewId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ComplaintReviewId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ComplaintReviewId>>,

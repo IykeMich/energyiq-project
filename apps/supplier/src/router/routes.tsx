@@ -42,7 +42,10 @@ import { KycDocumentTypesPage } from '@/ui/pages/kyc-documents/kyc-document-type
 import { AddKycDocumentTypePage } from '@/ui/pages/kyc-documents/add-kyc-document-type-page';
 import { KycDocumentCategoriesPage } from '@/ui/pages/kyc-documents/kyc-document-categories-page';
 import { KycReviewQueuePage } from '@/ui/pages/kyc-documents/kyc-review-queue-page';
+import { KycDocumentDetailPage } from '@/ui/pages/kyc-documents/kyc-document-detail-page';
 import { TierManagementPage } from '@/ui/pages/tier-management/tier-management-page';
+import { AccountsPage } from '@/ui/pages/accounts/accounts-page';
+import { TransactionsPage } from '@/ui/pages/transactions/transactions-page';
 import { DashboardLayout } from '@/ui/layouts/dashboard-layout';
 import { ForgotPasswordPage} from '@/ui/pages/auth/forgot-password-page';
 import { CheckEmailPage } from '@/ui/pages/auth/email-page';
@@ -98,6 +101,8 @@ export const router = createBrowserRouter([
               { path: '/:slug/orders/:id', element: <OrderDetailPage /> },
               { path: '/:slug/orders/:id/dispatch', element: <OrderDispatchPage /> },
               { path: '/:slug/sales-entry', element: <SalesEntryPage /> },
+              { path: '/:slug/accounts', element: <AccountsPage /> },
+              { path: '/:slug/transactions', element: <TransactionsPage /> },
               { path: '/:slug/audit-logs', element: <AuditLogsPage /> },
               { path: '/:slug/complaints', element: <ComplaintsPage /> },
               { path: '/:slug/complaints/:id', element: <ComplaintDetailPage /> },
@@ -112,6 +117,7 @@ export const router = createBrowserRouter([
               { path: '/:slug/reports/compliance', element: <ComplianceReportPage /> },
               { path: '/:slug/reports/custom', element: <CustomReportBuilderPage /> },
               { path: '/:slug/kyc-documents', element: <KycDocumentsPage /> },
+              { path: '/:slug/kyc-documents/documents/:documentId', element: <KycDocumentDetailPage /> },
               { path: '/:slug/kyc-documents/review', element: <KycReviewQueuePage /> },
               { path: '/:slug/kyc-documents/types', element: <KycDocumentTypesPage /> },
               { path: '/:slug/kyc-documents/types/new', element: <AddKycDocumentTypePage /> },

@@ -19,6 +19,15 @@ import type {
   UseQueryResult
 } from '@tanstack/react-query';
 
+import type {
+  ErrorResponse,
+  GetV1ApprovalDashboardParams,
+  GetV1ApprovalListParams,
+  QueueListResponse,
+  QueueSummaryResponse,
+  ReviewDetailResponse
+} from '../schemas';
+
 import { fetcher } from '../../fetcher';
 
 
@@ -28,19 +37,73 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Approve a pending request as a staff checker. Account-owner identities are not users and cannot participate in maker-checker resolution.
+
+**Frontend usage:**
+Call this operation when the user submits the **Approve request** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Approve request
  */
-export type postV1ApprovalApproveIdResponse200 = {
-  data: void
-  status: 200
+export type postV1ApprovalApproveIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1ApprovalApproveIdResponseSuccess = (postV1ApprovalApproveIdResponse200) & {
+export type postV1ApprovalApproveIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1ApprovalApproveIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ApprovalApproveIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1ApprovalApproveIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1ApprovalApproveIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ApprovalApproveIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1ApprovalApproveIdResponseError = (postV1ApprovalApproveIdResponse400 | postV1ApprovalApproveIdResponse401 | postV1ApprovalApproveIdResponse403 | postV1ApprovalApproveIdResponse404 | postV1ApprovalApproveIdResponse409 | postV1ApprovalApproveIdResponse429 | postV1ApprovalApproveIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1ApprovalApproveIdResponse = (postV1ApprovalApproveIdResponseSuccess)
+export type postV1ApprovalApproveIdResponse = (postV1ApprovalApproveIdResponseError)
 
 export const getPostV1ApprovalApproveIdUrl = (id: string,) => {
 
@@ -64,7 +127,7 @@ export const postV1ApprovalApproveId = async (id: string, options?: RequestInit)
 
 
 
-export const getPostV1ApprovalApproveIdMutationOptions = <TError = unknown,
+export const getPostV1ApprovalApproveIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalApproveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalApproveId>>, TError,{id: string}, TContext> => {
 
@@ -93,12 +156,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1ApprovalApproveIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ApprovalApproveId>>>
 
-    export type PostV1ApprovalApproveIdMutationError = unknown
+    export type PostV1ApprovalApproveIdMutationError = ErrorResponse
 
     /**
  * @summary Approve request
  */
-export const usePostV1ApprovalApproveId = <TError = unknown,
+export const usePostV1ApprovalApproveId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalApproveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ApprovalApproveId>>,
@@ -110,19 +173,73 @@ export const usePostV1ApprovalApproveId = <TError = unknown,
     }
     /**
  * Cancel a pending request as the original staff maker. Account-owner identities are not users and cannot participate in maker-checker resolution.
+
+**Frontend usage:**
+Call this operation when the user submits the **Cancel request** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Cancel request
  */
-export type postV1ApprovalCancelIdResponse200 = {
-  data: void
-  status: 200
+export type postV1ApprovalCancelIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1ApprovalCancelIdResponseSuccess = (postV1ApprovalCancelIdResponse200) & {
+export type postV1ApprovalCancelIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1ApprovalCancelIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ApprovalCancelIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1ApprovalCancelIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1ApprovalCancelIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ApprovalCancelIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1ApprovalCancelIdResponseError = (postV1ApprovalCancelIdResponse400 | postV1ApprovalCancelIdResponse401 | postV1ApprovalCancelIdResponse403 | postV1ApprovalCancelIdResponse404 | postV1ApprovalCancelIdResponse409 | postV1ApprovalCancelIdResponse429 | postV1ApprovalCancelIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1ApprovalCancelIdResponse = (postV1ApprovalCancelIdResponseSuccess)
+export type postV1ApprovalCancelIdResponse = (postV1ApprovalCancelIdResponseError)
 
 export const getPostV1ApprovalCancelIdUrl = (id: string,) => {
 
@@ -146,7 +263,7 @@ export const postV1ApprovalCancelId = async (id: string, options?: RequestInit):
 
 
 
-export const getPostV1ApprovalCancelIdMutationOptions = <TError = unknown,
+export const getPostV1ApprovalCancelIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalCancelId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalCancelId>>, TError,{id: string}, TContext> => {
 
@@ -175,12 +292,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1ApprovalCancelIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ApprovalCancelId>>>
 
-    export type PostV1ApprovalCancelIdMutationError = unknown
+    export type PostV1ApprovalCancelIdMutationError = ErrorResponse
 
     /**
  * @summary Cancel request
  */
-export const usePostV1ApprovalCancelId = <TError = unknown,
+export const usePostV1ApprovalCancelId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalCancelId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ApprovalCancelId>>,
@@ -191,32 +308,89 @@ export const usePostV1ApprovalCancelId = <TError = unknown,
       return useMutation(getPostV1ApprovalCancelIdMutationOptions(options));
     }
     /**
- * List approval requests for the current supplier. Supports optional `status`, `limit`, and `offset` query params.
- * @summary List approval requests
+ * Returns the authorization queue stat cards for the current supplier. Supports optional category filtering for product, order, or payment requests.
+
+**Frontend usage:**
+Call this operation when opening the **Approval queue summary** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `category` (query) — string; allowed: `product`, `order`, `payment`; Approval request category; Approval request category
+
+**Enum values:**
+- `category`: `product`, `order`, `payment`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Approval queue summary
  */
-export type getV1ApprovalListResponse200 = {
-  data: void
+export type getV1ApprovalDashboardResponse200 = {
+  data: QueueSummaryResponse
   status: 200
 }
 
-export type getV1ApprovalListResponseSuccess = (getV1ApprovalListResponse200) & {
-  headers: Headers;
-};
-;
-
-export type getV1ApprovalListResponse = (getV1ApprovalListResponseSuccess)
-
-export const getGetV1ApprovalListUrl = () => {
-
-
-
-
-  return `/v1/approval/list`
+export type getV1ApprovalDashboardResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export const getV1ApprovalList = async ( options?: RequestInit): Promise<getV1ApprovalListResponse> => {
+export type getV1ApprovalDashboardResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
 
-  return fetcher<getV1ApprovalListResponse>(getGetV1ApprovalListUrl(),
+export type getV1ApprovalDashboardResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ApprovalDashboardResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ApprovalDashboardResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1ApprovalDashboardResponseSuccess = (getV1ApprovalDashboardResponse200) & {
+  headers: Headers;
+};
+export type getV1ApprovalDashboardResponseError = (getV1ApprovalDashboardResponse400 | getV1ApprovalDashboardResponse401 | getV1ApprovalDashboardResponse403 | getV1ApprovalDashboardResponse429 | getV1ApprovalDashboardResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1ApprovalDashboardUrl = (params?: GetV1ApprovalDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/approval/dashboard?${stringifiedParams}` : `/v1/approval/dashboard`
+}
+
+export const getV1ApprovalDashboard = async (params?: GetV1ApprovalDashboardParams, options?: RequestInit): Promise<getV1ApprovalDashboardResponseSuccess> => {
+
+  return fetcher<getV1ApprovalDashboardResponseSuccess>(getGetV1ApprovalDashboardUrl(params),
   {
     ...options,
     method: 'GET'
@@ -229,23 +403,173 @@ export const getV1ApprovalList = async ( options?: RequestInit): Promise<getV1Ap
 
 
 
-export const getGetV1ApprovalListQueryKey = () => {
+export const getGetV1ApprovalDashboardQueryKey = (params?: GetV1ApprovalDashboardParams,) => {
     return [
-    `/v1/approval/list`
+    `/v1/approval/dashboard`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetV1ApprovalListQueryOptions = <TData = Awaited<ReturnType<typeof getV1ApprovalList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ApprovalDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getV1ApprovalDashboard>>, TError = ErrorResponse>(params?: GetV1ApprovalDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalDashboard>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetV1ApprovalListQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ApprovalDashboardQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ApprovalList>>> = ({ signal }) => getV1ApprovalList({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ApprovalDashboard>>> = ({ signal }) => getV1ApprovalDashboard(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1ApprovalDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ApprovalDashboard>>>
+export type GetV1ApprovalDashboardQueryError = ErrorResponse
+
+
+/**
+ * @summary Approval queue summary
+ */
+
+export function useGetV1ApprovalDashboard<TData = Awaited<ReturnType<typeof getV1ApprovalDashboard>>, TError = ErrorResponse>(
+ params?: GetV1ApprovalDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalDashboard>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1ApprovalDashboardQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Returns the authorization queue payload for the current supplier, including summary cards, filter options, paginated items, and queue metadata.
+
+**Frontend usage:**
+Use this operation to populate the **List approval requests** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `category` (query) — string; allowed: `product`, `order`, `payment`; Approval request category; Approval request category
+- `limit` (query) — integer; minimum 1; maximum 200; Page size; Page size
+- `offset` (query) — integer; minimum 0; Page offset; Page offset
+- `status` (query) — string; allowed: `pending`, `approved`, `rejected`, `cancelled`, `expired`; Approval request status; Approval request status
+
+**Enum values:**
+- `category`: `product`, `order`, `payment`
+- `status`: `pending`, `approved`, `rejected`, `cancelled`, `expired`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary List approval requests
+ */
+export type getV1ApprovalListResponse200 = {
+  data: QueueListResponse
+  status: 200
+}
+
+export type getV1ApprovalListResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1ApprovalListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ApprovalListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ApprovalListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ApprovalListResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1ApprovalListResponseSuccess = (getV1ApprovalListResponse200) & {
+  headers: Headers;
+};
+export type getV1ApprovalListResponseError = (getV1ApprovalListResponse400 | getV1ApprovalListResponse401 | getV1ApprovalListResponse403 | getV1ApprovalListResponse429 | getV1ApprovalListResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1ApprovalListUrl = (params?: GetV1ApprovalListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/approval/list?${stringifiedParams}` : `/v1/approval/list`
+}
+
+export const getV1ApprovalList = async (params?: GetV1ApprovalListParams, options?: RequestInit): Promise<getV1ApprovalListResponseSuccess> => {
+
+  return fetcher<getV1ApprovalListResponseSuccess>(getGetV1ApprovalListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1ApprovalListQueryKey = (params?: GetV1ApprovalListParams,) => {
+    return [
+    `/v1/approval/list`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetV1ApprovalListQueryOptions = <TData = Awaited<ReturnType<typeof getV1ApprovalList>>, TError = ErrorResponse>(params?: GetV1ApprovalListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1ApprovalListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1ApprovalList>>> = ({ signal }) => getV1ApprovalList(params, { signal, ...requestOptions });
 
 
 
@@ -255,19 +579,19 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ApprovalListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ApprovalList>>>
-export type GetV1ApprovalListQueryError = unknown
+export type GetV1ApprovalListQueryError = ErrorResponse
 
 
 /**
  * @summary List approval requests
  */
 
-export function useGetV1ApprovalList<TData = Awaited<ReturnType<typeof getV1ApprovalList>>, TError = unknown>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export function useGetV1ApprovalList<TData = Awaited<ReturnType<typeof getV1ApprovalList>>, TError = ErrorResponse>(
+ params?: GetV1ApprovalListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetV1ApprovalListQueryOptions(options)
+  const queryOptions = getGetV1ApprovalListQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -281,19 +605,72 @@ export function useGetV1ApprovalList<TData = Awaited<ReturnType<typeof getV1Appr
 
 /**
  * Read one approval request by ID.
+
+**Frontend usage:**
+Call this operation when opening the **Get approval request** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get approval request
  */
 export type getV1ApprovalReadIdResponse200 = {
-  data: void
+  data: ReviewDetailResponse
   status: 200
+}
+
+export type getV1ApprovalReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1ApprovalReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1ApprovalReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1ApprovalReadIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1ApprovalReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1ApprovalReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1ApprovalReadIdResponseSuccess = (getV1ApprovalReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1ApprovalReadIdResponse = (getV1ApprovalReadIdResponseSuccess)
+export type getV1ApprovalReadIdResponseError = (getV1ApprovalReadIdResponse400 | getV1ApprovalReadIdResponse401 | getV1ApprovalReadIdResponse403 | getV1ApprovalReadIdResponse404 | getV1ApprovalReadIdResponse429 | getV1ApprovalReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1ApprovalReadIdUrl = (id: string,) => {
 
@@ -303,9 +680,9 @@ export const getGetV1ApprovalReadIdUrl = (id: string,) => {
   return `/v1/approval/read/${id}`
 }
 
-export const getV1ApprovalReadId = async (id: string, options?: RequestInit): Promise<getV1ApprovalReadIdResponse> => {
+export const getV1ApprovalReadId = async (id: string, options?: RequestInit): Promise<getV1ApprovalReadIdResponseSuccess> => {
 
-  return fetcher<getV1ApprovalReadIdResponse>(getGetV1ApprovalReadIdUrl(id),
+  return fetcher<getV1ApprovalReadIdResponseSuccess>(getGetV1ApprovalReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -325,7 +702,7 @@ export const getGetV1ApprovalReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1ApprovalReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1ApprovalReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -344,14 +721,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1ApprovalReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1ApprovalReadId>>>
-export type GetV1ApprovalReadIdQueryError = unknown
+export type GetV1ApprovalReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get approval request
  */
 
-export function useGetV1ApprovalReadId<TData = Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError = unknown>(
+export function useGetV1ApprovalReadId<TData = Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1ApprovalReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -370,19 +747,73 @@ export function useGetV1ApprovalReadId<TData = Awaited<ReturnType<typeof getV1Ap
 
 /**
  * Reject a pending request as a staff checker. Account-owner identities are not users and cannot participate in maker-checker resolution.
+
+**Frontend usage:**
+Call this operation when the user submits the **Reject request** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+Use the success response as the frontend source of truth.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Reject request
  */
-export type postV1ApprovalRejectIdResponse200 = {
-  data: void
-  status: 200
+export type postV1ApprovalRejectIdResponse400 = {
+  data: ErrorResponse
+  status: 400
 }
 
-export type postV1ApprovalRejectIdResponseSuccess = (postV1ApprovalRejectIdResponse200) & {
+export type postV1ApprovalRejectIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1ApprovalRejectIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1ApprovalRejectIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1ApprovalRejectIdResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1ApprovalRejectIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1ApprovalRejectIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+;
+export type postV1ApprovalRejectIdResponseError = (postV1ApprovalRejectIdResponse400 | postV1ApprovalRejectIdResponse401 | postV1ApprovalRejectIdResponse403 | postV1ApprovalRejectIdResponse404 | postV1ApprovalRejectIdResponse409 | postV1ApprovalRejectIdResponse429 | postV1ApprovalRejectIdResponse500) & {
   headers: Headers;
 };
-;
 
-export type postV1ApprovalRejectIdResponse = (postV1ApprovalRejectIdResponseSuccess)
+export type postV1ApprovalRejectIdResponse = (postV1ApprovalRejectIdResponseError)
 
 export const getPostV1ApprovalRejectIdUrl = (id: string,) => {
 
@@ -406,7 +837,7 @@ export const postV1ApprovalRejectId = async (id: string, options?: RequestInit):
 
 
 
-export const getPostV1ApprovalRejectIdMutationOptions = <TError = unknown,
+export const getPostV1ApprovalRejectIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalRejectId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalRejectId>>, TError,{id: string}, TContext> => {
 
@@ -435,12 +866,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1ApprovalRejectIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1ApprovalRejectId>>>
 
-    export type PostV1ApprovalRejectIdMutationError = unknown
+    export type PostV1ApprovalRejectIdMutationError = ErrorResponse
 
     /**
  * @summary Reject request
  */
-export const usePostV1ApprovalRejectId = <TError = unknown,
+export const usePostV1ApprovalRejectId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1ApprovalRejectId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1ApprovalRejectId>>,

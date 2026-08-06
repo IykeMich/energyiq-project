@@ -28,8 +28,8 @@ export class WarehouseApiAdapter implements warehouse.WarehouseApi {
 
   async listWarehouses(
     params?: warehouse.WarehouseListParams,
-  ): Promise<warehouse.WarehouseListResult> {
-    return apiGet<warehouse.WarehouseListResult>('v1/warehouses', {
+  ): Promise<warehouse.Warehouse[]> {
+    return apiGet<warehouse.Warehouse[]>('v1/warehouses', {
       searchParams: toSearchParams(params),
     });
   }

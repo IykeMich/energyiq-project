@@ -20,16 +20,19 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ConfigurationUpdateRequest,
+  DispatchRequest,
+  ErrorResponse,
   GetV1OrderListParams,
   GetV1OrderListStatsParams,
-  HttpDispatchRequest,
-  HttpModifyRequest,
-  HttpOrderListResponse,
-  HttpOrderResponse,
-  HttpOrderStatsResponse,
-  InternalOrderAdaptersHttpCreateRequest,
-  InternalOrderAdaptersHttpRejectRequest,
-  ResponseErrorResponse
+  ModifyRequest,
+  OrderConfigurationResponse,
+  OrderCreateRequest,
+  OrderMutationResponse,
+  OrderRejectRequest,
+  OrderStatsResponse,
+  SupplierOrderListResponse,
+  SupplierOrderResponse
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -40,20 +43,67 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Moves a submitted order to approved. Prerequisites: order must currently be submitted and caller must hold order:approve. Outcome: approval timestamp and timeline entry are recorded.
+ * Approves an awaiting_approval order. When the caller is a staff member, this creates a pending Approval Queue request rather than applying the transition immediately. After approval, the order moves to awaiting_payment.
+
+**Frontend usage:**
+Call this operation from the **Approve order** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Order ID; Order ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Approve order
  */
 export type postV1OrderApproveIdResponse200 = {
-  data: HttpOrderResponse
+  data: OrderMutationResponse
   status: 200
+}
+
+export type postV1OrderApproveIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1OrderApproveIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1OrderApproveIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1OrderApproveIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1OrderApproveIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1OrderApproveIdResponseSuccess = (postV1OrderApproveIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1OrderApproveIdResponse = (postV1OrderApproveIdResponseSuccess)
+export type postV1OrderApproveIdResponseError = (postV1OrderApproveIdResponse400 | postV1OrderApproveIdResponse401 | postV1OrderApproveIdResponse403 | postV1OrderApproveIdResponse429 | postV1OrderApproveIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1OrderApproveIdUrl = (id: string,) => {
 
@@ -63,9 +113,9 @@ export const getPostV1OrderApproveIdUrl = (id: string,) => {
   return `/v1/order/approve/${id}`
 }
 
-export const postV1OrderApproveId = async (id: string, options?: RequestInit): Promise<postV1OrderApproveIdResponse> => {
+export const postV1OrderApproveId = async (id: string, options?: RequestInit): Promise<postV1OrderApproveIdResponseSuccess> => {
 
-  return fetcher<postV1OrderApproveIdResponse>(getPostV1OrderApproveIdUrl(id),
+  return fetcher<postV1OrderApproveIdResponseSuccess>(getPostV1OrderApproveIdUrl(id),
   {
     ...options,
     method: 'POST'
@@ -77,7 +127,7 @@ export const postV1OrderApproveId = async (id: string, options?: RequestInit): P
 
 
 
-export const getPostV1OrderApproveIdMutationOptions = <TError = unknown,
+export const getPostV1OrderApproveIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderApproveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderApproveId>>, TError,{id: string}, TContext> => {
 
@@ -106,12 +156,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1OrderApproveIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderApproveId>>>
 
-    export type PostV1OrderApproveIdMutationError = unknown
+    export type PostV1OrderApproveIdMutationError = ErrorResponse
 
     /**
  * @summary Approve order
  */
-export const usePostV1OrderApproveId = <TError = unknown,
+export const usePostV1OrderApproveId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderApproveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1OrderApproveId>>,
@@ -122,20 +172,67 @@ export const usePostV1OrderApproveId = <TError = unknown,
       return useMutation(getPostV1OrderApproveIdMutationOptions(options));
     }
     /**
- * Cancels draft, submitted, or approved orders when the state machine allows it. Distributor callers can cancel only their own orders. Use before dispatch; dispatched orders must use dispute or return flows.
+ * Cancels an order only before dispatch. Once an order reaches dispatched, cancellation is disabled.
+
+**Frontend usage:**
+Call this operation from the **Cancel order** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Order ID; Order ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Cancel order
  */
 export type postV1OrderCancelIdResponse200 = {
-  data: HttpOrderResponse
+  data: OrderMutationResponse
   status: 200
+}
+
+export type postV1OrderCancelIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1OrderCancelIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1OrderCancelIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1OrderCancelIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1OrderCancelIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1OrderCancelIdResponseSuccess = (postV1OrderCancelIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1OrderCancelIdResponse = (postV1OrderCancelIdResponseSuccess)
+export type postV1OrderCancelIdResponseError = (postV1OrderCancelIdResponse400 | postV1OrderCancelIdResponse401 | postV1OrderCancelIdResponse403 | postV1OrderCancelIdResponse429 | postV1OrderCancelIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1OrderCancelIdUrl = (id: string,) => {
 
@@ -145,9 +242,9 @@ export const getPostV1OrderCancelIdUrl = (id: string,) => {
   return `/v1/order/cancel/${id}`
 }
 
-export const postV1OrderCancelId = async (id: string, options?: RequestInit): Promise<postV1OrderCancelIdResponse> => {
+export const postV1OrderCancelId = async (id: string, options?: RequestInit): Promise<postV1OrderCancelIdResponseSuccess> => {
 
-  return fetcher<postV1OrderCancelIdResponse>(getPostV1OrderCancelIdUrl(id),
+  return fetcher<postV1OrderCancelIdResponseSuccess>(getPostV1OrderCancelIdUrl(id),
   {
     ...options,
     method: 'POST'
@@ -159,7 +256,7 @@ export const postV1OrderCancelId = async (id: string, options?: RequestInit): Pr
 
 
 
-export const getPostV1OrderCancelIdMutationOptions = <TError = unknown,
+export const getPostV1OrderCancelIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCancelId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCancelId>>, TError,{id: string}, TContext> => {
 
@@ -188,12 +285,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1OrderCancelIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderCancelId>>>
 
-    export type PostV1OrderCancelIdMutationError = unknown
+    export type PostV1OrderCancelIdMutationError = ErrorResponse
 
     /**
  * @summary Cancel order
  */
-export const usePostV1OrderCancelId = <TError = unknown,
+export const usePostV1OrderCancelId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCancelId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1OrderCancelId>>,
@@ -204,32 +301,342 @@ export const usePostV1OrderCancelId = <TError = unknown,
       return useMutation(getPostV1OrderCancelIdMutationOptions(options));
     }
     /**
- * Creates a submitted distributor order after validating the distributor, active products, and available supplier stock. Supplier staff must provide distributor_id and can obtain it from GET /v1/distributor/list. Distributor-authenticated users should omit distributor_id because the API securely derives it from their JWT; if they provide a different distributor's ID, the request is rejected. The distributor must belong to the authenticated supplier and have active status, so pending, suspended, terminated, and cross-supplier distributors cannot be used. Every item contains only product_id and quantity. Pricing is always loaded from the supplier product catalog and distributor tier, then snapshotted with unit_price and line_total in the saved order. Outcomes: 201 with server-computed totals, 400 for malformed/inactive data, 404 for an ineligible distributor, 409 for insufficient stock, and 401/403 for authentication or authorization failures.
+ * Read order configuration.
+
+**Frontend usage:**
+Call this operation when opening the **Read order configuration** detail view or pre-filling its related form.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Read order configuration
+ */
+export type getV1OrderConfigReadResponse200 = {
+  data: OrderConfigurationResponse
+  status: 200
+}
+
+export type getV1OrderConfigReadResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1OrderConfigReadResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1OrderConfigReadResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1OrderConfigReadResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1OrderConfigReadResponseSuccess = (getV1OrderConfigReadResponse200) & {
+  headers: Headers;
+};
+export type getV1OrderConfigReadResponseError = (getV1OrderConfigReadResponse401 | getV1OrderConfigReadResponse403 | getV1OrderConfigReadResponse429 | getV1OrderConfigReadResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1OrderConfigReadUrl = () => {
+
+
+
+
+  return `/v1/order/config/read`
+}
+
+export const getV1OrderConfigRead = async ( options?: RequestInit): Promise<getV1OrderConfigReadResponseSuccess> => {
+
+  return fetcher<getV1OrderConfigReadResponseSuccess>(getGetV1OrderConfigReadUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1OrderConfigReadQueryKey = () => {
+    return [
+    `/v1/order/config/read`
+    ] as const;
+    }
+
+
+export const getGetV1OrderConfigReadQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderConfigRead>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderConfigRead>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1OrderConfigReadQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1OrderConfigRead>>> = ({ signal }) => getV1OrderConfigRead({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1OrderConfigRead>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1OrderConfigReadQueryResult = NonNullable<Awaited<ReturnType<typeof getV1OrderConfigRead>>>
+export type GetV1OrderConfigReadQueryError = ErrorResponse
+
+
+/**
+ * @summary Read order configuration
+ */
+
+export function useGetV1OrderConfigRead<TData = Awaited<ReturnType<typeof getV1OrderConfigRead>>, TError = ErrorResponse>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderConfigRead>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1OrderConfigReadQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Update order configuration.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update order configuration** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `approval_mode` — string; allowed: `manual`, `automatic`
+- `inventory_strategy` — string; allowed: `reserve_on_order`, `reserve_on_approval`
+
+**Optional inputs:**
+- `reservation_window_minutes` — integer; minimum 0
+
+**Enum values:**
+- `approval_mode`: `manual`, `automatic`
+- `inventory_strategy`: `reserve_on_order`, `reserve_on_approval`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Update order configuration
+ */
+export type putV1OrderConfigUpdateResponse200 = {
+  data: OrderConfigurationResponse
+  status: 200
+}
+
+export type putV1OrderConfigUpdateResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1OrderConfigUpdateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1OrderConfigUpdateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1OrderConfigUpdateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1OrderConfigUpdateResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type putV1OrderConfigUpdateResponseSuccess = (putV1OrderConfigUpdateResponse200) & {
+  headers: Headers;
+};
+export type putV1OrderConfigUpdateResponseError = (putV1OrderConfigUpdateResponse400 | putV1OrderConfigUpdateResponse401 | putV1OrderConfigUpdateResponse403 | putV1OrderConfigUpdateResponse429 | putV1OrderConfigUpdateResponse500) & {
+  headers: Headers;
+};
+
+export const getPutV1OrderConfigUpdateUrl = () => {
+
+
+
+
+  return `/v1/order/config/update`
+}
+
+export const putV1OrderConfigUpdate = async (configurationUpdateRequest: ConfigurationUpdateRequest, options?: RequestInit): Promise<putV1OrderConfigUpdateResponseSuccess> => {
+
+  return fetcher<putV1OrderConfigUpdateResponseSuccess>(getPutV1OrderConfigUpdateUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      configurationUpdateRequest,)
+  }
+);}
+
+
+
+
+export const getPutV1OrderConfigUpdateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1OrderConfigUpdate>>, TError,{data: ConfigurationUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1OrderConfigUpdate>>, TError,{data: ConfigurationUpdateRequest}, TContext> => {
+
+const mutationKey = ['putV1OrderConfigUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1OrderConfigUpdate>>, {data: ConfigurationUpdateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  putV1OrderConfigUpdate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutV1OrderConfigUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof putV1OrderConfigUpdate>>>
+    export type PutV1OrderConfigUpdateMutationBody = ConfigurationUpdateRequest
+    export type PutV1OrderConfigUpdateMutationError = ErrorResponse
+
+    /**
+ * @summary Update order configuration
+ */
+export const usePutV1OrderConfigUpdate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1OrderConfigUpdate>>, TError,{data: ConfigurationUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putV1OrderConfigUpdate>>,
+        TError,
+        {data: ConfigurationUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getPutV1OrderConfigUpdateMutationOptions(options));
+    }
+    /**
+ * Creates a supplier-scoped order with an uppercase order reference shared across the checkout and uppercase per-item IDs. Supplier staff must provide distributor_id and can obtain it from GET /v1/distributor/list. Distributor-authenticated users should omit distributor_id because the API securely derives it from their JWT; if they provide a different distributor's ID, the request is rejected. The distributor must belong to the authenticated supplier and have active status. The created status follows supplier configuration: manual approval creates awaiting_approval; automatic approval creates awaiting_payment.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create an order** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `items[].product_id` — string
+- `items[].quantity` — integer
+
+**Optional inputs:**
+- `Idempotency-Key` (header) — string; Client-generated key; retried requests with the same key return the original order; Client-generated key; retried requests with the same key return the original order
+- `distributor_id` — string
+- `notes` — string
+- `shipping_address` — object
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create an order
  */
 export type postV1OrderCreateResponse201 = {
-  data: HttpOrderResponse
+  data: OrderMutationResponse
   status: 201
 }
 
 export type postV1OrderCreateResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
+export type postV1OrderCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1OrderCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1OrderCreateResponse409 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 409
+}
+
+export type postV1OrderCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1OrderCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1OrderCreateResponseSuccess = (postV1OrderCreateResponse201) & {
   headers: Headers;
 };
-export type postV1OrderCreateResponseError = (postV1OrderCreateResponse400 | postV1OrderCreateResponse409) & {
+export type postV1OrderCreateResponseError = (postV1OrderCreateResponse400 | postV1OrderCreateResponse401 | postV1OrderCreateResponse403 | postV1OrderCreateResponse409 | postV1OrderCreateResponse429 | postV1OrderCreateResponse500) & {
   headers: Headers;
 };
-
-export type postV1OrderCreateResponse = (postV1OrderCreateResponseSuccess | postV1OrderCreateResponseError)
 
 export const getPostV1OrderCreateUrl = () => {
 
@@ -239,24 +646,24 @@ export const getPostV1OrderCreateUrl = () => {
   return `/v1/order/create`
 }
 
-export const postV1OrderCreate = async (internalOrderAdaptersHttpCreateRequest: InternalOrderAdaptersHttpCreateRequest, options?: RequestInit): Promise<postV1OrderCreateResponse> => {
+export const postV1OrderCreate = async (orderCreateRequest: OrderCreateRequest, options?: RequestInit): Promise<postV1OrderCreateResponseSuccess> => {
 
-  return fetcher<postV1OrderCreateResponse>(getPostV1OrderCreateUrl(),
+  return fetcher<postV1OrderCreateResponseSuccess>(getPostV1OrderCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalOrderAdaptersHttpCreateRequest,)
+      orderCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1OrderCreateMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCreate>>, TError,{data: InternalOrderAdaptersHttpCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCreate>>, TError,{data: InternalOrderAdaptersHttpCreateRequest}, TContext> => {
+export const getPostV1OrderCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCreate>>, TError,{data: OrderCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCreate>>, TError,{data: OrderCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1OrderCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -268,7 +675,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderCreate>>, {data: InternalOrderAdaptersHttpCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderCreate>>, {data: OrderCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1OrderCreate(data,requestOptions)
@@ -282,37 +689,217 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1OrderCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderCreate>>>
-    export type PostV1OrderCreateMutationBody = InternalOrderAdaptersHttpCreateRequest
-    export type PostV1OrderCreateMutationError = ResponseErrorResponse
+    export type PostV1OrderCreateMutationBody = OrderCreateRequest
+    export type PostV1OrderCreateMutationError = ErrorResponse
 
     /**
  * @summary Create an order
  */
-export const usePostV1OrderCreate = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCreate>>, TError,{data: InternalOrderAdaptersHttpCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1OrderCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderCreate>>, TError,{data: OrderCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1OrderCreate>>,
         TError,
-        {data: InternalOrderAdaptersHttpCreateRequest},
+        {data: OrderCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1OrderCreateMutationOptions(options));
     }
     /**
- * Moves an approved order to dispatched and records driver, vehicle, waybill/tracking and estimated delivery metadata. Edge cases: only approved orders can dispatch.
+ * Confirms delivery for a dispatched order.
+
+**Frontend usage:**
+Call this operation from the **Mark order delivered** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `id` (path) — string; Order ID; Order ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Mark order delivered
+ */
+export type postV1OrderDeliverIdResponse200 = {
+  data: OrderMutationResponse
+  status: 200
+}
+
+export type postV1OrderDeliverIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1OrderDeliverIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1OrderDeliverIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1OrderDeliverIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1OrderDeliverIdResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1OrderDeliverIdResponseSuccess = (postV1OrderDeliverIdResponse200) & {
+  headers: Headers;
+};
+export type postV1OrderDeliverIdResponseError = (postV1OrderDeliverIdResponse400 | postV1OrderDeliverIdResponse401 | postV1OrderDeliverIdResponse403 | postV1OrderDeliverIdResponse429 | postV1OrderDeliverIdResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1OrderDeliverIdUrl = (id: string,) => {
+
+
+
+
+  return `/v1/order/deliver/${id}`
+}
+
+export const postV1OrderDeliverId = async (id: string, options?: RequestInit): Promise<postV1OrderDeliverIdResponseSuccess> => {
+
+  return fetcher<postV1OrderDeliverIdResponseSuccess>(getPostV1OrderDeliverIdUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPostV1OrderDeliverIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDeliverId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDeliverId>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['postV1OrderDeliverId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderDeliverId>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postV1OrderDeliverId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1OrderDeliverIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderDeliverId>>>
+
+    export type PostV1OrderDeliverIdMutationError = ErrorResponse
+
+    /**
+ * @summary Mark order delivered
+ */
+export const usePostV1OrderDeliverId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDeliverId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1OrderDeliverId>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getPostV1OrderDeliverIdMutationOptions(options));
+    }
+    /**
+ * Moves a processing order to dispatched and records driver, vehicle, waybill or tracking number, and estimated delivery metadata.
+
+**Frontend usage:**
+Call this operation from the **Dispatch order** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `driver_name` — string; minimum length 2; maximum length 255
+- `estimated_delivery` — string
+- `id` (path) — string; Order ID; Order ID
+- `tracking_number` — string; minimum length 2; maximum length 100
+- `vehicle_plate` — string; minimum length 2; maximum length 50
+
+**Optional inputs:**
+- `note` — string; maximum length 1000
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Dispatch order
  */
 export type postV1OrderDispatchIdResponse200 = {
-  data: HttpOrderResponse
+  data: OrderMutationResponse
   status: 200
+}
+
+export type postV1OrderDispatchIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1OrderDispatchIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1OrderDispatchIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1OrderDispatchIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1OrderDispatchIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1OrderDispatchIdResponseSuccess = (postV1OrderDispatchIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1OrderDispatchIdResponse = (postV1OrderDispatchIdResponseSuccess)
+export type postV1OrderDispatchIdResponseError = (postV1OrderDispatchIdResponse400 | postV1OrderDispatchIdResponse401 | postV1OrderDispatchIdResponse403 | postV1OrderDispatchIdResponse429 | postV1OrderDispatchIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1OrderDispatchIdUrl = (id: string,) => {
 
@@ -323,24 +910,24 @@ export const getPostV1OrderDispatchIdUrl = (id: string,) => {
 }
 
 export const postV1OrderDispatchId = async (id: string,
-    httpDispatchRequest: HttpDispatchRequest, options?: RequestInit): Promise<postV1OrderDispatchIdResponse> => {
+    dispatchRequest: DispatchRequest, options?: RequestInit): Promise<postV1OrderDispatchIdResponseSuccess> => {
 
-  return fetcher<postV1OrderDispatchIdResponse>(getPostV1OrderDispatchIdUrl(id),
+  return fetcher<postV1OrderDispatchIdResponseSuccess>(getPostV1OrderDispatchIdUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpDispatchRequest,)
+      dispatchRequest,)
   }
 );}
 
 
 
 
-export const getPostV1OrderDispatchIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDispatchId>>, TError,{id: string;data: HttpDispatchRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDispatchId>>, TError,{id: string;data: HttpDispatchRequest}, TContext> => {
+export const getPostV1OrderDispatchIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDispatchId>>, TError,{id: string;data: DispatchRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDispatchId>>, TError,{id: string;data: DispatchRequest}, TContext> => {
 
 const mutationKey = ['postV1OrderDispatchId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -352,7 +939,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderDispatchId>>, {id: string;data: HttpDispatchRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderDispatchId>>, {id: string;data: DispatchRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1OrderDispatchId(id,data,requestOptions)
@@ -366,37 +953,96 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1OrderDispatchIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderDispatchId>>>
-    export type PostV1OrderDispatchIdMutationBody = HttpDispatchRequest
-    export type PostV1OrderDispatchIdMutationError = unknown
+    export type PostV1OrderDispatchIdMutationBody = DispatchRequest
+    export type PostV1OrderDispatchIdMutationError = ErrorResponse
 
     /**
  * @summary Dispatch order
  */
-export const usePostV1OrderDispatchId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDispatchId>>, TError,{id: string;data: HttpDispatchRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1OrderDispatchId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderDispatchId>>, TError,{id: string;data: DispatchRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1OrderDispatchId>>,
         TError,
-        {id: string;data: HttpDispatchRequest},
+        {id: string;data: DispatchRequest},
         TContext
       > => {
       return useMutation(getPostV1OrderDispatchIdMutationOptions(options));
     }
     /**
- * Lists orders with optional status, distributor, and purchase-date filters. Supplier callers can list orders across their supplier tenant and optionally filter by distributor_id. Distributor callers are always restricted to their JWT distributor identity; distributor_id may be omitted or must match that identity. Supports pagination and returns total, limit and offset. Date filters use YYYY-MM-DD; date_to is inclusive from the user's perspective and internally converted to an exclusive upper bound.
+ * Lists supplier-facing orders with optional status, payment status, distributor, and purchase-date filters. Returns screen-ready order rows including distributor display fields, payment state, and action flags. Supplier callers can list orders across their supplier tenant and optionally filter by distributor_id. Distributor callers are always restricted to their JWT distributor identity; distributor_id may be omitted or must match that identity. Supports pagination and returns total, limit and offset. Date filters use YYYY-MM-DD; date_to is inclusive from the user's perspective and internally converted to an exclusive upper bound.
+
+**Frontend usage:**
+Use this operation to populate the **List orders** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `date_from` (query) — string; Start date in YYYY-MM-DD; Start date in YYYY-MM-DD
+- `date_to` (query) — string; End date in YYYY-MM-DD; End date in YYYY-MM-DD
+- `distributor_id` (query) — string; Filter by distributor UUID; Filter by distributor UUID
+- `limit` (query) — integer; Page size, max 100; Page size, max 100
+- `offset` (query) — integer; Offset; Offset
+- `payment_status` (query) — string; allowed: `pending`, `paid`, `refunded`, `cancelled`; Filter by payment status; Filter by payment status
+- `sort` (query) — string; allowed: `asc`, `desc`; default desc; Sort by created date; Sort by created date
+- `status` (query) — string; allowed: `pending`, `awaiting_approval`, `approved`, `awaiting_payment`, `paid`, `processing`, `dispatched`, `delivered`, `completed`, `rejected`, `cancelled`, `partially_returned`, `returned`, `refunded`; Filter by workflow status; Filter by workflow status
+
+**Enum values:**
+- `payment_status`: `pending`, `paid`, `refunded`, `cancelled`
+- `sort`: `asc`, `desc`
+- `status`: `pending`, `awaiting_approval`, `approved`, `awaiting_payment`, `paid`, `processing`, `dispatched`, `delivered`, `completed`, `rejected`, `cancelled`, `partially_returned`, `returned`, `refunded`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary List orders
  */
 export type getV1OrderListResponse200 = {
-  data: HttpOrderListResponse
+  data: SupplierOrderListResponse
   status: 200
+}
+
+export type getV1OrderListResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1OrderListResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1OrderListResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1OrderListResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1OrderListResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1OrderListResponseSuccess = (getV1OrderListResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1OrderListResponse = (getV1OrderListResponseSuccess)
+export type getV1OrderListResponseError = (getV1OrderListResponse400 | getV1OrderListResponse401 | getV1OrderListResponse403 | getV1OrderListResponse429 | getV1OrderListResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1OrderListUrl = (params?: GetV1OrderListParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -413,9 +1059,9 @@ export const getGetV1OrderListUrl = (params?: GetV1OrderListParams,) => {
   return stringifiedParams.length > 0 ? `/v1/order/list?${stringifiedParams}` : `/v1/order/list`
 }
 
-export const getV1OrderList = async (params?: GetV1OrderListParams, options?: RequestInit): Promise<getV1OrderListResponse> => {
+export const getV1OrderList = async (params?: GetV1OrderListParams, options?: RequestInit): Promise<getV1OrderListResponseSuccess> => {
 
-  return fetcher<getV1OrderListResponse>(getGetV1OrderListUrl(params),
+  return fetcher<getV1OrderListResponseSuccess>(getGetV1OrderListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -435,7 +1081,7 @@ export const getGetV1OrderListQueryKey = (params?: GetV1OrderListParams,) => {
     }
 
 
-export const getGetV1OrderListQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderList>>, TError = unknown>(params?: GetV1OrderListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1OrderListQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderList>>, TError = ErrorResponse>(params?: GetV1OrderListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -454,14 +1100,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1OrderListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1OrderList>>>
-export type GetV1OrderListQueryError = unknown
+export type GetV1OrderListQueryError = ErrorResponse
 
 
 /**
  * @summary List orders
  */
 
-export function useGetV1OrderList<TData = Awaited<ReturnType<typeof getV1OrderList>>, TError = unknown>(
+export function useGetV1OrderList<TData = Awaited<ReturnType<typeof getV1OrderList>>, TError = ErrorResponse>(
  params?: GetV1OrderListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -479,20 +1125,73 @@ export function useGetV1OrderList<TData = Awaited<ReturnType<typeof getV1OrderLi
 
 
 /**
- * Returns status counts for the orders screen tabs, such as submitted, approved, dispatched, cancelled, and total. Supplier callers see their supplier tenant; distributor callers are always restricted to their JWT distributor identity. Accepts the same distributor and date filters as list, but ignores status so each tab can render its own count. Caller must have order:list permission.
+ * Returns status counts for the supplier orders screen tabs, such as awaiting_approval, awaiting_payment, paid, dispatched, delivered, cancelled, and total. Optional payment_status and date-range filters apply before aggregation.
+
+**Frontend usage:**
+Use this operation to populate the **Get order status stats** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+- `date_from` (query) — string; Start date in YYYY-MM-DD; Start date in YYYY-MM-DD
+- `date_to` (query) — string; End date in YYYY-MM-DD; End date in YYYY-MM-DD
+- `distributor_id` (query) — string; Filter by distributor UUID; Filter by distributor UUID
+- `payment_status` (query) — string; allowed: `pending`, `paid`, `refunded`, `cancelled`; Filter by payment status; Filter by payment status
+
+**Enum values:**
+- `payment_status`: `pending`, `paid`, `refunded`, `cancelled`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get order status stats
  */
 export type getV1OrderListStatsResponse200 = {
-  data: HttpOrderStatsResponse
+  data: OrderStatsResponse
   status: 200
+}
+
+export type getV1OrderListStatsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1OrderListStatsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1OrderListStatsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1OrderListStatsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1OrderListStatsResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1OrderListStatsResponseSuccess = (getV1OrderListStatsResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1OrderListStatsResponse = (getV1OrderListStatsResponseSuccess)
+export type getV1OrderListStatsResponseError = (getV1OrderListStatsResponse400 | getV1OrderListStatsResponse401 | getV1OrderListStatsResponse403 | getV1OrderListStatsResponse429 | getV1OrderListStatsResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1OrderListStatsUrl = (params?: GetV1OrderListStatsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -509,9 +1208,9 @@ export const getGetV1OrderListStatsUrl = (params?: GetV1OrderListStatsParams,) =
   return stringifiedParams.length > 0 ? `/v1/order/list/stats?${stringifiedParams}` : `/v1/order/list/stats`
 }
 
-export const getV1OrderListStats = async (params?: GetV1OrderListStatsParams, options?: RequestInit): Promise<getV1OrderListStatsResponse> => {
+export const getV1OrderListStats = async (params?: GetV1OrderListStatsParams, options?: RequestInit): Promise<getV1OrderListStatsResponseSuccess> => {
 
-  return fetcher<getV1OrderListStatsResponse>(getGetV1OrderListStatsUrl(params),
+  return fetcher<getV1OrderListStatsResponseSuccess>(getGetV1OrderListStatsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -531,7 +1230,7 @@ export const getGetV1OrderListStatsQueryKey = (params?: GetV1OrderListStatsParam
     }
 
 
-export const getGetV1OrderListStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderListStats>>, TError = unknown>(params?: GetV1OrderListStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1OrderListStatsQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderListStats>>, TError = ErrorResponse>(params?: GetV1OrderListStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -550,14 +1249,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1OrderListStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1OrderListStats>>>
-export type GetV1OrderListStatsQueryError = unknown
+export type GetV1OrderListStatsQueryError = ErrorResponse
 
 
 /**
  * @summary Get order status stats
  */
 
-export function useGetV1OrderListStats<TData = Awaited<ReturnType<typeof getV1OrderListStats>>, TError = unknown>(
+export function useGetV1OrderListStats<TData = Awaited<ReturnType<typeof getV1OrderListStats>>, TError = ErrorResponse>(
  params?: GetV1OrderListStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderListStats>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -575,20 +1274,67 @@ export function useGetV1OrderListStats<TData = Awaited<ReturnType<typeof getV1Or
 
 
 /**
- * Returns a single order with pricing, item JSON, delivery timestamps and current workflow status. Supplier callers can read orders in their supplier tenant; distributor callers can read only orders owned by their authenticated distributor identity. Unknown, cross-tenant, and cross-distributor IDs return 404. Caller must hold order:read permission.
+ * Returns the supplier-facing order detail payload for the order management screens, including distributor profile, payment state, delivery details, timeline, action flags, and screen-ready line items. Supplier callers can read orders in their supplier tenant; distributor callers can read only orders owned by their authenticated distributor identity. Unknown, cross-tenant, and cross-distributor IDs return 404. Caller must hold order:read permission.
+
+**Frontend usage:**
+Call this operation when opening the **Get order details** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Order ID; Order ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get order details
  */
 export type getV1OrderReadIdResponse200 = {
-  data: HttpOrderResponse
+  data: SupplierOrderResponse
   status: 200
+}
+
+export type getV1OrderReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1OrderReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1OrderReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1OrderReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1OrderReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1OrderReadIdResponseSuccess = (getV1OrderReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1OrderReadIdResponse = (getV1OrderReadIdResponseSuccess)
+export type getV1OrderReadIdResponseError = (getV1OrderReadIdResponse400 | getV1OrderReadIdResponse401 | getV1OrderReadIdResponse403 | getV1OrderReadIdResponse429 | getV1OrderReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1OrderReadIdUrl = (id: string,) => {
 
@@ -598,9 +1344,9 @@ export const getGetV1OrderReadIdUrl = (id: string,) => {
   return `/v1/order/read/${id}`
 }
 
-export const getV1OrderReadId = async (id: string, options?: RequestInit): Promise<getV1OrderReadIdResponse> => {
+export const getV1OrderReadId = async (id: string, options?: RequestInit): Promise<getV1OrderReadIdResponseSuccess> => {
 
-  return fetcher<getV1OrderReadIdResponse>(getGetV1OrderReadIdUrl(id),
+  return fetcher<getV1OrderReadIdResponseSuccess>(getGetV1OrderReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -620,7 +1366,7 @@ export const getGetV1OrderReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1OrderReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1OrderReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1OrderReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -639,14 +1385,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1OrderReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1OrderReadId>>>
-export type GetV1OrderReadIdQueryError = unknown
+export type GetV1OrderReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get order details
  */
 
-export function useGetV1OrderReadId<TData = Awaited<ReturnType<typeof getV1OrderReadId>>, TError = unknown>(
+export function useGetV1OrderReadId<TData = Awaited<ReturnType<typeof getV1OrderReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1OrderReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -664,102 +1410,68 @@ export function useGetV1OrderReadId<TData = Awaited<ReturnType<typeof getV1Order
 
 
 /**
- * Confirms receipt for a dispatched order. Distributor callers can receive only their own orders; supplier callers remain tenant-scoped. Outcome: received_at and timeline are recorded; invalid states return 409.
- * @summary Mark order received
- */
-export type postV1OrderReceiveIdResponse200 = {
-  data: HttpOrderResponse
-  status: 200
-}
+ * Rejects an awaiting_approval order with a required reason.
 
-export type postV1OrderReceiveIdResponseSuccess = (postV1OrderReceiveIdResponse200) & {
-  headers: Headers;
-};
-;
+**Frontend usage:**
+Call this operation from the **Reject order** action or confirmation flow, then refresh the affected resource.
 
-export type postV1OrderReceiveIdResponse = (postV1OrderReceiveIdResponseSuccess)
+**Required inputs:**
+- `id` (path) — string; Order ID; Order ID
+- `reason` — string; minimum length 5; maximum length 500
 
-export const getPostV1OrderReceiveIdUrl = (id: string,) => {
+**Optional inputs:**
+- `note` — string; maximum length 1000
 
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
 
+**Expected outcomes:**
+- `200` — OK.
 
-
-  return `/v1/order/receive/${id}`
-}
-
-export const postV1OrderReceiveId = async (id: string, options?: RequestInit): Promise<postV1OrderReceiveIdResponse> => {
-
-  return fetcher<postV1OrderReceiveIdResponse>(getPostV1OrderReceiveIdUrl(id),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-
-
-export const getPostV1OrderReceiveIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderReceiveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderReceiveId>>, TError,{id: string}, TContext> => {
-
-const mutationKey = ['postV1OrderReceiveId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderReceiveId>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
-
-          return  postV1OrderReceiveId(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1OrderReceiveIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderReceiveId>>>
-
-    export type PostV1OrderReceiveIdMutationError = unknown
-
-    /**
- * @summary Mark order received
- */
-export const usePostV1OrderReceiveId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderReceiveId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1OrderReceiveId>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return useMutation(getPostV1OrderReceiveIdMutationOptions(options));
-    }
-    /**
- * Rejects a submitted order with a required reason. Only submitted orders can become rejected; dispatched or received orders must use the separate dispute workflow. The reason is stored atomically in order history for distributor notification.
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Reject order
  */
 export type postV1OrderRejectIdResponse200 = {
-  data: HttpOrderResponse
+  data: OrderMutationResponse
   status: 200
+}
+
+export type postV1OrderRejectIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1OrderRejectIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1OrderRejectIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1OrderRejectIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1OrderRejectIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1OrderRejectIdResponseSuccess = (postV1OrderRejectIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type postV1OrderRejectIdResponse = (postV1OrderRejectIdResponseSuccess)
+export type postV1OrderRejectIdResponseError = (postV1OrderRejectIdResponse400 | postV1OrderRejectIdResponse401 | postV1OrderRejectIdResponse403 | postV1OrderRejectIdResponse429 | postV1OrderRejectIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1OrderRejectIdUrl = (id: string,) => {
 
@@ -770,24 +1482,24 @@ export const getPostV1OrderRejectIdUrl = (id: string,) => {
 }
 
 export const postV1OrderRejectId = async (id: string,
-    internalOrderAdaptersHttpRejectRequest: InternalOrderAdaptersHttpRejectRequest, options?: RequestInit): Promise<postV1OrderRejectIdResponse> => {
+    orderRejectRequest: OrderRejectRequest, options?: RequestInit): Promise<postV1OrderRejectIdResponseSuccess> => {
 
-  return fetcher<postV1OrderRejectIdResponse>(getPostV1OrderRejectIdUrl(id),
+  return fetcher<postV1OrderRejectIdResponseSuccess>(getPostV1OrderRejectIdUrl(id),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalOrderAdaptersHttpRejectRequest,)
+      orderRejectRequest,)
   }
 );}
 
 
 
 
-export const getPostV1OrderRejectIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderRejectId>>, TError,{id: string;data: InternalOrderAdaptersHttpRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderRejectId>>, TError,{id: string;data: InternalOrderAdaptersHttpRejectRequest}, TContext> => {
+export const getPostV1OrderRejectIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderRejectId>>, TError,{id: string;data: OrderRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1OrderRejectId>>, TError,{id: string;data: OrderRejectRequest}, TContext> => {
 
 const mutationKey = ['postV1OrderRejectId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -799,7 +1511,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderRejectId>>, {id: string;data: InternalOrderAdaptersHttpRejectRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1OrderRejectId>>, {id: string;data: OrderRejectRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  postV1OrderRejectId(id,data,requestOptions)
@@ -813,37 +1525,87 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1OrderRejectIdMutationResult = NonNullable<Awaited<ReturnType<typeof postV1OrderRejectId>>>
-    export type PostV1OrderRejectIdMutationBody = InternalOrderAdaptersHttpRejectRequest
-    export type PostV1OrderRejectIdMutationError = unknown
+    export type PostV1OrderRejectIdMutationBody = OrderRejectRequest
+    export type PostV1OrderRejectIdMutationError = ErrorResponse
 
     /**
  * @summary Reject order
  */
-export const usePostV1OrderRejectId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderRejectId>>, TError,{id: string;data: InternalOrderAdaptersHttpRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1OrderRejectId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1OrderRejectId>>, TError,{id: string;data: OrderRejectRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1OrderRejectId>>,
         TError,
-        {id: string;data: InternalOrderAdaptersHttpRejectRequest},
+        {id: string;data: OrderRejectRequest},
         TContext
       > => {
       return useMutation(getPostV1OrderRejectIdMutationOptions(options));
     }
     /**
- * Replaces order items and recalculates totals. Distributor callers may update only their own submitted orders; they cannot modify another distributor's order or change an order after approval. Authorized supplier callers may update submitted or approved orders. Caller must hold order:update and provide a modification reason for the audit history.
+ * Replaces order items and recalculates totals. Distributor callers may update only their own awaiting_approval orders. Authorized supplier callers may update awaiting_approval or approved orders. Returns the raw persisted order payload for mutation workflows; use GET /v1/order/read/{id} for the screen-ready supplier detail contract.
+
+**Frontend usage:**
+Call this operation when the user saves the **Modify order** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `id` (path) — string; Order ID; Order ID
+- `items[].product_id` — string
+- `items[].quantity` — integer
+- `reason` — string; minimum length 5; maximum length 500
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Modify order
  */
 export type putV1OrderUpdateIdResponse200 = {
-  data: HttpOrderResponse
+  data: OrderMutationResponse
   status: 200
+}
+
+export type putV1OrderUpdateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1OrderUpdateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1OrderUpdateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1OrderUpdateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1OrderUpdateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type putV1OrderUpdateIdResponseSuccess = (putV1OrderUpdateIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type putV1OrderUpdateIdResponse = (putV1OrderUpdateIdResponseSuccess)
+export type putV1OrderUpdateIdResponseError = (putV1OrderUpdateIdResponse400 | putV1OrderUpdateIdResponse401 | putV1OrderUpdateIdResponse403 | putV1OrderUpdateIdResponse429 | putV1OrderUpdateIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPutV1OrderUpdateIdUrl = (id: string,) => {
 
@@ -854,24 +1616,24 @@ export const getPutV1OrderUpdateIdUrl = (id: string,) => {
 }
 
 export const putV1OrderUpdateId = async (id: string,
-    httpModifyRequest: HttpModifyRequest, options?: RequestInit): Promise<putV1OrderUpdateIdResponse> => {
+    modifyRequest: ModifyRequest, options?: RequestInit): Promise<putV1OrderUpdateIdResponseSuccess> => {
 
-  return fetcher<putV1OrderUpdateIdResponse>(getPutV1OrderUpdateIdUrl(id),
+  return fetcher<putV1OrderUpdateIdResponseSuccess>(getPutV1OrderUpdateIdUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpModifyRequest,)
+      modifyRequest,)
   }
 );}
 
 
 
 
-export const getPutV1OrderUpdateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1OrderUpdateId>>, TError,{id: string;data: HttpModifyRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1OrderUpdateId>>, TError,{id: string;data: HttpModifyRequest}, TContext> => {
+export const getPutV1OrderUpdateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1OrderUpdateId>>, TError,{id: string;data: ModifyRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1OrderUpdateId>>, TError,{id: string;data: ModifyRequest}, TContext> => {
 
 const mutationKey = ['putV1OrderUpdateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -883,7 +1645,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1OrderUpdateId>>, {id: string;data: HttpModifyRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1OrderUpdateId>>, {id: string;data: ModifyRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  putV1OrderUpdateId(id,data,requestOptions)
@@ -897,18 +1659,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PutV1OrderUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1OrderUpdateId>>>
-    export type PutV1OrderUpdateIdMutationBody = HttpModifyRequest
-    export type PutV1OrderUpdateIdMutationError = unknown
+    export type PutV1OrderUpdateIdMutationBody = ModifyRequest
+    export type PutV1OrderUpdateIdMutationError = ErrorResponse
 
     /**
  * @summary Modify order
  */
-export const usePutV1OrderUpdateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1OrderUpdateId>>, TError,{id: string;data: HttpModifyRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1OrderUpdateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1OrderUpdateId>>, TError,{id: string;data: ModifyRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1OrderUpdateId>>,
         TError,
-        {id: string;data: HttpModifyRequest},
+        {id: string;data: ModifyRequest},
         TContext
       > => {
       return useMutation(getPutV1OrderUpdateIdMutationOptions(options));

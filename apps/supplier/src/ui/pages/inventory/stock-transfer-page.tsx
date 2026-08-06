@@ -26,7 +26,7 @@ export function StockTransferPage() {
   const backToInventory = () => navigate(`/${slug}/inventory`);
 
   const warehouses = useMemo(
-    () => (warehousesResult?.items ?? []).map(toWarehouseViewModel),
+    () => (warehousesResult ?? []).map(toWarehouseViewModel),
     [warehousesResult],
   );
 

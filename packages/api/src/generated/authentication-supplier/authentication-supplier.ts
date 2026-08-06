@@ -20,27 +20,29 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  HttpChangePasswordRequest,
-  HttpCompleteEnvelope,
-  HttpCompletePasswordResetRequest,
-  HttpCompleteRequest,
-  HttpDeleteOnboardingDocumentRequest,
-  HttpInitiateEnvelope,
-  HttpInitiateRequest,
-  HttpLoginEnvelope,
-  HttpLoginRequest,
-  HttpLogoutRequest,
-  HttpMFARequest,
-  HttpOnboardingDocumentEnvelope,
-  HttpOnboardingDocumentListEnvelope,
-  HttpRefreshEnvelope,
-  HttpRefreshRequest,
-  HttpResetPasswordRequest,
-  InternalAuthAdaptersHttpOnboardingDocumentRequest,
-  InternalAuthAdaptersHttpResendOTPEnvelope,
-  InternalAuthAdaptersHttpResendOTPRequest,
-  ResponseEmptyResponse,
-  ResponseErrorResponse
+  AuthOnboardingDocumentRequest,
+  ChangePasswordRequest,
+  CompleteEnvelope,
+  CompletePasswordResetRequest,
+  CompleteRequest,
+  EmptyResponse,
+  ErrorResponse,
+  InitiateEnvelope,
+  InitiateRequest,
+  LogoutRequest,
+  MFARequest,
+  OnboardingDocumentEnvelope,
+  OnboardingDocumentListEnvelope,
+  OnboardingPresignRequest,
+  OwnDocumentRequest,
+  OwnPresignRequest,
+  PostV1AuthOnboardingDocumentsPresignedUrl200,
+  PostV1PublicAuthOnboardingDocumentsPresignedUrl200,
+  RefreshEnvelope,
+  RefreshRequest,
+  ResendOTPEnvelope,
+  ResendOTPRequest,
+  ResetPasswordRequest
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -51,42 +53,70 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 /**
- * Changes the authenticated user's password after validating the current password. Prerequisites: caller must be authenticated; new_password must meet the minimum length policy.
+ * Changes the authenticated user's password after validating the current password.
+
+**Prerequisites:** caller must be authenticated; new_password must meet the minimum length policy.
+
+**Frontend usage:**
+Call this operation from the **Change authenticated password** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `current_password` — string
+- `new_password` — string; minimum length 12
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Change authenticated password
  */
 export type postV1AuthChangePasswordResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type postV1AuthChangePasswordResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1AuthChangePasswordResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1AuthChangePasswordResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1AuthChangePasswordResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type postV1AuthChangePasswordResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
 export type postV1AuthChangePasswordResponseSuccess = (postV1AuthChangePasswordResponse200) & {
   headers: Headers;
 };
-export type postV1AuthChangePasswordResponseError = (postV1AuthChangePasswordResponse400 | postV1AuthChangePasswordResponse401 | postV1AuthChangePasswordResponse429 | postV1AuthChangePasswordResponse500) & {
+export type postV1AuthChangePasswordResponseError = (postV1AuthChangePasswordResponse400 | postV1AuthChangePasswordResponse401 | postV1AuthChangePasswordResponse403 | postV1AuthChangePasswordResponse429 | postV1AuthChangePasswordResponse500) & {
   headers: Headers;
 };
-
-export type postV1AuthChangePasswordResponse = (postV1AuthChangePasswordResponseSuccess | postV1AuthChangePasswordResponseError)
 
 export const getPostV1AuthChangePasswordUrl = () => {
 
@@ -96,24 +126,24 @@ export const getPostV1AuthChangePasswordUrl = () => {
   return `/v1/auth/change-password`
 }
 
-export const postV1AuthChangePassword = async (httpChangePasswordRequest: HttpChangePasswordRequest, options?: RequestInit): Promise<postV1AuthChangePasswordResponse> => {
+export const postV1AuthChangePassword = async (changePasswordRequest: ChangePasswordRequest, options?: RequestInit): Promise<postV1AuthChangePasswordResponseSuccess> => {
 
-  return fetcher<postV1AuthChangePasswordResponse>(getPostV1AuthChangePasswordUrl(),
+  return fetcher<postV1AuthChangePasswordResponseSuccess>(getPostV1AuthChangePasswordUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpChangePasswordRequest,)
+      changePasswordRequest,)
   }
 );}
 
 
 
 
-export const getPostV1AuthChangePasswordMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthChangePassword>>, TError,{data: HttpChangePasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthChangePassword>>, TError,{data: HttpChangePasswordRequest}, TContext> => {
+export const getPostV1AuthChangePasswordMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthChangePassword>>, TError,{data: ChangePasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthChangePassword>>, TError,{data: ChangePasswordRequest}, TContext> => {
 
 const mutationKey = ['postV1AuthChangePassword'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -125,7 +155,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthChangePassword>>, {data: HttpChangePasswordRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthChangePassword>>, {data: ChangePasswordRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1AuthChangePassword(data,requestOptions)
@@ -139,54 +169,85 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1AuthChangePasswordMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthChangePassword>>>
-    export type PostV1AuthChangePasswordMutationBody = HttpChangePasswordRequest
-    export type PostV1AuthChangePasswordMutationError = ResponseErrorResponse
+    export type PostV1AuthChangePasswordMutationBody = ChangePasswordRequest
+    export type PostV1AuthChangePasswordMutationError = ErrorResponse
 
     /**
  * @summary Change authenticated password
  */
-export const usePostV1AuthChangePassword = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthChangePassword>>, TError,{data: HttpChangePasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1AuthChangePassword = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthChangePassword>>, TError,{data: ChangePasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1AuthChangePassword>>,
         TError,
-        {data: HttpChangePasswordRequest},
+        {data: ChangePasswordRequest},
         TContext
       > => {
       return useMutation(getPostV1AuthChangePasswordMutationOptions(options));
     }
     /**
- * Starts MFA setup for the authenticated user. Prerequisites: caller must be authenticated. Expected outcomes: when implemented, the API will return setup metadata such as a TOTP secret or provisioning URI.
- * @summary Step 1: Enable MFA
+ * Starts MFA setup for the authenticated user.
+
+**Prerequisites:** caller must be authenticated.
+
+**Expected outcomes:** when implemented, the API will return setup metadata such as a TOTP secret or provisioning URI.
+
+**Frontend usage:**
+Call this operation from the **Begin MFA setup** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+- `501` — The operation is documented but not yet implemented.
+ * @summary Begin MFA setup
  */
 export type postV1AuthEnableMfaResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type postV1AuthEnableMfaResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1AuthEnableMfaResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1AuthEnableMfaResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
+export type postV1AuthEnableMfaResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
 export type postV1AuthEnableMfaResponse501 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 501
 }
 
 export type postV1AuthEnableMfaResponseSuccess = (postV1AuthEnableMfaResponse200) & {
   headers: Headers;
 };
-export type postV1AuthEnableMfaResponseError = (postV1AuthEnableMfaResponse401 | postV1AuthEnableMfaResponse429 | postV1AuthEnableMfaResponse501) & {
+export type postV1AuthEnableMfaResponseError = (postV1AuthEnableMfaResponse401 | postV1AuthEnableMfaResponse403 | postV1AuthEnableMfaResponse429 | postV1AuthEnableMfaResponse500 | postV1AuthEnableMfaResponse501) & {
   headers: Headers;
 };
-
-export type postV1AuthEnableMfaResponse = (postV1AuthEnableMfaResponseSuccess | postV1AuthEnableMfaResponseError)
 
 export const getPostV1AuthEnableMfaUrl = () => {
 
@@ -196,9 +257,9 @@ export const getPostV1AuthEnableMfaUrl = () => {
   return `/v1/auth/enable-mfa`
 }
 
-export const postV1AuthEnableMfa = async ( options?: RequestInit): Promise<postV1AuthEnableMfaResponse> => {
+export const postV1AuthEnableMfa = async ( options?: RequestInit): Promise<postV1AuthEnableMfaResponseSuccess> => {
 
-  return fetcher<postV1AuthEnableMfaResponse>(getPostV1AuthEnableMfaUrl(),
+  return fetcher<postV1AuthEnableMfaResponseSuccess>(getPostV1AuthEnableMfaUrl(),
   {
     ...options,
     method: 'POST'
@@ -210,7 +271,7 @@ export const postV1AuthEnableMfa = async ( options?: RequestInit): Promise<postV
 
 
 
-export const getPostV1AuthEnableMfaMutationOptions = <TError = ResponseErrorResponse,
+export const getPostV1AuthEnableMfaMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthEnableMfa>>, TError,void, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthEnableMfa>>, TError,void, TContext> => {
 
@@ -239,12 +300,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PostV1AuthEnableMfaMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthEnableMfa>>>
 
-    export type PostV1AuthEnableMfaMutationError = ResponseErrorResponse
+    export type PostV1AuthEnableMfaMutationError = ErrorResponse
 
     /**
- * @summary Step 1: Enable MFA
+ * @summary Begin MFA setup
  */
-export const usePostV1AuthEnableMfa = <TError = ResponseErrorResponse,
+export const usePostV1AuthEnableMfa = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthEnableMfa>>, TError,void, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1AuthEnableMfa>>,
@@ -255,37 +316,68 @@ export const usePostV1AuthEnableMfa = <TError = ResponseErrorResponse,
       return useMutation(getPostV1AuthEnableMfaMutationOptions(options));
     }
     /**
- * Revokes a refresh token from Redis so it can no longer be used to rotate credentials. Prerequisites: caller must be authenticated and provide the refresh token issued to the current session. Expected outcomes: token is deleted idempotently and the client should clear local credentials.
+ * Revokes a refresh token from Redis so it can no longer be used to rotate credentials.
+
+**Prerequisites:** caller must be authenticated and provide the refresh token issued to the current session.
+
+**Expected outcomes:** token is deleted idempotently and the client should clear local credentials.
+
+**Frontend usage:**
+Call this operation from the **Logout** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `refresh_token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Logout
  */
 export type postV1AuthLogoutResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type postV1AuthLogoutResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1AuthLogoutResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1AuthLogoutResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1AuthLogoutResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
+}
+
+export type postV1AuthLogoutResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1AuthLogoutResponseSuccess = (postV1AuthLogoutResponse200) & {
   headers: Headers;
 };
-export type postV1AuthLogoutResponseError = (postV1AuthLogoutResponse400 | postV1AuthLogoutResponse401 | postV1AuthLogoutResponse429) & {
+export type postV1AuthLogoutResponseError = (postV1AuthLogoutResponse400 | postV1AuthLogoutResponse401 | postV1AuthLogoutResponse403 | postV1AuthLogoutResponse429 | postV1AuthLogoutResponse500) & {
   headers: Headers;
 };
-
-export type postV1AuthLogoutResponse = (postV1AuthLogoutResponseSuccess | postV1AuthLogoutResponseError)
 
 export const getPostV1AuthLogoutUrl = () => {
 
@@ -295,24 +387,24 @@ export const getPostV1AuthLogoutUrl = () => {
   return `/v1/auth/logout`
 }
 
-export const postV1AuthLogout = async (httpLogoutRequest: HttpLogoutRequest, options?: RequestInit): Promise<postV1AuthLogoutResponse> => {
+export const postV1AuthLogout = async (logoutRequest: LogoutRequest, options?: RequestInit): Promise<postV1AuthLogoutResponseSuccess> => {
 
-  return fetcher<postV1AuthLogoutResponse>(getPostV1AuthLogoutUrl(),
+  return fetcher<postV1AuthLogoutResponseSuccess>(getPostV1AuthLogoutUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpLogoutRequest,)
+      logoutRequest,)
   }
 );}
 
 
 
 
-export const getPostV1AuthLogoutMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,{data: HttpLogoutRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,{data: HttpLogoutRequest}, TContext> => {
+export const getPostV1AuthLogoutMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,{data: LogoutRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,{data: LogoutRequest}, TContext> => {
 
 const mutationKey = ['postV1AuthLogout'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -324,7 +416,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthLogout>>, {data: HttpLogoutRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthLogout>>, {data: LogoutRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1AuthLogout(data,requestOptions)
@@ -338,59 +430,486 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1AuthLogoutMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthLogout>>>
-    export type PostV1AuthLogoutMutationBody = HttpLogoutRequest
-    export type PostV1AuthLogoutMutationError = ResponseErrorResponse
+    export type PostV1AuthLogoutMutationBody = LogoutRequest
+    export type PostV1AuthLogoutMutationError = ErrorResponse
 
     /**
  * @summary Logout
  */
-export const usePostV1AuthLogout = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,{data: HttpLogoutRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1AuthLogout = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthLogout>>, TError,{data: LogoutRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1AuthLogout>>,
         TError,
-        {data: HttpLogoutRequest},
+        {data: LogoutRequest},
         TContext
       > => {
       return useMutation(getPostV1AuthLogoutMutationOptions(options));
     }
     /**
- * Confirms an MFA setup or MFA challenge with a six-digit code. Prerequisites: caller must be authenticated and must have an MFA setup/challenge in progress. Edge cases: invalid or expired codes return validation/auth errors when implemented.
- * @summary Step 2: Verify MFA
+ * Lists KYC documents uploaded for the authenticated supplier's own account.
+
+**Frontend usage:**
+Use this operation to populate the **List KYC documents** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+None.
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary List KYC documents
+ */
+export type getV1AuthOnboardingDocumentsResponse200 = {
+  data: OnboardingDocumentListEnvelope
+  status: 200
+}
+
+export type getV1AuthOnboardingDocumentsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1AuthOnboardingDocumentsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1AuthOnboardingDocumentsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1AuthOnboardingDocumentsResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type getV1AuthOnboardingDocumentsResponseSuccess = (getV1AuthOnboardingDocumentsResponse200) & {
+  headers: Headers;
+};
+export type getV1AuthOnboardingDocumentsResponseError = (getV1AuthOnboardingDocumentsResponse401 | getV1AuthOnboardingDocumentsResponse403 | getV1AuthOnboardingDocumentsResponse429 | getV1AuthOnboardingDocumentsResponse500) & {
+  headers: Headers;
+};
+
+export const getGetV1AuthOnboardingDocumentsUrl = () => {
+
+
+
+
+  return `/v1/auth/onboarding-documents`
+}
+
+export const getV1AuthOnboardingDocuments = async ( options?: RequestInit): Promise<getV1AuthOnboardingDocumentsResponseSuccess> => {
+
+  return fetcher<getV1AuthOnboardingDocumentsResponseSuccess>(getGetV1AuthOnboardingDocumentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetV1AuthOnboardingDocumentsQueryKey = () => {
+    return [
+    `/v1/auth/onboarding-documents`
+    ] as const;
+    }
+
+
+export const getGetV1AuthOnboardingDocumentsQueryOptions = <TData = Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>, TError = ErrorResponse>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetV1AuthOnboardingDocumentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>> = ({ signal }) => getV1AuthOnboardingDocuments({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetV1AuthOnboardingDocumentsQueryResult = NonNullable<Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>>
+export type GetV1AuthOnboardingDocumentsQueryError = ErrorResponse
+
+
+/**
+ * @summary List KYC documents
+ */
+
+export function useGetV1AuthOnboardingDocuments<TData = Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>, TError = ErrorResponse>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1AuthOnboardingDocuments>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetV1AuthOnboardingDocumentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+/**
+ * Adds or replaces a KYC document for the authenticated supplier's own account. Unlike the pre-auth onboarding-documents endpoint, this needs no registration_token, so it works any time after login — including after OTP verification, since the registration_token is deleted at that point. Restricted to supplier-entity accounts (owner or staff); a distributor's own JWT is rejected. First upload moves kyc_status from not_submitted to pending.
+
+**Frontend usage:**
+Call this operation when the user submits the **Upload KYC document** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `document_type` — string; minimum length 2; maximum length 100
+- `file_name` — string; minimum length 2; maximum length 255
+- `file_size` — integer
+- `file_url` — string; maximum length 500
+- `mime_type` — string; maximum length 100
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Upload KYC document
+ */
+export type postV1AuthOnboardingDocumentsResponse201 = {
+  data: OnboardingDocumentEnvelope
+  status: 201
+}
+
+export type postV1AuthOnboardingDocumentsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1AuthOnboardingDocumentsResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1AuthOnboardingDocumentsResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1AuthOnboardingDocumentsResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1AuthOnboardingDocumentsResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1AuthOnboardingDocumentsResponseSuccess = (postV1AuthOnboardingDocumentsResponse201) & {
+  headers: Headers;
+};
+export type postV1AuthOnboardingDocumentsResponseError = (postV1AuthOnboardingDocumentsResponse400 | postV1AuthOnboardingDocumentsResponse401 | postV1AuthOnboardingDocumentsResponse403 | postV1AuthOnboardingDocumentsResponse429 | postV1AuthOnboardingDocumentsResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1AuthOnboardingDocumentsUrl = () => {
+
+
+
+
+  return `/v1/auth/onboarding-documents`
+}
+
+export const postV1AuthOnboardingDocuments = async (ownDocumentRequest: OwnDocumentRequest, options?: RequestInit): Promise<postV1AuthOnboardingDocumentsResponseSuccess> => {
+
+  return fetcher<postV1AuthOnboardingDocumentsResponseSuccess>(getPostV1AuthOnboardingDocumentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      ownDocumentRequest,)
+  }
+);}
+
+
+
+
+export const getPostV1AuthOnboardingDocumentsMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthOnboardingDocuments>>, TError,{data: OwnDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthOnboardingDocuments>>, TError,{data: OwnDocumentRequest}, TContext> => {
+
+const mutationKey = ['postV1AuthOnboardingDocuments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthOnboardingDocuments>>, {data: OwnDocumentRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1AuthOnboardingDocuments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1AuthOnboardingDocumentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthOnboardingDocuments>>>
+    export type PostV1AuthOnboardingDocumentsMutationBody = OwnDocumentRequest
+    export type PostV1AuthOnboardingDocumentsMutationError = ErrorResponse
+
+    /**
+ * @summary Upload KYC document
+ */
+export const usePostV1AuthOnboardingDocuments = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthOnboardingDocuments>>, TError,{data: OwnDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1AuthOnboardingDocuments>>,
+        TError,
+        {data: OwnDocumentRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1AuthOnboardingDocumentsMutationOptions(options));
+    }
+    /**
+ * Creates a short-lived S3 PUT URL scoped to the authenticated supplier's own account.
+
+**Frontend usage:** call after login, upload with the returned method/headers, then submit public_url to POST /v1/auth/onboarding-documents. Works any time after login, including after OTP verification since registration_token is gone by then.
+
+**Required inputs:**
+- `content_type` — string; maximum length 100
+- `file_name` — string; minimum length 2; maximum length 255
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+- `503` — A required downstream service is temporarily unavailable.
+ * @summary Presign KYC document upload
+ */
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse200 = {
+  data: PostV1AuthOnboardingDocumentsPresignedUrl200
+  status: 200
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponse503 = {
+  data: ErrorResponse
+  status: 503
+}
+
+export type postV1AuthOnboardingDocumentsPresignedUrlResponseSuccess = (postV1AuthOnboardingDocumentsPresignedUrlResponse200) & {
+  headers: Headers;
+};
+export type postV1AuthOnboardingDocumentsPresignedUrlResponseError = (postV1AuthOnboardingDocumentsPresignedUrlResponse400 | postV1AuthOnboardingDocumentsPresignedUrlResponse401 | postV1AuthOnboardingDocumentsPresignedUrlResponse403 | postV1AuthOnboardingDocumentsPresignedUrlResponse429 | postV1AuthOnboardingDocumentsPresignedUrlResponse500 | postV1AuthOnboardingDocumentsPresignedUrlResponse503) & {
+  headers: Headers;
+};
+
+export const getPostV1AuthOnboardingDocumentsPresignedUrlUrl = () => {
+
+
+
+
+  return `/v1/auth/onboarding-documents/presigned-url`
+}
+
+export const postV1AuthOnboardingDocumentsPresignedUrl = async (ownPresignRequest: OwnPresignRequest, options?: RequestInit): Promise<postV1AuthOnboardingDocumentsPresignedUrlResponseSuccess> => {
+
+  return fetcher<postV1AuthOnboardingDocumentsPresignedUrlResponseSuccess>(getPostV1AuthOnboardingDocumentsPresignedUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      ownPresignRequest,)
+  }
+);}
+
+
+
+
+export const getPostV1AuthOnboardingDocumentsPresignedUrlMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthOnboardingDocumentsPresignedUrl>>, TError,{data: OwnPresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthOnboardingDocumentsPresignedUrl>>, TError,{data: OwnPresignRequest}, TContext> => {
+
+const mutationKey = ['postV1AuthOnboardingDocumentsPresignedUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthOnboardingDocumentsPresignedUrl>>, {data: OwnPresignRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1AuthOnboardingDocumentsPresignedUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1AuthOnboardingDocumentsPresignedUrlMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthOnboardingDocumentsPresignedUrl>>>
+    export type PostV1AuthOnboardingDocumentsPresignedUrlMutationBody = OwnPresignRequest
+    export type PostV1AuthOnboardingDocumentsPresignedUrlMutationError = ErrorResponse
+
+    /**
+ * @summary Presign KYC document upload
+ */
+export const usePostV1AuthOnboardingDocumentsPresignedUrl = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthOnboardingDocumentsPresignedUrl>>, TError,{data: OwnPresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1AuthOnboardingDocumentsPresignedUrl>>,
+        TError,
+        {data: OwnPresignRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1AuthOnboardingDocumentsPresignedUrlMutationOptions(options));
+    }
+    /**
+ * Confirms an MFA setup or MFA challenge with a six-digit code.
+
+**Prerequisites:** caller must be authenticated and must have an MFA setup/challenge in progress.
+
+**Edge cases:** invalid or expired codes return validation/auth errors when implemented.
+
+**Frontend usage:**
+Call this operation from the **Confirm MFA setup** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `code` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+ * @summary Confirm MFA setup
  */
 export type postV1AuthVerifyMfaResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type postV1AuthVerifyMfaResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1AuthVerifyMfaResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
+export type postV1AuthVerifyMfaResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type postV1AuthVerifyMfaResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
+export type postV1AuthVerifyMfaResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
 export type postV1AuthVerifyMfaResponse501 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 501
 }
 
 export type postV1AuthVerifyMfaResponseSuccess = (postV1AuthVerifyMfaResponse200) & {
   headers: Headers;
 };
-export type postV1AuthVerifyMfaResponseError = (postV1AuthVerifyMfaResponse400 | postV1AuthVerifyMfaResponse401 | postV1AuthVerifyMfaResponse429 | postV1AuthVerifyMfaResponse501) & {
+export type postV1AuthVerifyMfaResponseError = (postV1AuthVerifyMfaResponse400 | postV1AuthVerifyMfaResponse401 | postV1AuthVerifyMfaResponse403 | postV1AuthVerifyMfaResponse429 | postV1AuthVerifyMfaResponse500 | postV1AuthVerifyMfaResponse501) & {
   headers: Headers;
 };
-
-export type postV1AuthVerifyMfaResponse = (postV1AuthVerifyMfaResponseSuccess | postV1AuthVerifyMfaResponseError)
 
 export const getPostV1AuthVerifyMfaUrl = () => {
 
@@ -400,24 +919,24 @@ export const getPostV1AuthVerifyMfaUrl = () => {
   return `/v1/auth/verify-mfa`
 }
 
-export const postV1AuthVerifyMfa = async (httpMFARequest: HttpMFARequest, options?: RequestInit): Promise<postV1AuthVerifyMfaResponse> => {
+export const postV1AuthVerifyMfa = async (mFARequest: MFARequest, options?: RequestInit): Promise<postV1AuthVerifyMfaResponseSuccess> => {
 
-  return fetcher<postV1AuthVerifyMfaResponse>(getPostV1AuthVerifyMfaUrl(),
+  return fetcher<postV1AuthVerifyMfaResponseSuccess>(getPostV1AuthVerifyMfaUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpMFARequest,)
+      mFARequest,)
   }
 );}
 
 
 
 
-export const getPostV1AuthVerifyMfaMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, TError,{data: HttpMFARequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, TError,{data: HttpMFARequest}, TContext> => {
+export const getPostV1AuthVerifyMfaMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, TError,{data: MFARequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, TError,{data: MFARequest}, TContext> => {
 
 const mutationKey = ['postV1AuthVerifyMfa'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -429,7 +948,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, {data: HttpMFARequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, {data: MFARequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1AuthVerifyMfa(data,requestOptions)
@@ -443,88 +962,102 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1AuthVerifyMfaMutationResult = NonNullable<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>>
-    export type PostV1AuthVerifyMfaMutationBody = HttpMFARequest
-    export type PostV1AuthVerifyMfaMutationError = ResponseErrorResponse
+    export type PostV1AuthVerifyMfaMutationBody = MFARequest
+    export type PostV1AuthVerifyMfaMutationError = ErrorResponse
 
     /**
- * @summary Step 2: Verify MFA
+ * @summary Confirm MFA setup
  */
-export const usePostV1AuthVerifyMfa = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, TError,{data: HttpMFARequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1AuthVerifyMfa = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1AuthVerifyMfa>>, TError,{data: MFARequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1AuthVerifyMfa>>,
         TError,
-        {data: HttpMFARequest},
+        {data: MFARequest},
         TContext
       > => {
       return useMutation(getPostV1AuthVerifyMfaMutationOptions(options));
     }
     /**
- * Verifies the OTP sent during registration and activates the supplier owner account. Prerequisites: registration_token must be valid and not expired; otp_code must match the cached OTP. Expected outcomes: returns access and refresh tokens plus supplier summary.
- * @summary Step 4: Complete supplier registration
+ * Starts the password reset flow for a supplier owner or staff email.
+
+**Prerequisites:** email must be a valid email address.
+
+**Expected outcomes:** the API sends a reset instruction without revealing whether the email exists.
+
+**Frontend usage:**
+Call this operation when the user submits the **Request password reset** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `email` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Request password reset
  */
-export type postV1PublicAuthCompleteResponse200 = {
-  data: HttpCompleteEnvelope
+export type postV1PublicAuthForgotPasswordResponse200 = {
+  data: EmptyResponse
   status: 200
 }
 
-export type postV1PublicAuthCompleteResponse400 = {
-  data: ResponseErrorResponse
+export type postV1PublicAuthForgotPasswordResponse400 = {
+  data: ErrorResponse
   status: 400
 }
 
-export type postV1PublicAuthCompleteResponse401 = {
-  data: ResponseErrorResponse
-  status: 401
-}
-
-export type postV1PublicAuthCompleteResponse429 = {
-  data: ResponseErrorResponse
+export type postV1PublicAuthForgotPasswordResponse429 = {
+  data: ErrorResponse
   status: 429
 }
 
-export type postV1PublicAuthCompleteResponse500 = {
-  data: ResponseErrorResponse
+export type postV1PublicAuthForgotPasswordResponse500 = {
+  data: ErrorResponse
   status: 500
 }
 
-export type postV1PublicAuthCompleteResponseSuccess = (postV1PublicAuthCompleteResponse200) & {
+export type postV1PublicAuthForgotPasswordResponseSuccess = (postV1PublicAuthForgotPasswordResponse200) & {
   headers: Headers;
 };
-export type postV1PublicAuthCompleteResponseError = (postV1PublicAuthCompleteResponse400 | postV1PublicAuthCompleteResponse401 | postV1PublicAuthCompleteResponse429 | postV1PublicAuthCompleteResponse500) & {
+export type postV1PublicAuthForgotPasswordResponseError = (postV1PublicAuthForgotPasswordResponse400 | postV1PublicAuthForgotPasswordResponse429 | postV1PublicAuthForgotPasswordResponse500) & {
   headers: Headers;
 };
 
-export type postV1PublicAuthCompleteResponse = (postV1PublicAuthCompleteResponseSuccess | postV1PublicAuthCompleteResponseError)
-
-export const getPostV1PublicAuthCompleteUrl = () => {
+export const getPostV1PublicAuthForgotPasswordUrl = () => {
 
 
 
 
-  return `/v1/public/auth/complete`
+  return `/v1/public/auth/forgot-password`
 }
 
-export const postV1PublicAuthComplete = async (httpCompleteRequest: HttpCompleteRequest, options?: RequestInit): Promise<postV1PublicAuthCompleteResponse> => {
+export const postV1PublicAuthForgotPassword = async (resetPasswordRequest: ResetPasswordRequest, options?: RequestInit): Promise<postV1PublicAuthForgotPasswordResponseSuccess> => {
 
-  return fetcher<postV1PublicAuthCompleteResponse>(getPostV1PublicAuthCompleteUrl(),
+  return fetcher<postV1PublicAuthForgotPasswordResponseSuccess>(getPostV1PublicAuthForgotPasswordUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpCompleteRequest,)
+      resetPasswordRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicAuthCompleteMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthComplete>>, TError,{data: HttpCompleteRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthComplete>>, TError,{data: HttpCompleteRequest}, TContext> => {
+export const getPostV1PublicAuthForgotPasswordMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthForgotPassword>>, TError,{data: ResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthForgotPassword>>, TError,{data: ResetPasswordRequest}, TContext> => {
 
-const mutationKey = ['postV1PublicAuthComplete'];
+const mutationKey = ['postV1PublicAuthForgotPassword'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -534,10 +1067,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthComplete>>, {data: HttpCompleteRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthForgotPassword>>, {data: ResetPasswordRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  postV1PublicAuthComplete(data,requestOptions)
+          return  postV1PublicAuthForgotPassword(data,requestOptions)
         }
 
 
@@ -547,259 +1080,69 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type PostV1PublicAuthCompleteMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthComplete>>>
-    export type PostV1PublicAuthCompleteMutationBody = HttpCompleteRequest
-    export type PostV1PublicAuthCompleteMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthForgotPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthForgotPassword>>>
+    export type PostV1PublicAuthForgotPasswordMutationBody = ResetPasswordRequest
+    export type PostV1PublicAuthForgotPasswordMutationError = ErrorResponse
 
     /**
- * @summary Step 4: Complete supplier registration
+ * @summary Request password reset
  */
-export const usePostV1PublicAuthComplete = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthComplete>>, TError,{data: HttpCompleteRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthForgotPassword = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthForgotPassword>>, TError,{data: ResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicAuthComplete>>,
+        Awaited<ReturnType<typeof postV1PublicAuthForgotPassword>>,
         TError,
-        {data: HttpCompleteRequest},
+        {data: ResetPasswordRequest},
         TContext
       > => {
-      return useMutation(getPostV1PublicAuthCompleteMutationOptions(options));
-    }
-    /**
- * Begins supplier onboarding by creating the supplier root account and sending an OTP to the owner email. Prerequisites: owner email must not already exist as a supplier or staff account. Expected outcomes: returns a registration_token, account_number and slug for the remaining signup steps.
- * @summary Step 1: Start supplier registration
- */
-export type postV1PublicAuthInitiateResponse201 = {
-  data: HttpInitiateEnvelope
-  status: 201
-}
-
-export type postV1PublicAuthInitiateResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type postV1PublicAuthInitiateResponse409 = {
-  data: ResponseErrorResponse
-  status: 409
-}
-
-export type postV1PublicAuthInitiateResponse429 = {
-  data: ResponseErrorResponse
-  status: 429
-}
-
-export type postV1PublicAuthInitiateResponse501 = {
-  data: ResponseErrorResponse
-  status: 501
-}
-
-export type postV1PublicAuthInitiateResponseSuccess = (postV1PublicAuthInitiateResponse201) & {
-  headers: Headers;
-};
-export type postV1PublicAuthInitiateResponseError = (postV1PublicAuthInitiateResponse400 | postV1PublicAuthInitiateResponse409 | postV1PublicAuthInitiateResponse429 | postV1PublicAuthInitiateResponse501) & {
-  headers: Headers;
-};
-
-export type postV1PublicAuthInitiateResponse = (postV1PublicAuthInitiateResponseSuccess | postV1PublicAuthInitiateResponseError)
-
-export const getPostV1PublicAuthInitiateUrl = () => {
-
-
-
-
-  return `/v1/public/auth/initiate`
-}
-
-export const postV1PublicAuthInitiate = async (httpInitiateRequest: HttpInitiateRequest, options?: RequestInit): Promise<postV1PublicAuthInitiateResponse> => {
-
-  return fetcher<postV1PublicAuthInitiateResponse>(getPostV1PublicAuthInitiateUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpInitiateRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1PublicAuthInitiateMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthInitiate>>, TError,{data: HttpInitiateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthInitiate>>, TError,{data: HttpInitiateRequest}, TContext> => {
-
-const mutationKey = ['postV1PublicAuthInitiate'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthInitiate>>, {data: HttpInitiateRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1PublicAuthInitiate(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1PublicAuthInitiateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthInitiate>>>
-    export type PostV1PublicAuthInitiateMutationBody = HttpInitiateRequest
-    export type PostV1PublicAuthInitiateMutationError = ResponseErrorResponse
-
-    /**
- * @summary Step 1: Start supplier registration
- */
-export const usePostV1PublicAuthInitiate = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthInitiate>>, TError,{data: HttpInitiateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicAuthInitiate>>,
-        TError,
-        {data: HttpInitiateRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1PublicAuthInitiateMutationOptions(options));
-    }
-    /**
- * Authenticates a supplier owner or staff user and returns JWT credentials. Prerequisites: account must be active and email-verified; if MFA is enabled, mfa_code is required. Edge cases: invalid credentials return 401 without revealing which field failed; suspended accounts return 403.
- * @summary Login supplier owner or staff
- */
-export type postV1PublicAuthLoginResponse200 = {
-  data: HttpLoginEnvelope
-  status: 200
-}
-
-export type postV1PublicAuthLoginResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type postV1PublicAuthLoginResponse401 = {
-  data: ResponseErrorResponse
-  status: 401
-}
-
-export type postV1PublicAuthLoginResponse403 = {
-  data: ResponseErrorResponse
-  status: 403
-}
-
-export type postV1PublicAuthLoginResponse429 = {
-  data: ResponseErrorResponse
-  status: 429
-}
-
-export type postV1PublicAuthLoginResponse500 = {
-  data: ResponseErrorResponse
-  status: 500
-}
-
-export type postV1PublicAuthLoginResponseSuccess = (postV1PublicAuthLoginResponse200) & {
-  headers: Headers;
-};
-export type postV1PublicAuthLoginResponseError = (postV1PublicAuthLoginResponse400 | postV1PublicAuthLoginResponse401 | postV1PublicAuthLoginResponse403 | postV1PublicAuthLoginResponse429 | postV1PublicAuthLoginResponse500) & {
-  headers: Headers;
-};
-
-export type postV1PublicAuthLoginResponse = (postV1PublicAuthLoginResponseSuccess | postV1PublicAuthLoginResponseError)
-
-export const getPostV1PublicAuthLoginUrl = () => {
-
-
-
-
-  return `/v1/public/auth/login`
-}
-
-export const postV1PublicAuthLogin = async (httpLoginRequest: HttpLoginRequest, options?: RequestInit): Promise<postV1PublicAuthLoginResponse> => {
-
-  return fetcher<postV1PublicAuthLoginResponse>(getPostV1PublicAuthLoginUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpLoginRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1PublicAuthLoginMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthLogin>>, TError,{data: HttpLoginRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthLogin>>, TError,{data: HttpLoginRequest}, TContext> => {
-
-const mutationKey = ['postV1PublicAuthLogin'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthLogin>>, {data: HttpLoginRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1PublicAuthLogin(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1PublicAuthLoginMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthLogin>>>
-    export type PostV1PublicAuthLoginMutationBody = HttpLoginRequest
-    export type PostV1PublicAuthLoginMutationError = ResponseErrorResponse
-
-    /**
- * @summary Login supplier owner or staff
- */
-export const usePostV1PublicAuthLogin = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthLogin>>, TError,{data: HttpLoginRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicAuthLogin>>,
-        TError,
-        {data: HttpLoginRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1PublicAuthLoginMutationOptions(options));
+      return useMutation(getPostV1PublicAuthForgotPasswordMutationOptions(options));
     }
     /**
  * Registers a supplier onboarding document during public registration using the registration token.
- * @summary Step 2a: Upload onboarding document metadata
+
+**Frontend usage:**
+Call this operation when the user submits the **Upload supplier registration document** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `document_type` — string; minimum length 2; maximum length 100
+- `file_name` — string; minimum length 2; maximum length 255
+- `file_size` — integer
+- `file_url` — string; maximum length 500
+- `mime_type` — string; maximum length 100
+- `registration_token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Upload supplier registration document
  */
 export type postV1PublicAuthOnboardingDocumentsResponse201 = {
-  data: HttpOnboardingDocumentEnvelope
+  data: OnboardingDocumentEnvelope
   status: 201
 }
 
 export type postV1PublicAuthOnboardingDocumentsResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1PublicAuthOnboardingDocumentsResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type postV1PublicAuthOnboardingDocumentsResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -810,8 +1153,6 @@ export type postV1PublicAuthOnboardingDocumentsResponseError = (postV1PublicAuth
   headers: Headers;
 };
 
-export type postV1PublicAuthOnboardingDocumentsResponse = (postV1PublicAuthOnboardingDocumentsResponseSuccess | postV1PublicAuthOnboardingDocumentsResponseError)
-
 export const getPostV1PublicAuthOnboardingDocumentsUrl = () => {
 
 
@@ -820,24 +1161,24 @@ export const getPostV1PublicAuthOnboardingDocumentsUrl = () => {
   return `/v1/public/auth/onboarding-documents`
 }
 
-export const postV1PublicAuthOnboardingDocuments = async (internalAuthAdaptersHttpOnboardingDocumentRequest: InternalAuthAdaptersHttpOnboardingDocumentRequest, options?: RequestInit): Promise<postV1PublicAuthOnboardingDocumentsResponse> => {
+export const postV1PublicAuthOnboardingDocuments = async (authOnboardingDocumentRequest: AuthOnboardingDocumentRequest, options?: RequestInit): Promise<postV1PublicAuthOnboardingDocumentsResponseSuccess> => {
 
-  return fetcher<postV1PublicAuthOnboardingDocumentsResponse>(getPostV1PublicAuthOnboardingDocumentsUrl(),
+  return fetcher<postV1PublicAuthOnboardingDocumentsResponseSuccess>(getPostV1PublicAuthOnboardingDocumentsUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalAuthAdaptersHttpOnboardingDocumentRequest,)
+      authOnboardingDocumentRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicAuthOnboardingDocumentsMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, TError,{data: InternalAuthAdaptersHttpOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, TError,{data: InternalAuthAdaptersHttpOnboardingDocumentRequest}, TContext> => {
+export const getPostV1PublicAuthOnboardingDocumentsMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, TError,{data: AuthOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, TError,{data: AuthOnboardingDocumentRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicAuthOnboardingDocuments'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -849,7 +1190,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, {data: InternalAuthAdaptersHttpOnboardingDocumentRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, {data: AuthOnboardingDocumentRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicAuthOnboardingDocuments(data,requestOptions)
@@ -863,89 +1204,108 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicAuthOnboardingDocumentsMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>>
-    export type PostV1PublicAuthOnboardingDocumentsMutationBody = InternalAuthAdaptersHttpOnboardingDocumentRequest
-    export type PostV1PublicAuthOnboardingDocumentsMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthOnboardingDocumentsMutationBody = AuthOnboardingDocumentRequest
+    export type PostV1PublicAuthOnboardingDocumentsMutationError = ErrorResponse
 
     /**
- * @summary Step 2a: Upload onboarding document metadata
+ * @summary Upload supplier registration document
  */
-export const usePostV1PublicAuthOnboardingDocuments = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, TError,{data: InternalAuthAdaptersHttpOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthOnboardingDocuments = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>, TError,{data: AuthOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocuments>>,
         TError,
-        {data: InternalAuthAdaptersHttpOnboardingDocumentRequest},
+        {data: AuthOnboardingDocumentRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicAuthOnboardingDocumentsMutationOptions(options));
     }
     /**
- * Deletes an uploaded onboarding document for an in-progress supplier registration.
- * @summary Step 2c: Delete onboarding document
+ * Creates a short-lived S3 PUT URL scoped to the supplier identified by registration_token, for use before OTP verification.
+
+**Frontend usage:** call this first, upload the file with the returned method/headers, then submit the returned public_url as file_url to POST /v1/public/auth/onboarding-documents.
+
+**Required inputs:**
+- `content_type` — string; maximum length 100
+- `file_name` — string; minimum length 2; maximum length 255
+- `registration_token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+- `503` — A required downstream service is temporarily unavailable.
+ * @summary Presign supplier registration document upload
  */
-export type deleteV1PublicAuthOnboardingDocumentsIdResponse200 = {
-  data: ResponseEmptyResponse
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponse200 = {
+  data: PostV1PublicAuthOnboardingDocumentsPresignedUrl200
   status: 200
 }
 
-export type deleteV1PublicAuthOnboardingDocumentsIdResponse400 = {
-  data: ResponseErrorResponse
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponse400 = {
+  data: ErrorResponse
   status: 400
 }
 
-export type deleteV1PublicAuthOnboardingDocumentsIdResponse404 = {
-  data: ResponseErrorResponse
-  status: 404
-}
-
-export type deleteV1PublicAuthOnboardingDocumentsIdResponse429 = {
-  data: ResponseErrorResponse
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponse429 = {
+  data: ErrorResponse
   status: 429
 }
 
-export type deleteV1PublicAuthOnboardingDocumentsIdResponse500 = {
-  data: ResponseErrorResponse
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponse500 = {
+  data: ErrorResponse
   status: 500
 }
 
-export type deleteV1PublicAuthOnboardingDocumentsIdResponseSuccess = (deleteV1PublicAuthOnboardingDocumentsIdResponse200) & {
-  headers: Headers;
-};
-export type deleteV1PublicAuthOnboardingDocumentsIdResponseError = (deleteV1PublicAuthOnboardingDocumentsIdResponse400 | deleteV1PublicAuthOnboardingDocumentsIdResponse404 | deleteV1PublicAuthOnboardingDocumentsIdResponse429 | deleteV1PublicAuthOnboardingDocumentsIdResponse500) & {
-  headers: Headers;
-};
-
-export type deleteV1PublicAuthOnboardingDocumentsIdResponse = (deleteV1PublicAuthOnboardingDocumentsIdResponseSuccess | deleteV1PublicAuthOnboardingDocumentsIdResponseError)
-
-export const getDeleteV1PublicAuthOnboardingDocumentsIdUrl = (id: string,) => {
-
-
-
-
-  return `/v1/public/auth/onboarding-documents/${id}`
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponse503 = {
+  data: ErrorResponse
+  status: 503
 }
 
-export const deleteV1PublicAuthOnboardingDocumentsId = async (id: string,
-    httpDeleteOnboardingDocumentRequest: HttpDeleteOnboardingDocumentRequest, options?: RequestInit): Promise<deleteV1PublicAuthOnboardingDocumentsIdResponse> => {
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponseSuccess = (postV1PublicAuthOnboardingDocumentsPresignedUrlResponse200) & {
+  headers: Headers;
+};
+export type postV1PublicAuthOnboardingDocumentsPresignedUrlResponseError = (postV1PublicAuthOnboardingDocumentsPresignedUrlResponse400 | postV1PublicAuthOnboardingDocumentsPresignedUrlResponse429 | postV1PublicAuthOnboardingDocumentsPresignedUrlResponse500 | postV1PublicAuthOnboardingDocumentsPresignedUrlResponse503) & {
+  headers: Headers;
+};
 
-  return fetcher<deleteV1PublicAuthOnboardingDocumentsIdResponse>(getDeleteV1PublicAuthOnboardingDocumentsIdUrl(id),
+export const getPostV1PublicAuthOnboardingDocumentsPresignedUrlUrl = () => {
+
+
+
+
+  return `/v1/public/auth/onboarding-documents/presigned-url`
+}
+
+export const postV1PublicAuthOnboardingDocumentsPresignedUrl = async (onboardingPresignRequest: OnboardingPresignRequest, options?: RequestInit): Promise<postV1PublicAuthOnboardingDocumentsPresignedUrlResponseSuccess> => {
+
+  return fetcher<postV1PublicAuthOnboardingDocumentsPresignedUrlResponseSuccess>(getPostV1PublicAuthOnboardingDocumentsPresignedUrlUrl(),
   {
     ...options,
-    method: 'DELETE',
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpDeleteOnboardingDocumentRequest,)
+      onboardingPresignRequest,)
   }
 );}
 
 
 
 
-export const getDeleteV1PublicAuthOnboardingDocumentsIdMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1PublicAuthOnboardingDocumentsId>>, TError,{id: string;data: HttpDeleteOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteV1PublicAuthOnboardingDocumentsId>>, TError,{id: string;data: HttpDeleteOnboardingDocumentRequest}, TContext> => {
+export const getPostV1PublicAuthOnboardingDocumentsPresignedUrlMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocumentsPresignedUrl>>, TError,{data: OnboardingPresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocumentsPresignedUrl>>, TError,{data: OnboardingPresignRequest}, TContext> => {
 
-const mutationKey = ['deleteV1PublicAuthOnboardingDocumentsId'];
+const mutationKey = ['postV1PublicAuthOnboardingDocumentsPresignedUrl'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -955,10 +1315,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteV1PublicAuthOnboardingDocumentsId>>, {id: string;data: HttpDeleteOnboardingDocumentRequest}> = (props) => {
-          const {id,data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocumentsPresignedUrl>>, {data: OnboardingPresignRequest}> = (props) => {
+          const {data} = props ?? {};
 
-          return  deleteV1PublicAuthOnboardingDocumentsId(id,data,requestOptions)
+          return  postV1PublicAuthOnboardingDocumentsPresignedUrl(data,requestOptions)
         }
 
 
@@ -968,44 +1328,64 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type DeleteV1PublicAuthOnboardingDocumentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1PublicAuthOnboardingDocumentsId>>>
-    export type DeleteV1PublicAuthOnboardingDocumentsIdMutationBody = HttpDeleteOnboardingDocumentRequest
-    export type DeleteV1PublicAuthOnboardingDocumentsIdMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthOnboardingDocumentsPresignedUrlMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocumentsPresignedUrl>>>
+    export type PostV1PublicAuthOnboardingDocumentsPresignedUrlMutationBody = OnboardingPresignRequest
+    export type PostV1PublicAuthOnboardingDocumentsPresignedUrlMutationError = ErrorResponse
 
     /**
- * @summary Step 2c: Delete onboarding document
+ * @summary Presign supplier registration document upload
  */
-export const useDeleteV1PublicAuthOnboardingDocumentsId = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1PublicAuthOnboardingDocumentsId>>, TError,{id: string;data: HttpDeleteOnboardingDocumentRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthOnboardingDocumentsPresignedUrl = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocumentsPresignedUrl>>, TError,{data: OnboardingPresignRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteV1PublicAuthOnboardingDocumentsId>>,
+        Awaited<ReturnType<typeof postV1PublicAuthOnboardingDocumentsPresignedUrl>>,
         TError,
-        {id: string;data: HttpDeleteOnboardingDocumentRequest},
+        {data: OnboardingPresignRequest},
         TContext
       > => {
-      return useMutation(getDeleteV1PublicAuthOnboardingDocumentsIdMutationOptions(options));
+      return useMutation(getPostV1PublicAuthOnboardingDocumentsPresignedUrlMutationOptions(options));
     }
     /**
  * Lists uploaded onboarding documents for an in-progress supplier registration.
- * @summary Step 2b: List onboarding documents
+
+**Frontend usage:**
+Use this operation to populate the **List supplier registration documents** view, including the tables, cards, filters, or selectors represented by its response.
+
+**Required inputs:**
+- `registration_token` (path) — string; Registration token; Registration token
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary List supplier registration documents
  */
 export type getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse200 = {
-  data: HttpOnboardingDocumentListEnvelope
+  data: OnboardingDocumentListEnvelope
   status: 200
 }
 
 export type getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -1016,8 +1396,6 @@ export type getV1PublicAuthOnboardingDocumentsRegistrationTokenResponseError = (
   headers: Headers;
 };
 
-export type getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse = (getV1PublicAuthOnboardingDocumentsRegistrationTokenResponseSuccess | getV1PublicAuthOnboardingDocumentsRegistrationTokenResponseError)
-
 export const getGetV1PublicAuthOnboardingDocumentsRegistrationTokenUrl = (registrationToken: string,) => {
 
 
@@ -1026,9 +1404,9 @@ export const getGetV1PublicAuthOnboardingDocumentsRegistrationTokenUrl = (regist
   return `/v1/public/auth/onboarding-documents/${registrationToken}`
 }
 
-export const getV1PublicAuthOnboardingDocumentsRegistrationToken = async (registrationToken: string, options?: RequestInit): Promise<getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse> => {
+export const getV1PublicAuthOnboardingDocumentsRegistrationToken = async (registrationToken: string, options?: RequestInit): Promise<getV1PublicAuthOnboardingDocumentsRegistrationTokenResponseSuccess> => {
 
-  return fetcher<getV1PublicAuthOnboardingDocumentsRegistrationTokenResponse>(getGetV1PublicAuthOnboardingDocumentsRegistrationTokenUrl(registrationToken),
+  return fetcher<getV1PublicAuthOnboardingDocumentsRegistrationTokenResponseSuccess>(getGetV1PublicAuthOnboardingDocumentsRegistrationTokenUrl(registrationToken),
   {
     ...options,
     method: 'GET'
@@ -1048,7 +1426,7 @@ export const getGetV1PublicAuthOnboardingDocumentsRegistrationTokenQueryKey = (r
     }
 
 
-export const getGetV1PublicAuthOnboardingDocumentsRegistrationTokenQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError = ResponseErrorResponse>(registrationToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1PublicAuthOnboardingDocumentsRegistrationTokenQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError = ErrorResponse>(registrationToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1067,14 +1445,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1PublicAuthOnboardingDocumentsRegistrationTokenQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>>
-export type GetV1PublicAuthOnboardingDocumentsRegistrationTokenQueryError = ResponseErrorResponse
+export type GetV1PublicAuthOnboardingDocumentsRegistrationTokenQueryError = ErrorResponse
 
 
 /**
- * @summary Step 2b: List onboarding documents
+ * @summary List supplier registration documents
  */
 
-export function useGetV1PublicAuthOnboardingDocumentsRegistrationToken<TData = Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError = ResponseErrorResponse>(
+export function useGetV1PublicAuthOnboardingDocumentsRegistrationToken<TData = Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError = ErrorResponse>(
  registrationToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicAuthOnboardingDocumentsRegistrationToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1092,31 +1470,54 @@ export function useGetV1PublicAuthOnboardingDocumentsRegistrationToken<TData = A
 
 
 /**
- * Rotates a valid refresh token and returns a new access token. Prerequisites: refresh_token must exist in Redis and must not be expired or previously used. Expected outcomes: old refresh token is revoked and a new token pair is stored server-side.
+ * Atomically consumes a valid refresh token and returns a new access and refresh token pair.
+
+**Prerequisites:** refresh_token must exist in Redis and must not be expired or previously used. The client must replace both stored tokens with the returned values.
+
+**Frontend usage:**
+Call this operation from the **Refresh access token** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `refresh_token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Refresh access token
  */
 export type postV1PublicAuthRefreshResponse200 = {
-  data: HttpRefreshEnvelope
+  data: RefreshEnvelope
   status: 200
 }
 
 export type postV1PublicAuthRefreshResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1PublicAuthRefreshResponse401 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 401
 }
 
 export type postV1PublicAuthRefreshResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type postV1PublicAuthRefreshResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -1127,8 +1528,6 @@ export type postV1PublicAuthRefreshResponseError = (postV1PublicAuthRefreshRespo
   headers: Headers;
 };
 
-export type postV1PublicAuthRefreshResponse = (postV1PublicAuthRefreshResponseSuccess | postV1PublicAuthRefreshResponseError)
-
 export const getPostV1PublicAuthRefreshUrl = () => {
 
 
@@ -1137,24 +1536,24 @@ export const getPostV1PublicAuthRefreshUrl = () => {
   return `/v1/public/auth/refresh`
 }
 
-export const postV1PublicAuthRefresh = async (httpRefreshRequest: HttpRefreshRequest, options?: RequestInit): Promise<postV1PublicAuthRefreshResponse> => {
+export const postV1PublicAuthRefresh = async (refreshRequest: RefreshRequest, options?: RequestInit): Promise<postV1PublicAuthRefreshResponseSuccess> => {
 
-  return fetcher<postV1PublicAuthRefreshResponse>(getPostV1PublicAuthRefreshUrl(),
+  return fetcher<postV1PublicAuthRefreshResponseSuccess>(getPostV1PublicAuthRefreshUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpRefreshRequest,)
+      refreshRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicAuthRefreshMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, TError,{data: HttpRefreshRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, TError,{data: HttpRefreshRequest}, TContext> => {
+export const getPostV1PublicAuthRefreshMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, TError,{data: RefreshRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, TError,{data: RefreshRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicAuthRefresh'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1166,7 +1565,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, {data: HttpRefreshRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, {data: RefreshRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicAuthRefresh(data,requestOptions)
@@ -1180,43 +1579,212 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicAuthRefreshMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>>
-    export type PostV1PublicAuthRefreshMutationBody = HttpRefreshRequest
-    export type PostV1PublicAuthRefreshMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthRefreshMutationBody = RefreshRequest
+    export type PostV1PublicAuthRefreshMutationError = ErrorResponse
 
     /**
  * @summary Refresh access token
  */
-export const usePostV1PublicAuthRefresh = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, TError,{data: HttpRefreshRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthRefresh = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRefresh>>, TError,{data: RefreshRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicAuthRefresh>>,
         TError,
-        {data: HttpRefreshRequest},
+        {data: RefreshRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicAuthRefreshMutationOptions(options));
     }
     /**
+ * Begins supplier onboarding by creating the supplier root account and sending an OTP to the owner email. Required company fields: name, business_type, registration_number. Required administrator fields: name or first_name plus last_name, email, phone, password, confirm_password, accepted_terms=true, and accepted_privacy_policy=true.
+
+**Expected outcomes:** returns registration_token, account_number, and slug. Repeating registration for an existing unverified supplier is a recovery action: the original password is required, saved details are preserved, and the short-lived token rotates. Verified or conflicting accounts return 409; invalid recovery credentials return 401.
+
+**Frontend usage:**
+Call this operation when the user submits the **Register supplier account** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `account.accepted_privacy_policy` — boolean
+- `account.accepted_terms` — boolean
+- `account.confirm_password` — string
+- `account.email` — string
+- `account.password` — string; minimum length 12
+- `account.phone` — string
+- `company.business_type` — string; allowed: `business_name`, `private_limited_company`, `public_limited_company`, `incorporated_trustees`, `limited_partnership`, `limited_liability_partnership`; BusinessType uses one of: business_name, private_limited_company, public_limited_company, incorporated_trustees, limited_partnership, limited_liability_partnership.
+- `company.name` — string
+- `company.registration_number` — string
+
+**Optional inputs:**
+- `account.first_name` — string; minimum length 2; maximum length 100
+- `account.last_name` — string; minimum length 2; maximum length 100
+- `account.name` — string; minimum length 2; maximum length 255
+- `company.email` — string
+
+**Enum values:**
+- `company.business_type`: `business_name`, `private_limited_company`, `public_limited_company`, `incorporated_trustees`, `limited_partnership`, `limited_liability_partnership`
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+- `501` — The operation is documented but not yet implemented.
+ * @summary Register supplier account
+ */
+export type postV1PublicAuthRegisterResponse201 = {
+  data: InitiateEnvelope
+  status: 201
+}
+
+export type postV1PublicAuthRegisterResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1PublicAuthRegisterResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1PublicAuthRegisterResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1PublicAuthRegisterResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1PublicAuthRegisterResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1PublicAuthRegisterResponse501 = {
+  data: ErrorResponse
+  status: 501
+}
+
+export type postV1PublicAuthRegisterResponseSuccess = (postV1PublicAuthRegisterResponse201) & {
+  headers: Headers;
+};
+export type postV1PublicAuthRegisterResponseError = (postV1PublicAuthRegisterResponse400 | postV1PublicAuthRegisterResponse401 | postV1PublicAuthRegisterResponse409 | postV1PublicAuthRegisterResponse429 | postV1PublicAuthRegisterResponse500 | postV1PublicAuthRegisterResponse501) & {
+  headers: Headers;
+};
+
+export const getPostV1PublicAuthRegisterUrl = () => {
+
+
+
+
+  return `/v1/public/auth/register`
+}
+
+export const postV1PublicAuthRegister = async (initiateRequest: InitiateRequest, options?: RequestInit): Promise<postV1PublicAuthRegisterResponseSuccess> => {
+
+  return fetcher<postV1PublicAuthRegisterResponseSuccess>(getPostV1PublicAuthRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      initiateRequest,)
+  }
+);}
+
+
+
+
+export const getPostV1PublicAuthRegisterMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRegister>>, TError,{data: InitiateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRegister>>, TError,{data: InitiateRequest}, TContext> => {
+
+const mutationKey = ['postV1PublicAuthRegister'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthRegister>>, {data: InitiateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1PublicAuthRegister(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1PublicAuthRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthRegister>>>
+    export type PostV1PublicAuthRegisterMutationBody = InitiateRequest
+    export type PostV1PublicAuthRegisterMutationError = ErrorResponse
+
+    /**
+ * @summary Register supplier account
+ */
+export const usePostV1PublicAuthRegister = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthRegister>>, TError,{data: InitiateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1PublicAuthRegister>>,
+        TError,
+        {data: InitiateRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1PublicAuthRegisterMutationOptions(options));
+    }
+    /**
  * Regenerates and resends the owner email verification OTP for an in-progress supplier registration.
- * @summary Step 3b: Resend registration OTP
+
+**Frontend usage:**
+Call this operation from the **Resend supplier registration OTP** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `registration_token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Resend supplier registration OTP
  */
 export type postV1PublicAuthResendOtpResponse200 = {
-  data: InternalAuthAdaptersHttpResendOTPEnvelope
+  data: ResendOTPEnvelope
   status: 200
 }
 
 export type postV1PublicAuthResendOtpResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1PublicAuthResendOtpResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type postV1PublicAuthResendOtpResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -1227,8 +1795,6 @@ export type postV1PublicAuthResendOtpResponseError = (postV1PublicAuthResendOtpR
   headers: Headers;
 };
 
-export type postV1PublicAuthResendOtpResponse = (postV1PublicAuthResendOtpResponseSuccess | postV1PublicAuthResendOtpResponseError)
-
 export const getPostV1PublicAuthResendOtpUrl = () => {
 
 
@@ -1237,24 +1803,24 @@ export const getPostV1PublicAuthResendOtpUrl = () => {
   return `/v1/public/auth/resend-otp`
 }
 
-export const postV1PublicAuthResendOtp = async (internalAuthAdaptersHttpResendOTPRequest: InternalAuthAdaptersHttpResendOTPRequest, options?: RequestInit): Promise<postV1PublicAuthResendOtpResponse> => {
+export const postV1PublicAuthResendOtp = async (resendOTPRequest: ResendOTPRequest, options?: RequestInit): Promise<postV1PublicAuthResendOtpResponseSuccess> => {
 
-  return fetcher<postV1PublicAuthResendOtpResponse>(getPostV1PublicAuthResendOtpUrl(),
+  return fetcher<postV1PublicAuthResendOtpResponseSuccess>(getPostV1PublicAuthResendOtpUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      internalAuthAdaptersHttpResendOTPRequest,)
+      resendOTPRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicAuthResendOtpMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, TError,{data: InternalAuthAdaptersHttpResendOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, TError,{data: InternalAuthAdaptersHttpResendOTPRequest}, TContext> => {
+export const getPostV1PublicAuthResendOtpMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, TError,{data: ResendOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, TError,{data: ResendOTPRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicAuthResendOtp'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1266,7 +1832,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, {data: InternalAuthAdaptersHttpResendOTPRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, {data: ResendOTPRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicAuthResendOtp(data,requestOptions)
@@ -1280,143 +1846,65 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicAuthResendOtpMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>>
-    export type PostV1PublicAuthResendOtpMutationBody = InternalAuthAdaptersHttpResendOTPRequest
-    export type PostV1PublicAuthResendOtpMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthResendOtpMutationBody = ResendOTPRequest
+    export type PostV1PublicAuthResendOtpMutationError = ErrorResponse
 
     /**
- * @summary Step 3b: Resend registration OTP
+ * @summary Resend supplier registration OTP
  */
-export const usePostV1PublicAuthResendOtp = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, TError,{data: InternalAuthAdaptersHttpResendOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthResendOtp = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>, TError,{data: ResendOTPRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicAuthResendOtp>>,
         TError,
-        {data: InternalAuthAdaptersHttpResendOTPRequest},
+        {data: ResendOTPRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicAuthResendOtpMutationOptions(options));
     }
     /**
- * Starts the password reset flow for a supplier owner or staff email. Prerequisites: email must be a valid email address. Expected outcomes: the API sends a reset instruction without revealing whether the email exists.
- * @summary Step 1: Request password reset
- */
-export type postV1PublicAuthResetPasswordResponse200 = {
-  data: ResponseEmptyResponse
-  status: 200
-}
-
-export type postV1PublicAuthResetPasswordResponse400 = {
-  data: ResponseErrorResponse
-  status: 400
-}
-
-export type postV1PublicAuthResetPasswordResponse429 = {
-  data: ResponseErrorResponse
-  status: 429
-}
-
-export type postV1PublicAuthResetPasswordResponse500 = {
-  data: ResponseErrorResponse
-  status: 500
-}
-
-export type postV1PublicAuthResetPasswordResponseSuccess = (postV1PublicAuthResetPasswordResponse200) & {
-  headers: Headers;
-};
-export type postV1PublicAuthResetPasswordResponseError = (postV1PublicAuthResetPasswordResponse400 | postV1PublicAuthResetPasswordResponse429 | postV1PublicAuthResetPasswordResponse500) & {
-  headers: Headers;
-};
-
-export type postV1PublicAuthResetPasswordResponse = (postV1PublicAuthResetPasswordResponseSuccess | postV1PublicAuthResetPasswordResponseError)
-
-export const getPostV1PublicAuthResetPasswordUrl = () => {
-
-
-
-
-  return `/v1/public/auth/reset-password`
-}
-
-export const postV1PublicAuthResetPassword = async (httpResetPasswordRequest: HttpResetPasswordRequest, options?: RequestInit): Promise<postV1PublicAuthResetPasswordResponse> => {
-
-  return fetcher<postV1PublicAuthResetPasswordResponse>(getPostV1PublicAuthResetPasswordUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      httpResetPasswordRequest,)
-  }
-);}
-
-
-
-
-export const getPostV1PublicAuthResetPasswordMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPassword>>, TError,{data: HttpResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPassword>>, TError,{data: HttpResetPasswordRequest}, TContext> => {
-
-const mutationKey = ['postV1PublicAuthResetPassword'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResetPassword>>, {data: HttpResetPasswordRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postV1PublicAuthResetPassword(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type PostV1PublicAuthResetPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthResetPassword>>>
-    export type PostV1PublicAuthResetPasswordMutationBody = HttpResetPasswordRequest
-    export type PostV1PublicAuthResetPasswordMutationError = ResponseErrorResponse
-
-    /**
- * @summary Step 1: Request password reset
- */
-export const usePostV1PublicAuthResetPassword = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPassword>>, TError,{data: HttpResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof postV1PublicAuthResetPassword>>,
-        TError,
-        {data: HttpResetPasswordRequest},
-        TContext
-      > => {
-      return useMutation(getPostV1PublicAuthResetPasswordMutationOptions(options));
-    }
-    /**
  * Completes the public password reset flow using the emailed reset token and the new password.
- * @summary Step 3: Complete password reset
+
+**Frontend usage:**
+Call this operation from the **Set new password** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `confirm_password` — string
+- `new_password` — string; minimum length 12
+- `token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Set new password
  */
 export type postV1PublicAuthResetPasswordConfirmResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type postV1PublicAuthResetPasswordConfirmResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1PublicAuthResetPasswordConfirmResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type postV1PublicAuthResetPasswordConfirmResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -1427,8 +1915,6 @@ export type postV1PublicAuthResetPasswordConfirmResponseError = (postV1PublicAut
   headers: Headers;
 };
 
-export type postV1PublicAuthResetPasswordConfirmResponse = (postV1PublicAuthResetPasswordConfirmResponseSuccess | postV1PublicAuthResetPasswordConfirmResponseError)
-
 export const getPostV1PublicAuthResetPasswordConfirmUrl = () => {
 
 
@@ -1437,24 +1923,24 @@ export const getPostV1PublicAuthResetPasswordConfirmUrl = () => {
   return `/v1/public/auth/reset-password/confirm`
 }
 
-export const postV1PublicAuthResetPasswordConfirm = async (httpCompletePasswordResetRequest: HttpCompletePasswordResetRequest, options?: RequestInit): Promise<postV1PublicAuthResetPasswordConfirmResponse> => {
+export const postV1PublicAuthResetPasswordConfirm = async (completePasswordResetRequest: CompletePasswordResetRequest, options?: RequestInit): Promise<postV1PublicAuthResetPasswordConfirmResponseSuccess> => {
 
-  return fetcher<postV1PublicAuthResetPasswordConfirmResponse>(getPostV1PublicAuthResetPasswordConfirmUrl(),
+  return fetcher<postV1PublicAuthResetPasswordConfirmResponseSuccess>(getPostV1PublicAuthResetPasswordConfirmUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpCompletePasswordResetRequest,)
+      completePasswordResetRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicAuthResetPasswordConfirmMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, TError,{data: HttpCompletePasswordResetRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, TError,{data: HttpCompletePasswordResetRequest}, TContext> => {
+export const getPostV1PublicAuthResetPasswordConfirmMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, TError,{data: CompletePasswordResetRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, TError,{data: CompletePasswordResetRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicAuthResetPasswordConfirm'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1466,7 +1952,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, {data: HttpCompletePasswordResetRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, {data: CompletePasswordResetRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicAuthResetPasswordConfirm(data,requestOptions)
@@ -1480,43 +1966,63 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicAuthResetPasswordConfirmMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>>
-    export type PostV1PublicAuthResetPasswordConfirmMutationBody = HttpCompletePasswordResetRequest
-    export type PostV1PublicAuthResetPasswordConfirmMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthResetPasswordConfirmMutationBody = CompletePasswordResetRequest
+    export type PostV1PublicAuthResetPasswordConfirmMutationError = ErrorResponse
 
     /**
- * @summary Step 3: Complete password reset
+ * @summary Set new password
  */
-export const usePostV1PublicAuthResetPasswordConfirm = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, TError,{data: HttpCompletePasswordResetRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthResetPasswordConfirm = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>, TError,{data: CompletePasswordResetRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicAuthResetPasswordConfirm>>,
         TError,
-        {data: HttpCompletePasswordResetRequest},
+        {data: CompletePasswordResetRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicAuthResetPasswordConfirmMutationOptions(options));
     }
     /**
  * Re-issues a password reset link for the supplied email without revealing whether the account exists.
- * @summary Step 1b: Resend password reset link
+
+**Frontend usage:**
+Call this operation from the **Resend password-reset email** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `email` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Resend password-reset email
  */
 export type postV1PublicAuthResetPasswordResendResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type postV1PublicAuthResetPasswordResendResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type postV1PublicAuthResetPasswordResendResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type postV1PublicAuthResetPasswordResendResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -1527,8 +2033,6 @@ export type postV1PublicAuthResetPasswordResendResponseError = (postV1PublicAuth
   headers: Headers;
 };
 
-export type postV1PublicAuthResetPasswordResendResponse = (postV1PublicAuthResetPasswordResendResponseSuccess | postV1PublicAuthResetPasswordResendResponseError)
-
 export const getPostV1PublicAuthResetPasswordResendUrl = () => {
 
 
@@ -1537,24 +2041,24 @@ export const getPostV1PublicAuthResetPasswordResendUrl = () => {
   return `/v1/public/auth/reset-password/resend`
 }
 
-export const postV1PublicAuthResetPasswordResend = async (httpResetPasswordRequest: HttpResetPasswordRequest, options?: RequestInit): Promise<postV1PublicAuthResetPasswordResendResponse> => {
+export const postV1PublicAuthResetPasswordResend = async (resetPasswordRequest: ResetPasswordRequest, options?: RequestInit): Promise<postV1PublicAuthResetPasswordResendResponseSuccess> => {
 
-  return fetcher<postV1PublicAuthResetPasswordResendResponse>(getPostV1PublicAuthResetPasswordResendUrl(),
+  return fetcher<postV1PublicAuthResetPasswordResendResponseSuccess>(getPostV1PublicAuthResetPasswordResendUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpResetPasswordRequest,)
+      resetPasswordRequest,)
   }
 );}
 
 
 
 
-export const getPostV1PublicAuthResetPasswordResendMutationOptions = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, TError,{data: HttpResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, TError,{data: HttpResetPasswordRequest}, TContext> => {
+export const getPostV1PublicAuthResetPasswordResendMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, TError,{data: ResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, TError,{data: ResetPasswordRequest}, TContext> => {
 
 const mutationKey = ['postV1PublicAuthResetPasswordResend'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1566,7 +2070,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, {data: HttpResetPasswordRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, {data: ResetPasswordRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1PublicAuthResetPasswordResend(data,requestOptions)
@@ -1580,43 +2084,63 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1PublicAuthResetPasswordResendMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>>
-    export type PostV1PublicAuthResetPasswordResendMutationBody = HttpResetPasswordRequest
-    export type PostV1PublicAuthResetPasswordResendMutationError = ResponseErrorResponse
+    export type PostV1PublicAuthResetPasswordResendMutationBody = ResetPasswordRequest
+    export type PostV1PublicAuthResetPasswordResendMutationError = ErrorResponse
 
     /**
- * @summary Step 1b: Resend password reset link
+ * @summary Resend password-reset email
  */
-export const usePostV1PublicAuthResetPasswordResend = <TError = ResponseErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, TError,{data: HttpResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1PublicAuthResetPasswordResend = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>, TError,{data: ResetPasswordRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1PublicAuthResetPasswordResend>>,
         TError,
-        {data: HttpResetPasswordRequest},
+        {data: ResetPasswordRequest},
         TContext
       > => {
       return useMutation(getPostV1PublicAuthResetPasswordResendMutationOptions(options));
     }
     /**
  * Checks whether a password reset token is valid before the client shows the new password form.
- * @summary Step 2: Verify password reset token
+
+**Frontend usage:**
+Call this operation when opening the **Validate password-reset token** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `token` (path) — string; Password reset token; Password reset token
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Validate password-reset token
  */
 export type getV1PublicAuthResetPasswordVerifyTokenResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
 }
 
 export type getV1PublicAuthResetPasswordVerifyTokenResponse400 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 400
 }
 
 export type getV1PublicAuthResetPasswordVerifyTokenResponse429 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 429
 }
 
 export type getV1PublicAuthResetPasswordVerifyTokenResponse500 = {
-  data: ResponseErrorResponse
+  data: ErrorResponse
   status: 500
 }
 
@@ -1627,8 +2151,6 @@ export type getV1PublicAuthResetPasswordVerifyTokenResponseError = (getV1PublicA
   headers: Headers;
 };
 
-export type getV1PublicAuthResetPasswordVerifyTokenResponse = (getV1PublicAuthResetPasswordVerifyTokenResponseSuccess | getV1PublicAuthResetPasswordVerifyTokenResponseError)
-
 export const getGetV1PublicAuthResetPasswordVerifyTokenUrl = (token: string,) => {
 
 
@@ -1637,9 +2159,9 @@ export const getGetV1PublicAuthResetPasswordVerifyTokenUrl = (token: string,) =>
   return `/v1/public/auth/reset-password/verify/${token}`
 }
 
-export const getV1PublicAuthResetPasswordVerifyToken = async (token: string, options?: RequestInit): Promise<getV1PublicAuthResetPasswordVerifyTokenResponse> => {
+export const getV1PublicAuthResetPasswordVerifyToken = async (token: string, options?: RequestInit): Promise<getV1PublicAuthResetPasswordVerifyTokenResponseSuccess> => {
 
-  return fetcher<getV1PublicAuthResetPasswordVerifyTokenResponse>(getGetV1PublicAuthResetPasswordVerifyTokenUrl(token),
+  return fetcher<getV1PublicAuthResetPasswordVerifyTokenResponseSuccess>(getGetV1PublicAuthResetPasswordVerifyTokenUrl(token),
   {
     ...options,
     method: 'GET'
@@ -1659,7 +2181,7 @@ export const getGetV1PublicAuthResetPasswordVerifyTokenQueryKey = (token: string
     }
 
 
-export const getGetV1PublicAuthResetPasswordVerifyTokenQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError = ResponseErrorResponse>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1PublicAuthResetPasswordVerifyTokenQueryOptions = <TData = Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError = ErrorResponse>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1678,14 +2200,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1PublicAuthResetPasswordVerifyTokenQueryResult = NonNullable<Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>>
-export type GetV1PublicAuthResetPasswordVerifyTokenQueryError = ResponseErrorResponse
+export type GetV1PublicAuthResetPasswordVerifyTokenQueryError = ErrorResponse
 
 
 /**
- * @summary Step 2: Verify password reset token
+ * @summary Validate password-reset token
  */
 
-export function useGetV1PublicAuthResetPasswordVerifyToken<TData = Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError = ResponseErrorResponse>(
+export function useGetV1PublicAuthResetPasswordVerifyToken<TData = Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError = ErrorResponse>(
  token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1PublicAuthResetPasswordVerifyToken>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1702,3 +2224,129 @@ export function useGetV1PublicAuthResetPasswordVerifyToken<TData = Awaited<Retur
 
 
 
+/**
+ * Verifies the OTP sent during registration and activates the supplier owner account.
+
+**Prerequisites:** registration_token must be valid and not expired; otp_code must match the cached OTP.
+
+**Expected outcomes:** returns access and refresh tokens plus the verified owner's identity flattened directly on data, including data.name and data.email.
+
+**Frontend usage:**
+Call this operation from the **Verify supplier registration OTP** action or confirmation flow, then refresh the affected resource.
+
+**Required inputs:**
+- `otp_code` — string
+- `registration_token` — string
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Public endpoint. No Bearer token is required; rate limiting and request validation still apply.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
+ * @summary Verify supplier registration OTP
+ */
+export type postV1PublicAuthVerifyOtpResponse200 = {
+  data: CompleteEnvelope
+  status: 200
+}
+
+export type postV1PublicAuthVerifyOtpResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1PublicAuthVerifyOtpResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1PublicAuthVerifyOtpResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1PublicAuthVerifyOtpResponse500 = {
+  data: ErrorResponse
+  status: 500
+}
+
+export type postV1PublicAuthVerifyOtpResponseSuccess = (postV1PublicAuthVerifyOtpResponse200) & {
+  headers: Headers;
+};
+export type postV1PublicAuthVerifyOtpResponseError = (postV1PublicAuthVerifyOtpResponse400 | postV1PublicAuthVerifyOtpResponse401 | postV1PublicAuthVerifyOtpResponse429 | postV1PublicAuthVerifyOtpResponse500) & {
+  headers: Headers;
+};
+
+export const getPostV1PublicAuthVerifyOtpUrl = () => {
+
+
+
+
+  return `/v1/public/auth/verify-otp`
+}
+
+export const postV1PublicAuthVerifyOtp = async (completeRequest: CompleteRequest, options?: RequestInit): Promise<postV1PublicAuthVerifyOtpResponseSuccess> => {
+
+  return fetcher<postV1PublicAuthVerifyOtpResponseSuccess>(getPostV1PublicAuthVerifyOtpUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      completeRequest,)
+  }
+);}
+
+
+
+
+export const getPostV1PublicAuthVerifyOtpMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthVerifyOtp>>, TError,{data: CompleteRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthVerifyOtp>>, TError,{data: CompleteRequest}, TContext> => {
+
+const mutationKey = ['postV1PublicAuthVerifyOtp'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1PublicAuthVerifyOtp>>, {data: CompleteRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postV1PublicAuthVerifyOtp(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostV1PublicAuthVerifyOtpMutationResult = NonNullable<Awaited<ReturnType<typeof postV1PublicAuthVerifyOtp>>>
+    export type PostV1PublicAuthVerifyOtpMutationBody = CompleteRequest
+    export type PostV1PublicAuthVerifyOtpMutationError = ErrorResponse
+
+    /**
+ * @summary Verify supplier registration OTP
+ */
+export const usePostV1PublicAuthVerifyOtp = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1PublicAuthVerifyOtp>>, TError,{data: CompleteRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postV1PublicAuthVerifyOtp>>,
+        TError,
+        {data: CompleteRequest},
+        TContext
+      > => {
+      return useMutation(getPostV1PublicAuthVerifyOtpMutationOptions(options));
+    }

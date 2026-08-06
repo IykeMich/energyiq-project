@@ -16,6 +16,24 @@ const outputPath = path.join(outputDir, 'energyiq-swagger.json');
 const swagger = JSON.parse(readFileSync(sourcePath, 'utf-8'));
 
 let patchedCount = 0;
+
+// A few presign endpoints (Distributor/Own Onboarding) $ref a shared
+// "APIResponse" base envelope via `allOf` that the backend's swagger export
+// never actually defines under `definitions`, which orval refuses to
+// generate from. Patch in the same envelope shape every other response uses
+// (see e.g. `EmptyResponse`) rather than touching the backend-owned source doc.
+if (!swagger.definitions?.APIResponse) {
+  swagger.definitions ??= {};
+  swagger.definitions.APIResponse = {
+    type: 'object',
+    properties: {
+      responseCode: { type: 'string', example: 'EIQ-0000' },
+      responseMessage: { type: 'string', example: 'Request successful' },
+    },
+  };
+  patchedCount += 1;
+}
+
 for (const [pathTemplate, pathItem] of Object.entries(swagger.paths ?? {})) {
   const pathParamNames = [...pathTemplate.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
 

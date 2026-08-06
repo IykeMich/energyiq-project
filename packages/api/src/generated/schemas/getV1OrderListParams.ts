@@ -5,6 +5,7 @@
  * B2B Energy Supply Chain Platform API
  * OpenAPI spec version: 1.0
  */
+import type { GetV1OrderListPaymentStatus } from './getV1OrderListPaymentStatus';
 import type { GetV1OrderListSort } from './getV1OrderListSort';
 import type { GetV1OrderListStatus } from './getV1OrderListStatus';
 
@@ -13,6 +14,10 @@ export type GetV1OrderListParams = {
  * Filter by workflow status
  */
 status?: GetV1OrderListStatus;
+/**
+ * Filter by payment status
+ */
+payment_status?: GetV1OrderListPaymentStatus;
 /**
  * Filter by distributor UUID
  */

@@ -3,7 +3,6 @@ import type {
   Distributor,
   DistributorUpsertRequest,
   DistributorListParams,
-  DistributorListResult,
 } from './types';
 
 // ════════════════════════════════════════════════════════════════
@@ -34,7 +33,7 @@ export class DistributorUseCases {
     return this.api.deleteDistributor(id);
   }
 
-  async listDistributors(params?: DistributorListParams): Promise<DistributorListResult> {
+  async listDistributors(params?: DistributorListParams): Promise<Distributor[]> {
     return this.api.listDistributors(params);
   }
 

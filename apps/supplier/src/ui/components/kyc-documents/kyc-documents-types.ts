@@ -88,19 +88,10 @@ export interface ReviewQueueItem {
   tier?: string;
   fileName: string;
   submittedAgo: string;
-  /** Document image/stream URL — no endpoint among the 12 serves document bytes, so
-   * this stays undefined and the preview shows its placeholder. */
+  /** `DomainDocument.file_url` — undefined only when the API hasn't set one yet, in
+   * which case the preview modal shows its placeholder. */
   documentUrl?: string;
 }
-
-// Reasons offered when rejecting a document submission (free-text UI copy, not API data).
-export const KYC_REJECT_REASONS = [
-  'Invalid Document',
-  'Expired Document',
-  'Illegible / Poor Quality',
-  'Wrong Document Type',
-  'Other',
-];
 
 // ───────── Document Types configuration list ("see all" page) ─────────
 

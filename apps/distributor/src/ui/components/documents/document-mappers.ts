@@ -1,4 +1,4 @@
-import type { DomainDocument, DomainDocumentDetail } from '@energyiq/api/generated/schemas';
+import type { DomainDocument, DocumentDetail as DomainDocumentDetail } from '@energyiq/api/generated/schemas';
 
 /** Display status shown in the UI — `expiring` is derived, not an API status value. */
 export type DisplayDocumentStatus = 'approved' | 'rejected' | 'pending' | 'expired' | 'expiring';
@@ -19,6 +19,12 @@ export function toDisplayStatus(document: DomainDocument): DisplayDocumentStatus
     return 'approved';
   }
   return (document.status as DisplayDocumentStatus | undefined) ?? 'pending';
+}
+
+/** Whether tapping a document's row should open the re-upload flow instead of its
+ * read-only detail view (`doc-overview.tsx`'s routing decision). */
+export function opensReuploadFlow(document: DomainDocument): boolean {
+  return document.status === 'rejected' || document.status === 'pending';
 }
 
 export function formatDate(dateString: string | undefined): string {

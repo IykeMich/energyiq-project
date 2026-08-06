@@ -20,11 +20,11 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  HttpDocumentTypeCreateRequest,
-  HttpDocumentTypeListResponse,
-  HttpDocumentTypeResponse,
-  HttpDocumentTypeUpdateRequest,
-  ResponseEmptyResponse
+  DocumentTypeCreateRequest,
+  DocumentTypeResponse,
+  DocumentTypeUpdateRequest,
+  EmptyResponse,
+  ErrorResponse
 } from '../schemas';
 
 import { fetcher } from '../../fetcher';
@@ -36,19 +36,89 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Saves one document type using the Figma-facing document details form fields such as document name, expiry requirement, validity period, allowed file types, max file size, and description.
+
+**Frontend usage:**
+Call this operation when the user submits the **Create document type** flow. Use the success payload for navigation/UI state and render field errors beside matching inputs.
+
+**Required inputs:**
+- `allowed_file_types` — array; allowed: `pdf`, `jpg`, `jpeg`, `png`; minimum items 1
+- `document_category_id` — string
+- `document_name` — string; minimum length 2; maximum length 255
+- `max_file_size_mb` — integer; minimum 1; maximum 100
+
+**Optional inputs:**
+- `audience` — string; allowed: `supplier`, `distributor`, `both`
+- `description` — string
+- `expiry_required` — boolean
+- `required` — boolean
+- `validity_period_months` — integer; minimum 1; maximum 120
+
+**Enum values:**
+- `allowed_file_types`: `pdf`, `jpg`, `jpeg`, `png`
+- `audience`: `supplier`, `distributor`, `both`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `201` — Created.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `409` — Duplicate data or an invalid state transition is rejected.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Create document type
  */
 export type postV1DocumentTypeCreateResponse201 = {
-  data: HttpDocumentTypeResponse
+  data: DocumentTypeResponse
   status: 201
+}
+
+export type postV1DocumentTypeCreateResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type postV1DocumentTypeCreateResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type postV1DocumentTypeCreateResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type postV1DocumentTypeCreateResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type postV1DocumentTypeCreateResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type postV1DocumentTypeCreateResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type postV1DocumentTypeCreateResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type postV1DocumentTypeCreateResponseSuccess = (postV1DocumentTypeCreateResponse201) & {
   headers: Headers;
 };
-;
-
-export type postV1DocumentTypeCreateResponse = (postV1DocumentTypeCreateResponseSuccess)
+export type postV1DocumentTypeCreateResponseError = (postV1DocumentTypeCreateResponse400 | postV1DocumentTypeCreateResponse401 | postV1DocumentTypeCreateResponse403 | postV1DocumentTypeCreateResponse404 | postV1DocumentTypeCreateResponse409 | postV1DocumentTypeCreateResponse429 | postV1DocumentTypeCreateResponse500) & {
+  headers: Headers;
+};
 
 export const getPostV1DocumentTypeCreateUrl = () => {
 
@@ -58,24 +128,24 @@ export const getPostV1DocumentTypeCreateUrl = () => {
   return `/v1/document-type/create`
 }
 
-export const postV1DocumentTypeCreate = async (httpDocumentTypeCreateRequest: HttpDocumentTypeCreateRequest, options?: RequestInit): Promise<postV1DocumentTypeCreateResponse> => {
+export const postV1DocumentTypeCreate = async (documentTypeCreateRequest: DocumentTypeCreateRequest, options?: RequestInit): Promise<postV1DocumentTypeCreateResponseSuccess> => {
 
-  return fetcher<postV1DocumentTypeCreateResponse>(getPostV1DocumentTypeCreateUrl(),
+  return fetcher<postV1DocumentTypeCreateResponseSuccess>(getPostV1DocumentTypeCreateUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpDocumentTypeCreateRequest,)
+      documentTypeCreateRequest,)
   }
 );}
 
 
 
 
-export const getPostV1DocumentTypeCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext> => {
+export const getPostV1DocumentTypeCreateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: DocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: DocumentTypeCreateRequest}, TContext> => {
 
 const mutationKey = ['postV1DocumentTypeCreate'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -87,7 +157,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, {data: HttpDocumentTypeCreateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, {data: DocumentTypeCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
           return  postV1DocumentTypeCreate(data,requestOptions)
@@ -101,37 +171,90 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostV1DocumentTypeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>>
-    export type PostV1DocumentTypeCreateMutationBody = HttpDocumentTypeCreateRequest
-    export type PostV1DocumentTypeCreateMutationError = unknown
+    export type PostV1DocumentTypeCreateMutationBody = DocumentTypeCreateRequest
+    export type PostV1DocumentTypeCreateMutationError = ErrorResponse
 
     /**
  * @summary Create document type
  */
-export const usePostV1DocumentTypeCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: HttpDocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePostV1DocumentTypeCreate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postV1DocumentTypeCreate>>, TError,{data: DocumentTypeCreateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof postV1DocumentTypeCreate>>,
         TError,
-        {data: HttpDocumentTypeCreateRequest},
+        {data: DocumentTypeCreateRequest},
         TContext
       > => {
       return useMutation(getPostV1DocumentTypeCreateMutationOptions(options));
     }
     /**
  * Soft-deactivates a document type so historical document submissions remain auditable.
+
+**Frontend usage:**
+Call this operation only after confirmation of **Delete document type**; remove or refresh the affected item after success.
+
+**Required inputs:**
+- `id` (path) — string; Document type ID; Document type ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Delete document type
  */
 export type deleteV1DocumentTypeDeleteIdResponse200 = {
-  data: ResponseEmptyResponse
+  data: EmptyResponse
   status: 200
+}
+
+export type deleteV1DocumentTypeDeleteIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type deleteV1DocumentTypeDeleteIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type deleteV1DocumentTypeDeleteIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteV1DocumentTypeDeleteIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteV1DocumentTypeDeleteIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type deleteV1DocumentTypeDeleteIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type deleteV1DocumentTypeDeleteIdResponseSuccess = (deleteV1DocumentTypeDeleteIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type deleteV1DocumentTypeDeleteIdResponse = (deleteV1DocumentTypeDeleteIdResponseSuccess)
+export type deleteV1DocumentTypeDeleteIdResponseError = (deleteV1DocumentTypeDeleteIdResponse400 | deleteV1DocumentTypeDeleteIdResponse401 | deleteV1DocumentTypeDeleteIdResponse403 | deleteV1DocumentTypeDeleteIdResponse404 | deleteV1DocumentTypeDeleteIdResponse429 | deleteV1DocumentTypeDeleteIdResponse500) & {
+  headers: Headers;
+};
 
 export const getDeleteV1DocumentTypeDeleteIdUrl = (id: string,) => {
 
@@ -141,9 +264,9 @@ export const getDeleteV1DocumentTypeDeleteIdUrl = (id: string,) => {
   return `/v1/document-type/delete/${id}`
 }
 
-export const deleteV1DocumentTypeDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentTypeDeleteIdResponse> => {
+export const deleteV1DocumentTypeDeleteId = async (id: string, options?: RequestInit): Promise<deleteV1DocumentTypeDeleteIdResponseSuccess> => {
 
-  return fetcher<deleteV1DocumentTypeDeleteIdResponse>(getDeleteV1DocumentTypeDeleteIdUrl(id),
+  return fetcher<deleteV1DocumentTypeDeleteIdResponseSuccess>(getDeleteV1DocumentTypeDeleteIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -155,7 +278,7 @@ export const deleteV1DocumentTypeDeleteId = async (id: string, options?: Request
 
 
 
-export const getDeleteV1DocumentTypeDeleteIdMutationOptions = <TError = unknown,
+export const getDeleteV1DocumentTypeDeleteIdMutationOptions = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, TError,{id: string}, TContext> => {
 
@@ -184,12 +307,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteV1DocumentTypeDeleteIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>>
 
-    export type DeleteV1DocumentTypeDeleteIdMutationError = unknown
+    export type DeleteV1DocumentTypeDeleteIdMutationError = ErrorResponse
 
     /**
  * @summary Delete document type
  */
-export const useDeleteV1DocumentTypeDeleteId = <TError = unknown,
+export const useDeleteV1DocumentTypeDeleteId = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteV1DocumentTypeDeleteId>>,
@@ -200,109 +323,73 @@ export const useDeleteV1DocumentTypeDeleteId = <TError = unknown,
       return useMutation(getDeleteV1DocumentTypeDeleteIdMutationOptions(options));
     }
     /**
- * Lists document types using the Figma-facing document details field names for table and modal flows.
- * @summary List document types
- */
-export type getV1DocumentTypeListResponse200 = {
-  data: HttpDocumentTypeListResponse
-  status: 200
-}
-
-export type getV1DocumentTypeListResponseSuccess = (getV1DocumentTypeListResponse200) & {
-  headers: Headers;
-};
-;
-
-export type getV1DocumentTypeListResponse = (getV1DocumentTypeListResponseSuccess)
-
-export const getGetV1DocumentTypeListUrl = () => {
-
-
-
-
-  return `/v1/document-type/list`
-}
-
-export const getV1DocumentTypeList = async ( options?: RequestInit): Promise<getV1DocumentTypeListResponse> => {
-
-  return fetcher<getV1DocumentTypeListResponse>(getGetV1DocumentTypeListUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetV1DocumentTypeListQueryKey = () => {
-    return [
-    `/v1/document-type/list`
-    ] as const;
-    }
-
-
-export const getGetV1DocumentTypeListQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetV1DocumentTypeListQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getV1DocumentTypeList>>> = ({ signal }) => getV1DocumentTypeList({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetV1DocumentTypeListQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentTypeList>>>
-export type GetV1DocumentTypeListQueryError = unknown
-
-
-/**
- * @summary List document types
- */
-
-export function useGetV1DocumentTypeList<TData = Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError = unknown>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeList>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetV1DocumentTypeListQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-/**
  * Returns one document type in the same field naming used by the Figma document details form.
+
+**Frontend usage:**
+Call this operation when opening the **Get document type** detail view or pre-filling its related form.
+
+**Required inputs:**
+- `id` (path) — string; Document type ID; Document type ID
+
+**Optional inputs:**
+None.
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Get document type
  */
 export type getV1DocumentTypeReadIdResponse200 = {
-  data: HttpDocumentTypeResponse
+  data: DocumentTypeResponse
   status: 200
+}
+
+export type getV1DocumentTypeReadIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getV1DocumentTypeReadIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type getV1DocumentTypeReadIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getV1DocumentTypeReadIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getV1DocumentTypeReadIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type getV1DocumentTypeReadIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type getV1DocumentTypeReadIdResponseSuccess = (getV1DocumentTypeReadIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type getV1DocumentTypeReadIdResponse = (getV1DocumentTypeReadIdResponseSuccess)
+export type getV1DocumentTypeReadIdResponseError = (getV1DocumentTypeReadIdResponse400 | getV1DocumentTypeReadIdResponse401 | getV1DocumentTypeReadIdResponse403 | getV1DocumentTypeReadIdResponse404 | getV1DocumentTypeReadIdResponse429 | getV1DocumentTypeReadIdResponse500) & {
+  headers: Headers;
+};
 
 export const getGetV1DocumentTypeReadIdUrl = (id: string,) => {
 
@@ -312,9 +399,9 @@ export const getGetV1DocumentTypeReadIdUrl = (id: string,) => {
   return `/v1/document-type/read/${id}`
 }
 
-export const getV1DocumentTypeReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentTypeReadIdResponse> => {
+export const getV1DocumentTypeReadId = async (id: string, options?: RequestInit): Promise<getV1DocumentTypeReadIdResponseSuccess> => {
 
-  return fetcher<getV1DocumentTypeReadIdResponse>(getGetV1DocumentTypeReadIdUrl(id),
+  return fetcher<getV1DocumentTypeReadIdResponseSuccess>(getGetV1DocumentTypeReadIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -334,7 +421,7 @@ export const getGetV1DocumentTypeReadIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetV1DocumentTypeReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError = unknown>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
+export const getGetV1DocumentTypeReadIdQueryOptions = <TData = Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError = ErrorResponse>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -353,14 +440,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetV1DocumentTypeReadIdQueryResult = NonNullable<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>>
-export type GetV1DocumentTypeReadIdQueryError = unknown
+export type GetV1DocumentTypeReadIdQueryError = ErrorResponse
 
 
 /**
  * @summary Get document type
  */
 
-export function useGetV1DocumentTypeReadId<TData = Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError = unknown>(
+export function useGetV1DocumentTypeReadId<TData = Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError = ErrorResponse>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getV1DocumentTypeReadId>>, TError, TData>, request?: SecondParameter<typeof fetcher>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -379,19 +466,84 @@ export function useGetV1DocumentTypeReadId<TData = Awaited<ReturnType<typeof get
 
 /**
  * Updates one document type using the Figma-facing document details form fields. The backend keeps the internal document key stable for historical records.
+
+**Frontend usage:**
+Call this operation when the user saves the **Update document type** form. Pre-fill unchanged values from its read endpoint and render field errors inline.
+
+**Required inputs:**
+- `allowed_file_types` — array; allowed: `pdf`, `jpg`, `jpeg`, `png`; minimum items 1
+- `document_category_id` — string
+- `document_name` — string; minimum length 2; maximum length 255
+- `id` (path) — string; Document type ID; Document type ID
+- `max_file_size_mb` — integer; minimum 1; maximum 100
+
+**Optional inputs:**
+- `audience` — string; allowed: `supplier`, `distributor`, `both`
+- `description` — string
+- `expiry_required` — boolean
+- `required` — boolean
+- `validity_period_months` — integer; minimum 1; maximum 120
+
+**Enum values:**
+- `allowed_file_types`: `pdf`, `jpg`, `jpeg`, `png`
+- `audience`: `supplier`, `distributor`, `both`
+
+**Authorization:**
+Bearer JWT required. Account status, tenant isolation, and RBAC permissions are checked before the operation runs.
+
+**Expected outcomes:**
+- `200` — OK.
+
+**Edge cases:**
+- `400` — Invalid or incomplete input returns field-level validation feedback.
+- `401` — Missing, expired, or invalid authentication is rejected.
+- `403` — The caller lacks the required permission, tenant access, or account state.
+- `404` — Missing and cross-tenant resources are returned as not found.
+- `429` — A rate limit or resend cooldown applies; wait before retrying.
+- `500` — Unexpected failures use the standard error envelope; retain user input for a safe retry.
  * @summary Update document type
  */
 export type putV1DocumentTypeUpdateIdResponse200 = {
-  data: HttpDocumentTypeResponse
+  data: DocumentTypeResponse
   status: 200
+}
+
+export type putV1DocumentTypeUpdateIdResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type putV1DocumentTypeUpdateIdResponse401 = {
+  data: ErrorResponse
+  status: 401
+}
+
+export type putV1DocumentTypeUpdateIdResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type putV1DocumentTypeUpdateIdResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type putV1DocumentTypeUpdateIdResponse429 = {
+  data: ErrorResponse
+  status: 429
+}
+
+export type putV1DocumentTypeUpdateIdResponse500 = {
+  data: ErrorResponse
+  status: 500
 }
 
 export type putV1DocumentTypeUpdateIdResponseSuccess = (putV1DocumentTypeUpdateIdResponse200) & {
   headers: Headers;
 };
-;
-
-export type putV1DocumentTypeUpdateIdResponse = (putV1DocumentTypeUpdateIdResponseSuccess)
+export type putV1DocumentTypeUpdateIdResponseError = (putV1DocumentTypeUpdateIdResponse400 | putV1DocumentTypeUpdateIdResponse401 | putV1DocumentTypeUpdateIdResponse403 | putV1DocumentTypeUpdateIdResponse404 | putV1DocumentTypeUpdateIdResponse429 | putV1DocumentTypeUpdateIdResponse500) & {
+  headers: Headers;
+};
 
 export const getPutV1DocumentTypeUpdateIdUrl = (id: string,) => {
 
@@ -402,24 +554,24 @@ export const getPutV1DocumentTypeUpdateIdUrl = (id: string,) => {
 }
 
 export const putV1DocumentTypeUpdateId = async (id: string,
-    httpDocumentTypeUpdateRequest: HttpDocumentTypeUpdateRequest, options?: RequestInit): Promise<putV1DocumentTypeUpdateIdResponse> => {
+    documentTypeUpdateRequest: DocumentTypeUpdateRequest, options?: RequestInit): Promise<putV1DocumentTypeUpdateIdResponseSuccess> => {
 
-  return fetcher<putV1DocumentTypeUpdateIdResponse>(getPutV1DocumentTypeUpdateIdUrl(id),
+  return fetcher<putV1DocumentTypeUpdateIdResponseSuccess>(getPutV1DocumentTypeUpdateIdUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      httpDocumentTypeUpdateRequest,)
+      documentTypeUpdateRequest,)
   }
 );}
 
 
 
 
-export const getPutV1DocumentTypeUpdateIdMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext> => {
+export const getPutV1DocumentTypeUpdateIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: DocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: DocumentTypeUpdateRequest}, TContext> => {
 
 const mutationKey = ['putV1DocumentTypeUpdateId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -431,7 +583,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, {id: string;data: HttpDocumentTypeUpdateRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, {id: string;data: DocumentTypeUpdateRequest}> = (props) => {
           const {id,data} = props ?? {};
 
           return  putV1DocumentTypeUpdateId(id,data,requestOptions)
@@ -445,18 +597,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PutV1DocumentTypeUpdateIdMutationResult = NonNullable<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>>
-    export type PutV1DocumentTypeUpdateIdMutationBody = HttpDocumentTypeUpdateRequest
-    export type PutV1DocumentTypeUpdateIdMutationError = unknown
+    export type PutV1DocumentTypeUpdateIdMutationBody = DocumentTypeUpdateRequest
+    export type PutV1DocumentTypeUpdateIdMutationError = ErrorResponse
 
     /**
  * @summary Update document type
  */
-export const usePutV1DocumentTypeUpdateId = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: HttpDocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
+export const usePutV1DocumentTypeUpdateId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>, TError,{id: string;data: DocumentTypeUpdateRequest}, TContext>, request?: SecondParameter<typeof fetcher>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof putV1DocumentTypeUpdateId>>,
         TError,
-        {id: string;data: HttpDocumentTypeUpdateRequest},
+        {id: string;data: DocumentTypeUpdateRequest},
         TContext
       > => {
       return useMutation(getPutV1DocumentTypeUpdateIdMutationOptions(options));

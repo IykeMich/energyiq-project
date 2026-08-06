@@ -20,6 +20,15 @@ export default defineConfig({
         query: {
           useQuery: true,
         },
+        // Our custom `fetcher` mutator always throws on non-2xx responses
+        // (see packages/api/src/fetcher.ts), so a query's resolved `data`
+        // can never actually be one of the documented error schemas. Without
+        // this, orval types every query's TData as `Success | Error` purely
+        // from the swagger's documented status codes, forcing every call
+        // site to narrow away an error variant that can never occur.
+        fetch: {
+          forceSuccessResponse: true,
+        },
       },
     },
     hooks: {

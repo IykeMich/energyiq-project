@@ -2,7 +2,6 @@ import type { WarehouseApi } from './ports';
 import type {
   Warehouse,
   WarehouseListParams,
-  WarehouseListResult,
   WarehouseStats,
   WarehouseCreateRequest,
   WarehouseUpdateRequest,
@@ -44,7 +43,7 @@ export class WarehouseUseCases {
     return this.api.deleteWarehouse(id);
   }
 
-  async listWarehouses(params?: WarehouseListParams): Promise<WarehouseListResult> {
+  async listWarehouses(params?: WarehouseListParams): Promise<Warehouse[]> {
     return this.api.listWarehouses(params);
   }
 
