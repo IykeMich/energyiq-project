@@ -7,6 +7,10 @@ import { apiGet, apiPut } from './client';
 // ════════════════════════════════════════════════════════════════
 
 export class TierApiAdapter implements tier.TierApi {
+  async listTierConfig(): Promise<tier.TierConfig[]> {
+    return apiGet<tier.TierConfig[]>('v1/tier/list');
+  }
+
   async updateTierConfig(
     req: tier.TierUpdateRequest,
   ): Promise<tier.TierUpdateResult> {

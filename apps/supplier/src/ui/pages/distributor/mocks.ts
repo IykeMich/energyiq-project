@@ -55,8 +55,7 @@ export function toDistributorRow(item: distributor.Distributor): Distributor {
 export interface DistributorSummary {
   total: number;
   activeThisMonth: number;
-  /** No backend concept of a "cold" tier/status exists yet — always 0 until product/backend define one. */
-  coldTier: number;
+  goldTier: number;
   pendingApproval: number;
 }
 
@@ -64,7 +63,7 @@ export function buildDistributorSummary(rows: Distributor[]): DistributorSummary
   return {
     total: rows.length,
     activeThisMonth: rows.filter((r) => r.status === 'active').length,
-    coldTier: 0,
+    goldTier: rows.filter((r) => r.tier === 'Gold').length,
     pendingApproval: rows.filter((r) => r.status === 'pending').length,
   };
 }
@@ -105,8 +104,42 @@ export interface DistributorApplication {
   assuranceFeeNGN: number;
 }
 
-// TODO(orval): replace with the generated `useGetPendingDistributorApplications`
-// query once the approval endpoint lands.
+/**
+ * Maps a pending distributor (GET /v1/distributor/list?status=pending) into the approval
+ * review card/detail shape. Fields the backend doesn't return yet (cacRegNo, document
+ * counts, assurance status/fee) stay placeholder values until the read endpoint grows them.
+ */
+export function toDistributorApplication(item: distributor.Distributor): DistributorApplication {
+  const appliedMonth = formatMonthYear(item.created_at);
+  const address = item.address && typeof item.address === 'object' ? item.address : undefined;
+  const state = (address && 'state' in address ? (address.state as string | undefined) : undefined) ?? '—';
+
+  return {
+    id: item.id ?? '',
+    submittedLabel: appliedMonth ? `Submitted ${appliedMonth}` : 'Submitted —',
+    businessName: item.name ?? '',
+    contactName: item.owner_name ?? '—',
+    state,
+    headquarters: formatLocation(item.address) ?? '—',
+    appliedLabel: appliedMonth ? `Applied ${appliedMonth}` : 'Applied —',
+    reviewStatus: 'awaiting',
+    // TODO(orval): no assurance-fee-status field exists on Distributor yet.
+    assuranceStatus: 'pending',
+    email: item.email ?? '',
+    phone: item.phone ?? '',
+    // TODO(orval): no CAC registration number field exists on Distributor yet.
+    cacRegNo: '—',
+    taxId: item.tax_id ?? '—',
+    // TODO(orval): no per-document submission counts exist on Distributor yet.
+    documentsSubmitted: 0,
+    documentsTotal: 0,
+    riskScore: item.risk_score ?? 0,
+    // TODO(orval): no assurance fee field exists on Distributor yet.
+    assuranceFeeNGN: 0,
+  };
+}
+
+// TODO(orval): remove once every consumer reads from toDistributorApplication(real data).
 export const DISTRIBUTOR_APPLICATIONS_MOCK: DistributorApplication[] = [
   {
     id: 'app-001',

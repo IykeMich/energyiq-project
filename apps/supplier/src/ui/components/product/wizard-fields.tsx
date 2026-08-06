@@ -9,13 +9,32 @@ import {
   SelectValue,
 } from '@energyiq/ui';
 
-function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+function FieldLabel({
+  label,
+  required,
+  optional,
+  htmlFor,
+}: {
+  label: string;
+  required?: boolean;
+  optional?: boolean;
+  htmlFor?: string;
+}) {
   return (
-    <label className="text-sm text-foreground">
+    <label htmlFor={htmlFor} className="text-sm text-foreground">
       {label}
       {required && <span className="text-danger ml-1">*</span>}
+      {optional && <span className="text-warning ml-1 text-xs font-medium">(OPTIONAL)</span>}
     </label>
   );
+}
+
+/** Comma-groups a raw digit string for display (e.g. "50000" -> "50,000"). */
+function formatCurrency(digits: string): string {
+  if (!digits) return '';
+  const parts = digits.split('.');
+  const whole = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.length > 1 ? `${whole}.${parts[1].slice(0, 2)}` : whole;
 }
 
 interface FieldProps {
@@ -36,45 +55,65 @@ export function Field({ label, required, children, className }: FieldProps) {
 }
 
 interface TextFieldProps {
+  id?: string;
   value: string;
   onChange: (next: string) => void;
   placeholder?: string;
-  type?: 'text' | 'number';
+  type?: 'text' | 'number' | 'email' | 'tel';
   label?: string;
   required?: boolean;
+  /** Shows an "(OPTIONAL)" badge next to the label instead of a required asterisk. */
+  optional?: boolean;
   disabled?: boolean;
   /** When set, the control shows the destructive border and the message below it. */
   error?: string;
   className?: string;
+  /** Formats the value as comma-grouped digits and shows a ₦ prefix inside the field (e.g. an assurance amount). */
+  currency?: boolean;
 }
 
 export function TextField({
+  id,
   value,
   onChange,
   placeholder,
   type = 'text',
   label,
   required,
+  optional,
   disabled,
   error,
   className,
+  currency,
 }: TextFieldProps) {
+  const handleChange = (raw: string) => {
+    onChange(currency ? raw.replace(/[^\d.]/g, '') : raw);
+  };
+
   return (
     <div className="flex flex-col gap-2">
-      {label && <FieldLabel label={label} required={required} />}
+      {label && <FieldLabel label={label} required={required} optional={optional} htmlFor={id} />}
       <div className="flex flex-col gap-1">
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={cn(
-            'bg-[#6161611A] focus:border border-border-strong h-[52px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed',
-            error && 'border-destructive focus:border-destructive',
-            className,
+        <div className="relative">
+          {currency && (
+            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
           )}
-        />
+          <input
+            id={id}
+            type={currency ? 'text' : type}
+            inputMode={currency ? 'decimal' : undefined}
+            value={currency ? formatCurrency(value) : value}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={cn(
+              'bg-[#6161611A] focus:border border-border-strong h-13 rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed',
+              currency && 'pl-9',
+              error && 'border-destructive focus:border-destructive',
+              className,
+            )}
+          />
+        </div>
         {error && <p className="text-destructive text-xs">{error}</p>}
       </div>
     </div>

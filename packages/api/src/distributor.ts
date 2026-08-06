@@ -32,6 +32,10 @@ export class DistributorApiAdapter implements distributor.DistributorApi {
     await apiDelete(`v1/distributor/delete/${id}`);
   }
 
+  async activateDistributor(id: string): Promise<distributor.Distributor> {
+    return apiPost<distributor.Distributor>(`v1/distributor/activate/${id}`);
+  }
+
   async listDistributors(
     params?: distributor.DistributorListParams,
   ): Promise<distributor.DistributorListResult> {

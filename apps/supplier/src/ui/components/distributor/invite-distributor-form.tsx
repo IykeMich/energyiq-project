@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingOverlay, SuccessModal, useAuth } from '@energyiq/ui';
 import type { DistributorInvitePayload } from '@/ui/pages/distributor/mocks';
-import { InviteFormField } from './invite-form-field';
-import { FormActionButton } from '../product/wizard-fields';
+import { FormActionButton, TextField } from '../product/wizard-fields';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -87,46 +86,51 @@ export function InviteDistributorForm() {
         )}
 
         <div className="flex flex-col gap-5">
-          <InviteFormField
+          <TextField
             id="distributorName"
             label="Distributor Name:"
             value={form.distributorName}
             onChange={setField('distributorName')}
             placeholder="Starlink Oil & Gas Limited"
+            className="w-full"
           />
-          <InviteFormField
+          <TextField
             id="email"
             label="Email Address:"
             type="email"
             value={form.email}
             onChange={setField('email')}
             placeholder="chinedu@gmail.com"
+            className="w-full"
           />
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <InviteFormField
+            <TextField
               id="phone"
               label="Phone Number:"
               type="tel"
               value={form.phone}
               onChange={setField('phone')}
               placeholder="08035552134"
+              className="w-full"
             />
-            <InviteFormField
+            <TextField
               id="contactPerson"
               label="Contact Person:"
               value={form.contactPerson}
               onChange={setField('contactPerson')}
               placeholder="Chinedu Okafor"
+              className="w-full"
             />
-            <InviteFormField
+            <TextField
               id="location"
               label="Location:"
               value={form.location}
               onChange={setField('location')}
               placeholder="Lagos State"
+              className="w-full"
             />
-            <InviteFormField
+            <TextField
               id="assuranceAmount"
               label="Assurance Amount"
               optional
@@ -134,6 +138,7 @@ export function InviteDistributorForm() {
               value={form.assuranceAmount}
               onChange={setField('assuranceAmount')}
               placeholder="50,000"
+              className="w-full"
             />
           </div>
         </div>

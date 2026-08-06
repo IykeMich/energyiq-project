@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from '@energyiq/ui';
 import type { tier } from '@energyiq/domain';
-import { useUpdateTierConfigMutation } from '@/hooks/use-tier-management';
+import { useTierListQuery, useUpdateTierConfigMutation } from '@/hooks/use-tier-management';
 import { TIER_MANAGEMENT_MOCK, type TierConfig } from './tier-management-mocks';
 
+/** The design shows "-" for a threshold that hasn't been configured yet, rather than "0". */
 function formatNumberInput(value: number): string {
-  return value.toString();
+  return value === 0 ? '' : value.toString();
 }
 
 function parseNumberInput(value: string): number {
@@ -37,6 +38,7 @@ function toUiTier(source: tier.TierConfig, fallback?: TierConfig): TierConfig {
   const name = source.tier ? `${source.tier.charAt(0).toUpperCase()}${source.tier.slice(1)} Tier` : fallback?.name ?? 'Tier';
   const tierColor = fallback?.color ?? '#FBC02D';
   const border = fallback?.borderColor ?? tierColor;
+  const badgeTextColor = fallback?.badgeTextColor ?? tierColor;
 
   return {
     id: source.tier,
@@ -44,6 +46,7 @@ function toUiTier(source: tier.TierConfig, fallback?: TierConfig): TierConfig {
     activeCount: source.active_distributors ?? fallback?.activeCount ?? 0,
     color: tierColor,
     borderColor: border,
+    badgeTextColor,
     thresholds: {
       minMonths: source.min_months ?? 0,
       paymentDiscipline: source.min_payment_discipline ?? 0,
@@ -71,67 +74,77 @@ function TierCard({ tier, onChange }: TierCardProps) {
 
   return (
     <div
-      className="flex flex-col gap-5 rounded-[18px] bg-[#FFFFFF1A] p-6"
-      style={{ border: `1px solid ${tier.borderColor}` }}
+      className="flex flex-col gap-5 rounded-[28px] p-6"
+      style={{ border: `1px solid ${tier.borderColor}`, backgroundColor: `${tier.color}1A` }}
     >
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold" style={{ color: tier.color }}>
+        <h3 className="text-base font-semibold" style={{ color: tier.color }}>
           {tier.name}
         </h3>
         <span
-          className="rounded-full px-3 py-1 text-xs font-medium"
-          style={{ color: tier.color, backgroundColor: `${tier.color}1A` }}
+          className="rounded-full px-2.5 py-1 text-xs font-normal"
+          style={{ color: tier.badgeTextColor, backgroundColor: `${tier.color}33` }}
         >
           {tier.activeCount} Active
         </span>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-[#FFFFFFCC]">Thresholds</p>
+      <div className="flex flex-col gap-3">
+        <p className="text-xs text-[#FAFAFA]">THRESHOLDS</p>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-[#FFFFFFCC]">Min. Months:</span>
-          <input
-            type="number"
-            min={0}
-            value={formatNumberInput(tier.thresholds.minMonths)}
-            onChange={(event) => updateThreshold('minMonths', event.target.value)}
-            className="rounded-full border border-[#FFFFFF33] bg-[#121212] px-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#FFFFFF80] focus:border-[#FBC02D] focus:outline-none"
-          />
+          <span className="text-xs text-[#FAFAFA]">Min. Months:</span>
+          <div className="rounded-full bg-[#6161611A] px-4 py-2.5">
+            <input
+              type="number"
+              min={0}
+              placeholder="-"
+              value={formatNumberInput(tier.thresholds.minMonths)}
+              onChange={(event) => updateThreshold('minMonths', event.target.value)}
+              className="w-full bg-transparent text-sm text-[#FAFAFA] placeholder:text-[#FAFAFA] focus:outline-none"
+            />
+          </div>
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-[#FFFFFFCC]">Payment Discipline (%):</span>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={formatNumberInput(tier.thresholds.paymentDiscipline)}
-            onChange={(event) => updateThreshold('paymentDiscipline', event.target.value)}
-            className="rounded-full border border-[#FFFFFF33] bg-[#121212] px-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#FFFFFF80] focus:border-[#FBC02D] focus:outline-none"
-          />
+          <span className="text-xs text-[#FAFAFA]">Min. Volume (#):</span>
+          <div className="rounded-full bg-[#6161611A] px-4 py-2.5">
+            <input
+              type="number"
+              min={0}
+              placeholder="-"
+              value={formatNumberInput(tier.thresholds.minVolume)}
+              onChange={(event) => updateThreshold('minVolume', event.target.value)}
+              className="w-full bg-transparent text-sm text-[#FAFAFA] placeholder:text-[#FAFAFA] focus:outline-none"
+            />
+          </div>
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-[#FFFFFFCC]">Min. Volume (#):</span>
-          <input
-            type="number"
-            min={0}
-            value={formatNumberInput(tier.thresholds.minVolume)}
-            onChange={(event) => updateThreshold('minVolume', event.target.value)}
-            className="rounded-full border border-[#FFFFFF33] bg-[#121212] px-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#FFFFFF80] focus:border-[#FBC02D] focus:outline-none"
-          />
+          <span className="text-xs text-[#FAFAFA]">Payment Discipline (%):</span>
+          <div className="rounded-full bg-[#6161611A] px-4 py-2.5">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              placeholder="-"
+              value={formatNumberInput(tier.thresholds.paymentDiscipline)}
+              onChange={(event) => updateThreshold('paymentDiscipline', event.target.value)}
+              className="w-full bg-transparent text-sm text-[#FAFAFA] placeholder:text-[#FAFAFA] focus:outline-none"
+            />
+          </div>
         </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-[#FFFFFFCC]">Benefits:</span>
+        <div className="flex flex-col gap-1 rounded-[9px] bg-[#6161611A] p-3">
+          <span className="text-xs font-semibold text-[#FFFFFF]">Benefits:</span>
           <input
             type="text"
+            placeholder="-"
             value={tier.benefits}
             onChange={(event) => onChange({ ...tier, benefits: event.target.value })}
-            className="rounded-full border border-[#FFFFFF33] bg-[#121212] px-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#FFFFFF80] focus:border-[#FBC02D] focus:outline-none"
+            className="w-full bg-transparent text-[10px] text-[#FFFFFF] placeholder:text-[#FFFFFF] focus:outline-none"
           />
-        </label>
+        </div>
       </div>
     </div>
   );
@@ -141,6 +154,7 @@ export function TierManagementOverview() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
   const [tiers, setTiers] = useState<TierConfig[]>(TIER_MANAGEMENT_MOCK);
+  const tierListQuery = useTierListQuery();
   const updateMutation = useUpdateTierConfigMutation();
   const isSaving = updateMutation.isPending;
 
@@ -148,6 +162,16 @@ export function TierManagementOverview() {
     () => Object.fromEntries(TIER_MANAGEMENT_MOCK.map((tier) => [tier.id, tier])),
     [],
   );
+
+  // Seed the local edit buffer once real config data arrives; TIER_MANAGEMENT_MOCK
+  // supplies the cosmetic fields (name/color/order) the API doesn't return.
+  useEffect(() => {
+    if (!tierListQuery.data) return;
+    const uiById = Object.fromEntries(
+      tierListQuery.data.map((backendTier) => [backendTier.tier, toUiTier(backendTier, fallbackById[backendTier.tier])]),
+    );
+    setTiers((previous) => previous.map((tier) => uiById[tier.id] ?? tier));
+  }, [tierListQuery.data, fallbackById]);
 
   const handleTierChange = (updated: TierConfig) => {
     setTiers((previous) => previous.map((tier) => (tier.id === updated.id ? updated : tier)));
@@ -186,13 +210,13 @@ export function TierManagementOverview() {
             type="button"
             onClick={() => navigate(`/${slug}/dashboard`)}
             aria-label="Back to dashboard"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FBC02D] text-[#121212]"
+            className="tap-effect flex h-8 w-8 items-center justify-center rounded-full bg-[#FBC02DB2] text-[#121212] hover:bg-[#FBC02D]"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
             <h1 className="text-2xl font-semibold text-[#FAFAFA]">Tier Management</h1>
-            <p className="text-sm text-[#FFFFFFCC]">Configure thresholds and benefits per tier.</p>
+            <p className="text-base text-[#FAFAFA]">Configure thresholds and benefits per tier.</p>
           </div>
         </div>
 
@@ -200,13 +224,19 @@ export function TierManagementOverview() {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="tap-effect rounded-full bg-[#FBC02D] px-6 py-3 text-sm font-semibold text-[#121212] disabled:opacity-50"
+          className="tap-effect rounded-full bg-[#616161B2] px-6 py-3 text-sm font-semibold text-[#121212] hover:bg-[#616161] disabled:opacity-50"
         >
-          {isSaving ? 'Saving…' : 'Save Changes'}
+          {isSaving ? 'Saving…' : 'Save & Add Another'}
         </button>
       </header>
 
-      <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
+      {tierListQuery.isError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          Couldn't load tier configuration. Please try again.
+        </div>
+      )}
+
+      <div className="flex flex-col gap-5 rounded-[48px] border border-[#616161B2] py-12 px-12 p-6 lg:ml-12">
         <h2 className="text-base font-semibold text-[#FAFAFA]">Tier Distribution</h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {tiers.map((tier) => (

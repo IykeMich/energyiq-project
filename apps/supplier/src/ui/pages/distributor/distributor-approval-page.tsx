@@ -1,14 +1,19 @@
+import { useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { DISTRIBUTOR_APPLICATIONS_MOCK } from './mocks';
+import { useDistributorsQuery } from '@/hooks/use-distributor';
+import { toDistributorApplication } from './mocks';
 import { DistributorApprovalReview } from '@/ui/components/distributor/distributor-approval-review';
 
 export function DistributorApprovalPage() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
 
-  // TODO(orval): replace with the generated pending-applications query.
-  const applications = DISTRIBUTOR_APPLICATIONS_MOCK;
+  const pendingQuery = useDistributorsQuery({ status: 'pending' });
+  const applications = useMemo(
+    () => (pendingQuery.data?.items ?? []).map(toDistributorApplication),
+    [pendingQuery.data],
+  );
 
   return (
     <section className="flex flex-col gap-6">
@@ -18,7 +23,7 @@ export function DistributorApprovalPage() {
             type="button"
             onClick={() => navigate(`/${slug}/distributors`)}
             aria-label="Back to distributors"
-            className="flex h-7.75 w-7.75 items-center justify-center rounded-full bg-brand text-brand-foreground"
+            className="tap-effect flex h-7.75 w-7.75 items-center justify-center rounded-full bg-brand text-brand-foreground hover:opacity-90"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -29,7 +34,13 @@ export function DistributorApprovalPage() {
         </p>
       </header>
 
-      <DistributorApprovalReview applications={applications} />
+      {pendingQuery.isError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          Couldn't load pending applications. Please try again.
+        </div>
+      )}
+
+      <DistributorApprovalReview applications={applications} isEmpty={!pendingQuery.isLoading && applications.length === 0} />
     </section>
   );
 }

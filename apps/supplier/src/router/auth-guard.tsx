@@ -12,11 +12,13 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
-// Redirects to dashboard if already authenticated.
+// Redirects to dashboard if already authenticated — unless the user is
+// mid-registration with onboarding steps still left (e.g. Document Upload
+// right after OTP verification), in which case they must stay on the page.
 export function RedirectIfAuth() {
-  const { isAuthenticated, user, slug: stateSlug } = useAuth();
+  const { isAuthenticated, nextAction, user, slug: stateSlug } = useAuth();
 
-  if (isAuthenticated) {
+  if (isAuthenticated && nextAction !== 'complete_onboarding') {
     // Routes are slug-prefixed (/:slug/dashboard). Source the slug the same way
     // the sidebar does. With the temp login bypass this resolves to 'demo';
     // once the real auth endpoint lands it becomes the tenant's actual slug.

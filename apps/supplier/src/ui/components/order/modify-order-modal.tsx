@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
+import { X } from 'lucide-react';
 import { Modal } from '@energyiq/ui';
 import type { OrderDetail, OrderLineItem } from './order-detail-mapper';
 
@@ -59,11 +61,28 @@ export function ModifyOrderModal({ open, onOpenChange, detail, onSave }: ModifyO
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={`Modify Order- ${detail.summary.id}`}
-      size="lg"
+      showClose={false}
+      className="bg-[#121212] rounded-[36px] max-w-226 border-0"
     >
-      <div className="flex flex-col gap-6">
-        <dl className="flex flex-col gap-2 text-sm text-foreground">
+      <div className="px-16 pt-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2.5">
+            <span className="h-8.75 w-1.25 rounded-xs bg-brand" />
+            <h2 className="text-[22px] font-semibold text-[#FAFAFA] m-0">
+              {`Modify Order- ${detail.summary.id}`}
+            </h2>
+          </div>
+          <DialogPrimitive.Close
+            aria-label="Close"
+            className="tap-effect flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          >
+            <X className="h-4 w-4" />
+          </DialogPrimitive.Close>
+        </div>
+      </div>
+
+      <div className="px-16 pb-10 flex flex-col gap-6">
+        <dl className="flex flex-col gap-2 text-lg font-medium text-[#FAFAFA]">
           <Row label="Distributor:" value={`${detail.distributor.name} (Tier: ${detail.tierLabel})`} />
           <Row
             label="Original Subtotal:"
@@ -80,13 +99,13 @@ export function ModifyOrderModal({ open, onOpenChange, detail, onSave }: ModifyO
           {drafts.map((draft, idx) => (
             <div
               key={draft.id}
-              className="border-t border-border-subtle pt-5 first:border-0 first:pt-0"
+              className="border-t border-t-[#616161B2] pt-5 first:border-0 first:pt-0"
             >
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-lg font-medium text-[#FAFAFA]">
                   {draft.name.split(' (')[0]}:
                 </p>
-                <p className="text-sm font-semibold text-brand">
+                <p className="text-lg font-medium text-brand">
                   Total: ₦{NGN.format(totals[idx])}
                 </p>
               </div>
@@ -111,7 +130,7 @@ export function ModifyOrderModal({ open, onOpenChange, detail, onSave }: ModifyO
           <button
             type="button"
             onClick={handleSave}
-            className="h-[53px] rounded-[28px] bg-brand text-brand-foreground font-semibold px-12"
+            className="tap-effect w-39.5 h-13.25 rounded-[34px] bg-brand text-brand-foreground font-semibold hover:bg-brand/90"
           >
             Save
           </button>
@@ -140,12 +159,12 @@ interface FieldInputProps {
 function FieldInput({ label, value, onChange, placeholder }: FieldInputProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm text-foreground">{label}</label>
+      <label className="text-lg font-medium text-[#FAFAFA]">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="bg-surface-card border border-border-strong h-[44px] rounded-[28px] px-5 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand"
+        className="bg-[#6161611A] h-11.75 rounded-[33px] px-5 text-base text-[#FAFAFA] placeholder:text-muted-foreground outline-none focus:outline focus:outline-brand"
       />
     </div>
   );

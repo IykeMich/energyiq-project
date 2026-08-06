@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { distributor } from '@energyiq/domain';
 import { distributorUseCases } from '@/config/container';
 
@@ -21,5 +21,13 @@ export function useDistributorQuery(
     queryKey: [...DISTRIBUTORS_QUERY_KEY, id],
     queryFn: () => distributorUseCases.getDistributor(id),
     enabled: options?.enabled ?? Boolean(id),
+  });
+}
+
+export function useActivateDistributorMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => distributorUseCases.activateDistributor(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: DISTRIBUTORS_QUERY_KEY }),
   });
 }

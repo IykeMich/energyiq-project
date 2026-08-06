@@ -1,4 +1,5 @@
 import type {
+  TierConfig,
   TierHistoryParams,
   TierHistoryResult,
   TierUpdateRequest,
@@ -11,6 +12,7 @@ import type {
 // ════════════════════════════════════════════════════════════════
 
 export interface TierApi {
+  listTierConfig(): Promise<TierConfig[]>;
   updateTierConfig(req: TierUpdateRequest): Promise<TierUpdateResult>;
   getTierHistory(distributorId: string, params?: TierHistoryParams): Promise<TierHistoryResult>;
 }

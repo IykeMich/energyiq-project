@@ -16,4 +16,5 @@ export interface DistributorApi {
   updateDistributor(id: string, req: DistributorUpsertRequest): Promise<Distributor>;
   deleteDistributor(id: string): Promise<void>;
   listDistributors(params?: DistributorListParams): Promise<DistributorListResult>;
+  activateDistributor(id: string): Promise<Distributor>;
 }

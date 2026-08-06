@@ -4,8 +4,6 @@ import {
   Package,
   Tag,
   Ruler,
-  ShoppingCart,
-  Warehouse,
   Award,
   Wallet,
   ArrowLeftRight,
@@ -43,17 +41,20 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
   const displayName = user?.name?.trim() ? user.name : 'Andrew Franklin';
   const displayEmail = user?.email?.trim() ? user.email : 'andrewfran@gmail.com';
   const initials = getInitials(displayName);
+  // TODO: AuthUser has no company/tenant display-name field yet — hardcoded until one lands.
+  const supplierName = 'MRS InterOil';
 
-  // Dashboard sits above the labelled sections (matches the design).
-  const navTopItems: NavItem[] = [
-    { title: 'Dashboard', url: `/${slug}/dashboard`, icon: LayoutDashboard },
-  ];
+  // Grouped to match the Pencil "Supplier (Distributor) Sidebar" frame's section headers
+  // (TRADE/NETWORK/FINANCES/COMPLIANCE). Items with routes beyond what either Pencil sidebar
+  // frame shows fold those extra routes in as dropdown children of the closest matching row,
+  // instead of dropping them or inventing new top-level rows.
+  const navTopItems: NavItem[] = [{ title: 'Dashboard', url: `/${slug}/dashboard`, icon: LayoutDashboard }];
 
   const navTradeItems: NavItem[] = [
     {
-      title: 'Products',
+      title: 'Product',
       url: `/${slug}/products`,
-      icon: Package,
+      icon: FileText,
       activePaths: [`/${slug}/products`],
       items: [
         { title: 'Catalog', url: `/${slug}/products`, icon: Package, description: 'All products' },
@@ -70,25 +71,28 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
           description: 'Units & sizing',
         },
         {
-          title: 'Authorization',
+          title: 'Product Approval',
           url: `/${slug}/products/authorization`,
           icon: ShieldCheck,
           description: 'Approve pending changes',
         },
       ],
     },
-    { title: 'Inventory', url: `/${slug}/inventory`, icon: Warehouse },
-    {
-      title: 'Orders',
-      url: `/${slug}/orders`,
-      icon: ShoppingCart,
-      activePaths: [`/${slug}/orders`],
-    },
+    { title: 'Inventory', url: `/${slug}/inventory`, icon: Package },
+    { title: 'Orders', url: `/${slug}/orders`, icon: Package, activePaths: [`/${slug}/orders`] },
   ];
 
   const navNetworkItems: NavItem[] = [
-    { title: 'Distributors', url: `/${slug}/distributors`, icon: Users },
-    { title: 'Tier Management', url: `/${slug}/tier-management`, icon: Award },
+    {
+      title: 'Distributors',
+      url: `/${slug}/distributors`,
+      icon: Users,
+      activePaths: [`/${slug}/distributors`],
+      items: [
+        { title: 'Distributors', url: `/${slug}/distributors`, icon: Users, description: 'All distributors' },
+        { title: 'Tier Management', url: `/${slug}/tier-management`, icon: Award },
+      ],
+    },
   ];
 
   // TODO: Accounts / Transactions / Sales Entry have no pages yet — links will 404 until they land.
@@ -109,66 +113,52 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
     { title: 'Audit Logs', url: `/${slug}/audit-logs`, icon: ScrollText },
   ];
 
-  const navAnalyticsItems: NavItem[] = [
+  // Neither Pencil sidebar frame shows a section for these — kept as standalone,
+  // header-less rows (matching how the flat "Product 2" frame renders them).
+  const navStandaloneItems: NavItem[] = [
     {
       title: 'Analytics',
       url: `/${slug}/analytics/sales`,
       icon: BarChart3,
-      activePaths: [`/${slug}/analytics`],
+      activePaths: [`/${slug}/analytics`, `/${slug}/reports`],
       items: [
         { title: 'Sales Analytics', url: `/${slug}/analytics/sales`, icon: BarChart3 },
         { title: 'Distributor Analytics', url: `/${slug}/analytics/distributors`, icon: Users },
         { title: 'Complaint Analytics', url: `/${slug}/analytics/complaints`, icon: MessageSquareWarning },
         { title: 'Trading Analytics', url: `/${slug}/analytics/trading`, icon: ArrowLeftRight },
-      ],
-    },
-  ];
-
-  const navReportsItems: NavItem[] = [
-    {
-      title: 'Reports',
-      url: `/${slug}/reports/inventory`,
-      icon: FileText,
-      activePaths: [`/${slug}/reports`],
-      items: [
         { title: 'Inventory Report', url: `/${slug}/reports/inventory`, icon: Package },
         { title: 'Distributor Report', url: `/${slug}/reports/distributors`, icon: Users },
         { title: 'Compliance Report', url: `/${slug}/reports/compliance`, icon: FileCheck },
         { title: 'Custom Report Builder', url: `/${slug}/reports/custom`, icon: FileText },
       ],
     },
-  ];
-
-  // TODO: Team & Permissions has no page yet — link will 404 until that page lands.
-  const navSecondaryItems: NavItem[] = [
-    { title: 'Team & Permissions', url: `/${slug}/team-permissions`, icon: UserCog },
+    // TODO: Team & Permissions has no page yet — link will 404 until that page lands.
+    {
+      title: 'Employees',
+      url: `/${slug}/team-permissions`,
+      icon: UserCog,
+      items: [{ title: 'Team & Permissions', url: `/${slug}/team-permissions`, icon: UserCog }],
+    },
     { title: 'Settings', url: `/${slug}/settings`, icon: Settings },
-    { title: 'Log out', url: '/logout', icon: LogOut },
+    { title: 'Log Out', url: '/logout', icon: LogOut, accent: true },
   ];
 
   return (
     <Sidebar
       collapsible="icon"
       {...props}
-      className="border border-[#27272A] border-s-0 bg-[#121212]"
+      className="border border-[#27272A] border-s-0 [--sidebar:#6161611A]"
     >
       <SidebarHeader>
-        <TeamSwitcher />
+        <TeamSwitcher supplierName={supplierName} />
       </SidebarHeader>
       <SidebarContent className="no-scrollbar">
         <NavMain items={navTopItems} containerExtraClass="pb-0" />
         <NavMain items={navTradeItems} label="Trade" containerExtraClass="py-0" />
         <NavMain items={navNetworkItems} label="Network" containerExtraClass="py-0" />
         <NavMain items={navFinanceItems} label="Finances" containerExtraClass="py-0" />
-        <NavMain
-          items={navComplianceItems}
-          label="Compliance"
-          extraClass="pb-8 border-b border-gray-800"
-          containerExtraClass="py-0"
-        />
-        <NavMain items={navAnalyticsItems} label="Analytics" containerExtraClass="py-0" />
-        <NavMain items={navReportsItems} label="Reports" containerExtraClass="py-0" />
-        <NavMain items={navSecondaryItems} extraClass="pb-8" />
+        <NavMain items={navComplianceItems} label="Compliance" containerExtraClass="py-0" />
+        <NavMain items={navStandaloneItems} containerExtraClass="py-0" />
       </SidebarContent>
       <SidebarFooter className="p-4">
         <SidebarSeparator className="mb-4" />

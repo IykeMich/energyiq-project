@@ -4,6 +4,13 @@ import { tierUseCases } from '@/config/container';
 
 const TIERS_QUERY_KEY = ['tiers'] as const;
 
+export function useTierListQuery() {
+  return useQuery({
+    queryKey: TIERS_QUERY_KEY,
+    queryFn: () => tierUseCases.listTierConfig(),
+  });
+}
+
 export function useUpdateTierConfigMutation() {
   const queryClient = useQueryClient();
   return useMutation({

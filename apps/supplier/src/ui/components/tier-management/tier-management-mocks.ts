@@ -10,6 +10,8 @@ export interface TierConfig {
   activeCount: number;
   color: string;
   borderColor: string;
+  /** "N Active" badge text color — usually equals `color`, but Bronze uses a distinct accent per the design. */
+  badgeTextColor: string;
   thresholds: TierThreshold;
   benefits: string;
 }
@@ -19,8 +21,9 @@ export const TIER_MANAGEMENT_MOCK: TierConfig[] = [
     id: 'bronze',
     name: 'Bronze Tier',
     activeCount: 2,
-    color: '#FB8C1C',
-    borderColor: '#FB8C1C',
+    color: '#CD7F32',
+    borderColor: '#CD7F32',
+    badgeTextColor: '#FB8C1C',
     thresholds: {
       minMonths: 0,
       paymentDiscipline: 0,
@@ -33,7 +36,8 @@ export const TIER_MANAGEMENT_MOCK: TierConfig[] = [
     name: 'Silver Tier',
     activeCount: 2,
     color: '#C0C0C0',
-    borderColor: '#A1A1AA',
+    borderColor: '#C0C0C0',
+    badgeTextColor: '#C0C0C0',
     thresholds: {
       minMonths: 6,
       paymentDiscipline: 95,
@@ -45,8 +49,9 @@ export const TIER_MANAGEMENT_MOCK: TierConfig[] = [
     id: 'gold',
     name: 'Gold Tier',
     activeCount: 2,
-    color: '#FBC02D',
-    borderColor: '#FBC02D',
+    color: '#DF8A00',
+    borderColor: '#DF8A00',
+    badgeTextColor: '#DF8A00',
     thresholds: {
       minMonths: 12,
       paymentDiscipline: 95,

@@ -2,7 +2,11 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@en
 import EnergyIQLogo from '@energyiq/ui/assets/full-logo-image.png';
 import Logo from '@/assets/logo.png';
 
-export function TeamSwitcher() {
+interface TeamSwitcherProps {
+  supplierName: string;
+}
+
+export function TeamSwitcher({ supplierName }: TeamSwitcherProps) {
   const { state } = useSidebar();
 
   return (
@@ -21,6 +25,14 @@ export function TeamSwitcher() {
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
+      {state === 'expanded' && (
+        <SidebarMenuItem className="px-2">
+          <div className="flex items-center gap-2 rounded-[8px] border border-[#FFFFFFCC] bg-[#6161611A] px-4 py-2">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FBC02D]" />
+            <span className="truncate text-xs font-semibold text-white">{supplierName}</span>
+          </div>
+        </SidebarMenuItem>
+      )}
     </SidebarMenu>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ConfirmDialog, SuccessModal } from '@energyiq/ui';
+import { ConfirmDialog, SuccessModal, toast } from '@energyiq/ui';
+import { useActivateDistributorMutation } from '@/hooks/use-distributor';
 import type { DistributorApplication } from '@/ui/pages/distributor/mocks';
 import { DistributorApplicationCard } from './distributor-application-card';
 import { DistributorApplicationDetail } from './distributor-application-detail';
@@ -24,6 +25,7 @@ export function DistributorApprovalReview({
   const [selectedId, setSelectedId] = useState(applications[0]?.id ?? '');
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [success, setSuccess] = useState<SuccessState>({ open: false, title: '', subtitle: '' });
+  const activateMutation = useActivateDistributorMutation();
 
   const selected = applications.find((application) => application.id === selectedId) ?? applications[0];
 
@@ -37,14 +39,22 @@ export function DistributorApprovalReview({
 
   const closeSuccess = () => setSuccess((state) => ({ ...state, open: false }));
 
-  // TODO(orval): wire to the real approve/reject distributor endpoint once backend
-  // adds one — no such endpoint exists in energyiq-swagger.json today (only a public
-  // self-activation endpoint the distributor calls on themself, and an untyped generic
-  // maker-checker POST /v1/approval/approve/{id}). This stays local-only until then.
-  const handleConfirm = () => {
+  // Reject stays local-only: no reject/decline endpoint exists for distributor onboarding
+  // in energyiq-swagger.json (only POST /v1/distributor/activate/{id} for approval).
+  const handleConfirm = async () => {
     if (!pendingAction) return;
     const approved = pendingAction === 'approve';
     setPendingAction(null);
+
+    if (approved) {
+      try {
+        await activateMutation.mutateAsync(selected.id);
+      } catch (error) {
+        toast.error('Approval failed', { description: (error as Error).message });
+        return;
+      }
+    }
+
     setSuccess({
       open: true,
       title: approved ? 'Distributor Approved' : 'Application Rejected',

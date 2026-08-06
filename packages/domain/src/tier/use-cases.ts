@@ -1,5 +1,6 @@
 import type { TierApi } from './ports';
 import type {
+  TierConfig,
   TierHistoryParams,
   TierHistoryResult,
   TierUpdateRequest,
@@ -16,6 +17,10 @@ export class TierUseCases {
 
   constructor(api: TierApi) {
     this.api = api;
+  }
+
+  async listTierConfig(): Promise<TierConfig[]> {
+    return this.api.listTierConfig();
   }
 
   async updateTierConfig(req: TierUpdateRequest): Promise<TierUpdateResult> {

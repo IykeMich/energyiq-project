@@ -435,7 +435,10 @@ export const authSlice = createSlice({
         state.isAuthenticated = true;
         state.loginType = "account";
         state.registrationToken = null;
-        state.nextAction = "dashboard";
+        // Authenticated, but onboarding isn't finished until documents are
+        // submitted — RedirectIfAuth checks this to avoid bouncing the user
+        // out of the registration flow before step 4 (Document Upload).
+        state.nextAction = "complete_onboarding";
         state.user = {
           id: action.payload.supplier.id,
           name: action.payload.supplier.name,

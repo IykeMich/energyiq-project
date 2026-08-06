@@ -37,4 +37,8 @@ export class DistributorUseCases {
   async listDistributors(params?: DistributorListParams): Promise<DistributorListResult> {
     return this.api.listDistributors(params);
   }
+
+  async activateDistributor(id: string): Promise<Distributor> {
+    return this.api.activateDistributor(id);
+  }
 }
