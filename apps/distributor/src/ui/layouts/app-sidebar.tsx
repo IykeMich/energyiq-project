@@ -19,26 +19,25 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
+  // SidebarHeader,
   SidebarSeparator,
   useAuth,
 } from '@energyiq/ui';
 import { getInitials } from '@energyiq/shared';
 import { NavMain, type NavItem } from './nav-main';
-import { TeamSwitcher } from './team-switcher';
+// import { TeamSwitcher } from './team-switcher';
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
   const { user, slug: stateSlug } = useAuth();
 
   const slug = user?.slug ?? stateSlug ?? 'demo';
 
-  const displayName =
-    user?.name?.trim() || 'Andrew Franklin';
-
-  const displayEmail =
-    user?.email?.trim() || 'andrewfran@gmail.com';
+  const displayName = user?.name?.trim() ? user.name : 'Andrew Franklin';
+  const displayEmail = user?.email?.trim() ? user.email : 'andrewfran@gmail.com';
 
   const initials = getInitials(displayName);
+  // TODO: AuthUser has no company/tenant display-name field yet — hardcoded until one lands.
+  // const distributorName = 'Rain Oil Resources';
 
   // Dashboard
   const navTopItems: NavItem[] = [
@@ -129,11 +128,11 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
     <Sidebar
       collapsible="icon"
       {...props}
-      className="border-r border-[#27272A] bg-[#121212]"
+      className="border border-[#27272A] border-s-0 [--sidebar:#6161611A]"
     >
-      <SidebarHeader>
-        <TeamSwitcher />
-      </SidebarHeader>
+      {/* <SidebarHeader>
+        <TeamSwitcher distributorName={distributorName} />
+      </SidebarHeader> */}
 
       <SidebarContent className="no-scrollbar">
 

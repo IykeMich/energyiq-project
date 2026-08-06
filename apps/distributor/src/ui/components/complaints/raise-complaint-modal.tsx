@@ -38,7 +38,12 @@ export function RaiseComplaintModal({ open, onOpenChange }: RaiseComplaintModalP
     { limit: 100 },
     { query: { enabled: open, queryKey: getGetV1DistributorOrderListQueryKey({ limit: 100 }) } },
   );
-  const orderOptions: ComplaintOption[] = (ordersData?.data.data?.items ?? []).map((order) => ({
+  // The backend's list envelope has been observed returning `data` as the
+  // array directly rather than the documented `{ items, ... }` wrapper —
+  // handle both so a doc/behavior drift doesn't silently empty this list.
+  const rawOrders = ordersData?.data.data;
+  const orderList = Array.isArray(rawOrders) ? rawOrders : (rawOrders?.items ?? []);
+  const orderOptions: ComplaintOption[] = orderList.map((order) => ({
     value: order.distributor_order_id ?? '',
     label: order.distributor_order_number ?? order.distributor_order_id ?? '',
     description: order.distributor_order_supplier_name,

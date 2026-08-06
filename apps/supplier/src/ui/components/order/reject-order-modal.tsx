@@ -63,12 +63,13 @@ export function RejectOrderModal({ open, onOpenChange, detail, onReject }: Rejec
         </dl>
 
         <div className="flex flex-col gap-2">
-                  <TextField
-                    label="Reject Reason:"
-                    value={reason}
-                    onChange={(v) => setReason(v)}
-                    placeholder="e.g. Fuel"
-                  />
+          <TextField
+            label="Reject Reason:"
+            value={reason}
+            onChange={(v) => setReason(v)}
+            placeholder="e.g. Fuel"
+            className="w-full"
+          />
         </div>
 
         <div className="flex flex-col gap-2">

@@ -82,6 +82,7 @@ function Row({ variant, onRemove, onChange }: RowProps) {
           value={variant.name}
           onChange={(value) => onChange({ name: value })}
           placeholder="e.g. Lubricant X1"
+          className="w-full"
         />
       </div>
       <div className="min-w-0 flex flex-col gap-1 lg:border-l lg:border-border-subtle lg:pl-6">
@@ -90,6 +91,7 @@ function Row({ variant, onRemove, onChange }: RowProps) {
           value={variant.displayName}
           onChange={(value) => onChange({ displayName: value })}
           placeholder="e.g. LUB-X1"
+          className="w-full"
         />
       </div>
       <div className="min-w-0 grid grid-cols-2 gap-3 lg:border-l lg:border-border-subtle lg:pl-6">
@@ -100,6 +102,7 @@ function Row({ variant, onRemove, onChange }: RowProps) {
             value={variant.costPrice}
             onChange={(value) => onChange({ costPrice: value })}
             placeholder="0.00"
+            className="w-full"
           />
         </div>
         <div className="min-w-0 flex flex-col gap-1">
@@ -109,6 +112,7 @@ function Row({ variant, onRemove, onChange }: RowProps) {
             value={variant.sellingPrice}
             onChange={(value) => onChange({ sellingPrice: value })}
             placeholder="0.00"
+            className="w-full"
           />
         </div>
       </div>

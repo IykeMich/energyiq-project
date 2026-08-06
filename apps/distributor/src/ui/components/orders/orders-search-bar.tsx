@@ -8,7 +8,7 @@ interface OrdersSearchBarProps {
 /** Top-of-page order search pill. */
 export function OrdersSearchBar({ searchQuery, onSearchChange }: OrdersSearchBarProps) {
   return (
-    <div className="flex w-full items-center gap-3 rounded-full bg-[#6161611A] px-5 py-4 `lg:max-w-[350px]">
+    <div className="flex w-full items-center gap-3 rounded-full bg-[#6161611A] px-5 py-4 lg:max-w-[350px]">
       <Search className="h-5 w-5 shrink-0 text-[#FFFFFFCC]" aria-hidden="true" />
       <input
         type="search"

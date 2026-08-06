@@ -15,7 +15,7 @@ interface ProductComplianceCardProps {
   onNext: () => void;
 }
 
-const FIELD_CLASSNAME = 'h-[47px] rounded-[33px]';
+const FIELD_CLASSNAME = 'h-[47px] w-full rounded-[33px]';
 
 const CERTIFICATION_OPTIONS = [
   'NUPRC License',

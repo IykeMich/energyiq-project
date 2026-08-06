@@ -14,7 +14,7 @@ export function VerifyPage() {
   if (!registrationToken) return null;
 
   const handleResend = async () => {
-    const success = await resendOtp();
+    const { success } = await resendOtp();
     if (success) setOtpResent(true);
   };
 

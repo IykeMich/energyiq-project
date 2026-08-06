@@ -120,8 +120,8 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
 
       {tab === 'basic' ? (
         <div className="flex flex-col gap-5">
-          <TextField label="Warehouse Name:" value={name} onChange={setName} placeholder="Enter warehouse name" />
-          <TextField label="Location:" value={location} onChange={setLocation} placeholder="Enter location" />
+          <TextField label="Warehouse Name:" value={name} onChange={setName} placeholder="Enter warehouse name" className="w-full" />
+          <TextField label="Location:" value={location} onChange={setLocation} placeholder="Enter location" className="w-full" />
           <SelectField
             label="Warehouse Manager:"
             value={manager}
@@ -157,6 +157,7 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                   value={product.stockQuantity}
                   onChange={(value) => updateProduct(product.id, { stockQuantity: value })}
                   placeholder="e.g. 3,000L"
+                  className="w-full"
                 />
                 <TextField
                   label="Price Per Unit (#):"
@@ -164,6 +165,7 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                   value={product.pricePerUnit}
                   onChange={(value) => updateProduct(product.id, { pricePerUnit: value })}
                   placeholder="0"
+                  className="w-full"
                 />
                 <TextField
                   label="Max Stock:"
@@ -171,6 +173,7 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                   value={product.maxStock}
                   onChange={(value) => updateProduct(product.id, { maxStock: value })}
                   placeholder="e.g. 5000"
+                  className="w-full"
                 />
                 <TextField
                   label="Reorder Point:"
@@ -178,12 +181,14 @@ export function EditWarehouseModal({ open, onOpenChange, warehouse, onSave }: Ed
                   value={product.reorderPoint}
                   onChange={(value) => updateProduct(product.id, { reorderPoint: value })}
                   placeholder="e.g. 500"
+                  className="w-full"
                 />
                 <TextField
                   label="Storage Location:"
                   value={product.storageLocation}
                   onChange={(value) => updateProduct(product.id, { storageLocation: value })}
                   placeholder="e.g. Bay A-3"
+                  className="w-full"
                 />
               </div>
             </div>

@@ -87,6 +87,7 @@ function Row({ tier, onRemove, onChange }: RowProps) {
           value={tier.minQuantity}
           onChange={(value) => onChange({ minQuantity: value })}
           placeholder="0"
+          className="w-full"
         />
       </LabeledField>
       <LabeledField label="Max. Quantity">
@@ -95,6 +96,7 @@ function Row({ tier, onRemove, onChange }: RowProps) {
           value={tier.maxQuantity}
           onChange={(value) => onChange({ maxQuantity: value })}
           placeholder="0"
+          className="w-full"
         />
       </LabeledField>
       <LabeledField label="Unit Price">
@@ -103,6 +105,7 @@ function Row({ tier, onRemove, onChange }: RowProps) {
           value={tier.unitPrice}
           onChange={(value) => onChange({ unitPrice: value })}
           placeholder="0.00"
+          className="w-full"
         />
       </LabeledField>
       <div className="flex justify-end lg:block">

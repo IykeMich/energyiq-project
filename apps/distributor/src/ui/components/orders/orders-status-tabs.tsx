@@ -1,10 +1,10 @@
 import { cn } from '@energyiq/shared';
-import type { order } from '@energyiq/domain';
+import type { distributorOrder } from '@energyiq/domain';
 
 interface OrdersStatusTabsProps {
   activeLabel: string;
   onChange: (label: string) => void;
-  stats?: order.OrderStats;
+  stats?: distributorOrder.DistributorOrderStats;
 }
 
 interface OrderStatusTab {
@@ -12,7 +12,7 @@ interface OrderStatusTab {
   count: number;
 }
 
-function buildTabs(stats?: order.OrderStats): OrderStatusTab[] {
+function buildTabs(stats?: distributorOrder.DistributorOrderStats): OrderStatusTab[] {
   return [
     { label: 'All', count: stats?.total ?? 0 },
     { label: 'Pending', count: (stats?.pending ?? 0) + (stats?.awaiting_approval ?? 0) },

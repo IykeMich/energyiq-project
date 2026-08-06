@@ -41,7 +41,7 @@ export function KycDocumentCategoryModal({
       size="sm"
     >
       <div className="flex flex-col gap-6">
-        <TextField label="Category Name:" required value={name} onChange={setName} placeholder="e.g. Legal, Financial, Identity" />
+        <TextField label="Category Name:" required value={name} onChange={setName} placeholder="e.g. Legal, Financial, Identity" className="w-full" />
 
         <div className="flex items-center justify-end gap-3">
           <FormActionButton variant="cancel" onClick={() => onOpenChange(false)}>

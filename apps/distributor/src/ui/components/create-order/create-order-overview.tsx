@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import type { order } from '@energyiq/domain';
+import type { distributorOrder } from '@energyiq/domain';
 import { SuccessModal, toast } from '@energyiq/ui';
 import {
   useCreateOrderMutation,
@@ -34,7 +34,9 @@ import {
   SUBMITTED_ORDER_REFERENCE,
   // SUMMARY_PRODUCT_IDS,
   SUPPLIER_OPTIONS,
+  validateOrderDraft,
   type CreateOrderDeliveryContact as DeliveryContact,
+  type NewOrderDraft,
 } from './create-order-mocks';
 import type { CreateOrderProductOption } from './create-order-mocks';
 
@@ -73,7 +75,7 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
     isLoading: isLoadingOrder,
   } = useOrderQuery(orderId ?? '', { enabled: isEditMode && Boolean(orderId) });
   const { data: productsData } = useProductsQuery();
-  const orderReference = existingOrder?.supplier_order_reference ?? orderId ?? ORDER_REFERENCE;
+  const orderReference = existingOrder?.distributor_order_number ?? orderId ?? ORDER_REFERENCE;
 
   const productCatalog = useMemo<CreateOrderProductOption[]>(
     () => [
@@ -107,24 +109,22 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
   const [deliveryMethodId, setDeliveryMethodId] = useState(DEFAULT_DELIVERY_METHOD_ID);
   const [contact, setContact] = useState<DeliveryContact>(DEFAULT_DELIVERY_CONTACT);
   const [successKind, setSuccessKind] = useState<SuccessKind | null>(null);
-  const [successOrder, setSuccessOrder] = useState<order.Order | null>(null);
+  const [successOrder, setSuccessOrder] = useState<distributorOrder.DistributorOrderDetail | null>(
+    null,
+  );
 
   // Seed the edit form from the order being edited once it loads.
   useEffect(() => {
     if (!existingOrder) return;
 
-    setLineItems(toLineItems(existingOrder.supplier_order_items, productCatalog));
+    setLineItems(toLineItems(existingOrder.distributor_order_items, productCatalog));
 
-    if (existingOrder.supplier_distributor_id) {
-      setSupplierId(existingOrder.supplier_distributor_id);
-    }
-
-    const date = existingOrder.supplier_order_requested_on || existingOrder.supplier_order_date;
+    const date = existingOrder.distributor_order_requested_on || existingOrder.distributor_order_date;
     if (date) {
       setDeliveryDate(date.slice(0, 10));
     }
 
-    const parsed = parseOrderNotes(existingOrder.supplier_order_notes);
+    const parsed = parseOrderNotes(existingOrder.distributor_order_notes);
     if (parsed.deliveryMethodId) {
       setDeliveryMethodId(parsed.deliveryMethodId);
     }
@@ -132,8 +132,11 @@ export function CreateOrderOverview({ mode = 'create', orderId }: CreateOrderOve
       setContact((previous) => ({ ...previous, ...parsed.contact }));
     }
 
-    if (existingOrder.supplier_delivery_address) {
-      setContact((previous) => ({ ...previous, address: existingOrder.supplier_delivery_address! }));
+    if (existingOrder.distributor_delivery_address) {
+      setContact((previous) => ({
+        ...previous,
+        address: existingOrder.distributor_delivery_address!,
+      }));
     }
   }, [existingOrder]);
 
@@ -199,18 +202,36 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
   };
 }, [lineItems, deliveryMethodId]);
 
-  const buildOrderItems = () =>
-    lineItems.map((item) => ({ product_id: item.productId, quantity: item.quantity }));
+  const currentDraft = (): NewOrderDraft => ({
+    lineItems: lineItems.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    supplierId,
+    deliveryDate,
+    deliveryMethodId,
+    contact,
+  });
+
+  const toOrderCreateRequest = (draft: NewOrderDraft): distributorOrder.OrderCreateRequest => ({
+    items: draft.lineItems.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+    notes: `Delivery method: ${draft.deliveryMethodId}. Contact: ${draft.contact.contactPerson}, ${draft.contact.email}, ${draft.contact.address}`,
+  });
+
+  const toOrderUpdateRequest = (draft: NewOrderDraft): distributorOrder.OrderUpdateRequest => ({
+    items: draft.lineItems.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+    reason: 'Order modified by distributor',
+  });
 
   const handleSubmit = () => {
-    if (isEmpty) return;
+    const draft = currentDraft();
+    const errors = validateOrderDraft(draft);
+    const firstError = errors.lineItems ?? errors.deliveryDate ?? errors.contact;
+    if (firstError) {
+      toast.error('Cannot submit order', { description: firstError });
+      return;
+    }
 
     if (isEditMode && orderId) {
       updateMutation.mutate(
-        {
-          id: orderId,
-          req: { items: buildOrderItems(), reason: 'Order modified by distributor' },
-        },
+        { id: orderId, req: toOrderUpdateRequest(draft) },
         {
           onSuccess: (data) => {
             setSuccessOrder(data);
@@ -224,21 +245,15 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
       return;
     }
 
-    createMutation.mutate(
-      {
-        items: buildOrderItems(),
-        notes: `Delivery method: ${deliveryMethodId}. Contact: ${contact.contactPerson}, ${contact.email}, ${contact.address}`,
+    createMutation.mutate(toOrderCreateRequest(draft), {
+      onSuccess: (data) => {
+        setSuccessOrder(data);
+        setSuccessKind('submitted');
       },
-      {
-        onSuccess: (data) => {
-          setSuccessOrder(data);
-          setSuccessKind('submitted');
-        },
-        onError: (error: Error) => {
-          toast.error('Create failed', { description: error.message });
-        },
+      onError: (error: Error) => {
+        toast.error('Create failed', { description: error.message });
       },
-    );
+    });
   };
 
   const handleSaveDraft = () => {
@@ -280,8 +295,8 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
             highlight: {
               label: 'Order Reference:',
               value:
-                successOrder?.supplier_order_reference ??
-                createMutation.data?.supplier_order_reference ??
+                successOrder?.distributor_order_number ??
+                createMutation.data?.distributor_order_number ??
                 SUBMITTED_ORDER_REFERENCE,
             },
             primaryAction: { label: 'Track Order', onClick: goToOrders },
@@ -381,7 +396,7 @@ const summary = useMemo<CreateOrderSummaryData>(() => {
 }
 
 function toLineItems(
-  items?: order.OrderLineItem[],
+  items?: distributorOrder.DistributorOrderLineItem[],
   catalog: CreateOrderProductOption[] = PRODUCT_CATALOG,
 ): CreateOrderLineItem[] {
   if (!items) return [];
@@ -389,18 +404,18 @@ function toLineItems(
   return items
     .map((item) => {
       const productId = item.product_id ?? '';
-      const quantity = item.supplier_quantity ?? 0;
+      const quantity = item.distributor_quantity ?? 0;
 
       if (!productId) return null;
 
       const catalogProduct = catalog.find((product) => product.id === productId);
 
-      const name = item.supplier_product_name || catalogProduct?.name || 'Unknown Product';
+      const name = item.distributor_product_name || catalogProduct?.name || 'Unknown Product';
       const shortLabel = catalogProduct?.shortLabel || name;
-      const code = item.supplier_product_code || catalogProduct?.code || '';
-      const unit = item.supplier_unit_label || catalogProduct?.unit || '';
+      const code = item.distributor_product_code || catalogProduct?.code || '';
+      const unit = item.distributor_unit_label || catalogProduct?.unit || '';
       const unitAbbrev = catalogProduct?.unitAbbrev || unit;
-      const unitPrice = item.supplier_unit_price ?? catalogProduct?.unitPrice ?? 0;
+      const unitPrice = item.distributor_unit_price ?? catalogProduct?.unitPrice ?? 0;
       const moq = catalogProduct?.moq ?? 1;
       const goldDiscount = Boolean(catalogProduct?.goldDiscount ?? false);
 

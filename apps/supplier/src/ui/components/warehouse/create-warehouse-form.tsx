@@ -41,12 +41,12 @@ export function CreateWarehouseForm({ onCancel, onSave }: CreateWarehouseFormPro
     <div className="border border-border-subtle rounded-[28px] p-7 flex flex-col gap-6">
       <h2 className="text-base font-semibold text-foreground">Warehouse Details</h2>
 
-      <TextField label="Warehouse Name:" value={name} onChange={setName} placeholder="Enter warehouse name" />
+      <TextField label="Warehouse Name:" value={name} onChange={setName} placeholder="Enter warehouse name" className="w-full" />
 
-      <TextField label="Location:" value={location} onChange={setLocation} placeholder="Enter warehouse location" />
+      <TextField label="Location:" value={location} onChange={setLocation} placeholder="Enter warehouse location" className="w-full" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <TextField label="Capacity (L):" type="number" value={capacity} onChange={setCapacity} placeholder="e.g. 60000" />
+        <TextField label="Capacity (L):" type="number" value={capacity} onChange={setCapacity} placeholder="e.g. 60000" className="w-full" />
         <SelectField
           label="Select Manager:"
           value={managerId}

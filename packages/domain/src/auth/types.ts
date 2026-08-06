@@ -70,11 +70,13 @@ export interface VerifyOtpRequest {
   otp_code: string;
 }
 
-export interface VerifyOtpResult {
+// The backend returns the supplier's fields flat on the response root
+// (matching the generated `CompleteResponse` schema), not nested under a
+// `supplier` key.
+export interface VerifyOtpResult extends SupplierSummary {
   access_token: string;
   refresh_token: string;
   expires_in: number;
-  supplier: SupplierSummary;
 }
 
 export type CompleteRequest = VerifyOtpRequest;

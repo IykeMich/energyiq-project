@@ -1,19 +1,19 @@
-import type { order } from '@energyiq/domain';
-import type { OrderRow, OrderStatus } from './orders-mocks';
+import type { distributorOrder } from '@energyiq/domain';
+import type { OrderRow, OrderStatus, PaymentStatus } from './orders-mocks';
 
 /**
- * Maps a backend DomainOrder to the OrderRow view model used by the Orders list UI.
+ * Maps a backend DistributorOrderListItem to the OrderRow view model used by the Orders list UI.
  */
-export function toOrderRow(source: order.Order): OrderRow {
+export function toOrderRow(source: distributorOrder.DistributorOrderListItem): OrderRow {
   return {
-    id: source.supplier_order_id ?? source.supplier_order_reference ?? '',
-    orderNumber: source.supplier_order_reference ?? source.supplier_order_id ?? '',
-    date: formatDate(source.supplier_order_date),
-    supplier: 'Supplier', // Backend does not expose supplier name on the list item yet.
-    items: source.supplier_order_items_count ?? 0,
-    amount: source.supplier_order_amount ?? 0,
-    status: toOrderStatus(source.supplier_order_status_code),
-    payment: 'Pending', // Payment status not exposed by backend order endpoints yet.
+    id: source.distributor_order_id ?? source.distributor_order_number ?? '',
+    orderNumber: source.distributor_order_number ?? source.distributor_order_id ?? '',
+    date: formatDate(source.distributor_order_date),
+    supplier: source.distributor_order_supplier_name ?? 'Supplier',
+    items: source.distributor_order_items_count ?? 0,
+    amount: source.distributor_order_amount ?? 0,
+    status: toOrderStatus(source.distributor_order_status_code),
+    payment: toPaymentStatus(source.distributor_payment_status_code),
   };
 }
 
@@ -38,7 +38,7 @@ export function toOrderStatus(status?: string): OrderStatus {
   }
 }
 
-export function toBackendStatus(label: string): order.OrderStatus | undefined {
+export function toBackendStatus(label: string): string | undefined {
   switch (label) {
     case 'Pending':
       return 'pending';
@@ -52,6 +52,19 @@ export function toBackendStatus(label: string): order.OrderStatus | undefined {
       return 'delivered';
     default:
       return undefined;
+  }
+}
+
+export function toPaymentStatus(status?: string): PaymentStatus {
+  switch (status) {
+    case 'paid':
+      return 'Paid';
+    case 'cancelled':
+    case 'refunded':
+      return 'Failed';
+    case 'pending':
+    default:
+      return 'Pending';
   }
 }
 

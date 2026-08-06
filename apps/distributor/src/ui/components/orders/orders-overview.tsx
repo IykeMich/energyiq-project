@@ -68,7 +68,11 @@ export function OrdersOverview() {
 
       {/* Table card: status tabs, filter chips, then the orders table */}
       <div className="flex flex-col gap-5 rounded-[18px] bg-[#6161611A] p-6">
-        <OrdersStatusTabs activeLabel={activeTab} onChange={setActiveTab} stats={stats} />
+        <OrdersStatusTabs
+          activeLabel={activeTab}
+          onChange={setActiveTab}
+          stats={stats?.distributor_order_stats}
+        />
         <OrdersFilterChips />
         <OrdersTable
           orders={filteredOrders}

@@ -95,7 +95,7 @@ export function buildCompleteResult(overrides: Partial<CompleteResult> = {}): Co
     access_token: `acc_${nextId()}`,
     refresh_token: `ref_${nextId()}`,
     expires_in: 3600,
-    supplier: buildSupplierSummary(),
+    ...buildSupplierSummary(),
     ...overrides,
   };
 }

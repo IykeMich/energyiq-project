@@ -80,6 +80,7 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
           onChange={(value) => onChange({ costPrice: value })}
           placeholder="0.00"
           error={errors?.costPrice}
+          className="w-full"
         />
         <TextField
           label="Selling Price:"
@@ -88,6 +89,7 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
           onChange={(value) => onChange({ sellingPrice: value })}
           placeholder="0.00"
           error={errors?.sellingPrice}
+          className="w-full"
         />
       </div>
 
@@ -122,6 +124,7 @@ export function ProductPricingTab({ draft, onChange, errors }: ProductPricingTab
               value={draft.taxRate}
               onChange={(value) => onChange({ taxRate: value })}
               placeholder="0"
+              className="w-full"
             />
           </div>
         )}

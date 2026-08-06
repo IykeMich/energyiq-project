@@ -1,5 +1,5 @@
 import { Check, RefreshCcw, Boxes, Home, type LucideIcon } from 'lucide-react';
-import type { order } from '@energyiq/domain';
+import type { distributorOrder } from '@energyiq/domain';
 import type { OrderDetailData, OrderDetailBadge, OrderLineItem, OrderTimelineStep } from './order-detail-mocks';
 
 const SUCCESS = '#388E3C';
@@ -9,42 +9,44 @@ const INFO = '#1B22AF';
 const TEAL = '#008080';
 
 /**
- * Maps a backend DomainOrder to the OrderDetailData view model used by the
+ * Maps a backend DistributorOrderDetail to the OrderDetailData view model used by the
  * order detail UI. Fields not yet exposed by the backend are defaulted.
  */
-export function toOrderDetailData(source: order.Order): OrderDetailData {
-  const statusBadge = toStatusBadge(source.supplier_order_status_code);
-  const items = toLineItems(source.supplier_order_items);
+export function toOrderDetailData(source: distributorOrder.DistributorOrderDetail): OrderDetailData {
+  const statusBadge = toStatusBadge(source.distributor_order_status_code);
+  const items = toLineItems(source.distributor_order_items);
   const timeline = buildTimeline(source);
 
   return {
-    orderId: source.supplier_order_reference ?? source.supplier_order_id ?? '',
+    orderId: source.distributor_order_number ?? source.distributor_order_id ?? '',
     status: statusBadge,
     info: {
-      orderId: source.supplier_order_id ?? source.supplier_order_reference ?? '',
-      purchaseDate: formatDateTime(source.supplier_order_date),
-      paymentStatus: { label: 'Pending', color: WARNING },
-      amount: formatCurrency(source.supplier_order_amount ?? 0),
-      paymentMethod: 'Card',
+      orderId: source.distributor_order_id ?? source.distributor_order_number ?? '',
+      purchaseDate: formatDateTime(source.distributor_order_date),
+      paymentStatus: toPaymentBadge(source.distributor_payment_status_code),
+      amount: formatCurrency(source.distributor_order_amount ?? 0),
+      paymentMethod: source.distributor_payment_method || 'Card',
       deliveryStatus: statusBadge,
-      estimatedDeliveryDate: 'N/A',
+      estimatedDeliveryDate: source.distributor_estimated_delivery
+        ? formatDateTime(source.distributor_estimated_delivery)
+        : 'N/A',
     },
     items,
     timeline,
     supplier: [
-      { label: 'Name:', value: 'Supplier' },
-      { label: 'Email Address:', value: '-' },
-      { label: 'Phone Number:', value: '-' },
-      { label: 'Order Note:', value: source.supplier_order_notes || 'N/A' },
-      { label: 'Depot Location:', value: '-' },
+      { label: 'Name:', value: source.distributor_order_supplier_name || 'Supplier' },
+      { label: 'Email Address:', value: source.distributor_contact_email || '-' },
+      { label: 'Phone Number:', value: source.distributor_contact_phone || '-' },
+      { label: 'Order Note:', value: source.distributor_order_notes || 'N/A' },
+      { label: 'Depot Location:', value: source.distributor_delivery_address || '-' },
     ],
     payment: [
-      { label: 'Subtotal:', value: formatCurrency(source.supplier_order_subtotal ?? 0) },
-      { label: 'Discount:', value: formatCurrency(source.supplier_order_discount ?? 0) },
+      { label: 'Subtotal:', value: formatCurrency(source.distributor_order_subtotal ?? 0) },
+      { label: 'Discount:', value: formatCurrency(source.distributor_order_discount ?? 0) },
       { label: 'Shipping Fee:', value: '₦0' },
       { label: 'Tax:', value: '₦0' },
     ],
-    total: { label: 'Total:', value: formatCurrency(source.supplier_order_amount ?? 0) },
+    total: { label: 'Total:', value: formatCurrency(source.distributor_order_amount ?? 0) },
     help: { supportEmail: 'support@energyiq.com', emergencyLine: '+2348001234567' },
   };
 }
@@ -69,16 +71,29 @@ function toStatusBadge(status?: string): OrderDetailBadge {
   }
 }
 
-function toLineItems(items?: order.OrderLineItem[]): OrderLineItem[] {
+function toPaymentBadge(status?: string): OrderDetailBadge {
+  switch (status) {
+    case 'paid':
+      return { label: 'Paid', color: SUCCESS };
+    case 'cancelled':
+    case 'refunded':
+      return { label: 'Failed', color: DANGER };
+    case 'pending':
+    default:
+      return { label: 'Pending', color: WARNING };
+  }
+}
+
+function toLineItems(items?: distributorOrder.DistributorOrderLineItem[]): OrderLineItem[] {
   if (!items) return [];
   return items.map((item, index) => ({
-    name: item.supplier_product_name || `Product ${index + 1}`,
-    unitPrice: formatCurrency(item.supplier_unit_price ?? 0),
-    amount: formatCurrency(item.supplier_sub_total ?? 0),
+    name: item.distributor_product_name || `Product ${index + 1}`,
+    unitPrice: formatCurrency(item.distributor_unit_price ?? 0),
+    amount: formatCurrency(item.distributor_sub_total ?? 0),
   }));
 }
 
-function buildTimeline(source: order.Order): OrderTimelineStep[] {
+function buildTimeline(source: distributorOrder.DistributorOrderDetail): OrderTimelineStep[] {
   const iconForStep = (code?: string): LucideIcon => {
     switch (code) {
       case 'dispatched':
@@ -94,11 +109,11 @@ function buildTimeline(source: order.Order): OrderTimelineStep[] {
     }
   };
 
-  return (source.supplier_order_timeline ?? []).map((step) => ({
-    label: step.supplier_order_timeline_step_label ?? '',
-    detail: step.supplier_order_timeline_step_state === 'completed' ? 'Completed' : 'Pending',
-    done: step.supplier_order_timeline_step_state === 'completed',
-    Icon: iconForStep(step.supplier_order_timeline_step_code),
+  return (source.distributor_order_timeline ?? []).map((step) => ({
+    label: step.distributor_order_timeline_step_label ?? '',
+    detail: step.distributor_order_timeline_step_state === 'complete' ? 'Completed' : 'Pending',
+    done: step.distributor_order_timeline_step_state === 'complete',
+    Icon: iconForStep(step.distributor_order_timeline_step_code),
   }));
 }
 
@@ -121,18 +136,12 @@ function formatCurrency(value: number): string {
 }
 
 export function getAvailableActions(status?: string): {
-  canApprove: boolean;
-  canReject: boolean;
   canCancel: boolean;
-  canDispatch: boolean;
   canReceive: boolean;
   canModify: boolean;
 } {
   return {
-    canApprove: status === 'pending' || status === 'awaiting_approval',
-    canReject: status === 'pending' || status === 'awaiting_approval',
     canCancel: status !== 'cancelled' && status !== 'completed' && status !== 'delivered',
-    canDispatch: status === 'approved',
     canReceive: status === 'dispatched',
     canModify: status === 'pending' || status === 'awaiting_approval',
   };

@@ -20,7 +20,7 @@ interface ProductBasicInfoCardProps {
   onNext: () => void;
 }
 
-const FIELD_CLASSNAME = 'h-[47px] rounded-[33px]';
+const FIELD_CLASSNAME = 'h-[47px] w-full rounded-[33px]';
 
 /** Right-panel "Product Details" card for step 1 of the "Add New Product" wizard. */
 export function ProductBasicInfoCard({ draft, onChange, onCancel, onNext }: ProductBasicInfoCardProps) {

@@ -135,16 +135,14 @@ describe("AuthUseCases", () => {
         access_token: "acc_token",
         refresh_token: "ref_token",
         expires_in: 3600,
-        supplier: {
-          id: "sup-1",
-          account_number: "1234567890",
-          slug: "mega",
-          company_name: "MegaEnergy",
-          status: "active",
-          kyc_status: "pending",
-          name: "Emily Franklin",
-          email: "emily@mega.example",
-        },
+        id: "sup-1",
+        account_number: "1234567890",
+        slug: "mega",
+        company_name: "MegaEnergy",
+        status: "active",
+        kyc_status: "pending",
+        name: "Emily Franklin",
+        email: "emily@mega.example",
       };
       vi.mocked(mockApi.complete).mockResolvedValue(result);
 

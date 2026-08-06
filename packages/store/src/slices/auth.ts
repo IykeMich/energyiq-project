@@ -21,6 +21,11 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  // The server's `responseCode` (e.g. "EIQ-1004") for the last rejected
+  // thunk in this slice — lets callers branch on the exact error instead
+  // of matching the message string. Null unless the last rejection came
+  // from a DomainError.
+  errorCode: string | null;
   // Per-field validation messages from the last rejected thunk (see
   // shared.ErrorPayload) — null unless the server returned EIQ-2000
   // with a `data.errors` array. Forms map these onto their own fields
@@ -45,6 +50,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  errorCode: null,
   fieldErrors: null,
   registrationToken: null,
   accountNumber: null,
@@ -397,6 +403,7 @@ export const authSlice = createSlice({
     },
     clearError(state) {
       state.error = null;
+      state.errorCode = null;
       state.fieldErrors = null;
     },
     hydrate(state) {
@@ -440,16 +447,16 @@ export const authSlice = createSlice({
         // out of the registration flow before step 4 (Document Upload).
         state.nextAction = "complete_onboarding";
         state.user = {
-          id: action.payload.supplier.id,
-          name: action.payload.supplier.name,
-          email: action.payload.supplier.email,
+          id: action.payload.id,
+          name: action.payload.name,
+          email: action.payload.email,
           role: "owner",
           entity_type: "supplier",
-          entity_id: action.payload.supplier.id,
-          account_number: action.payload.supplier.account_number,
-          slug: action.payload.supplier.slug,
+          entity_id: action.payload.id,
+          account_number: action.payload.account_number,
+          slug: action.payload.slug,
         };
-        state.slug = action.payload.supplier.slug;
+        state.slug = action.payload.slug;
       })
       .addCase(complete.rejected, (state, action) => {
         state.isLoading = false;
@@ -761,16 +768,19 @@ export const authSlice = createSlice({
     builder
       .addMatcher(isRejected, (state, action) => {
         if (!action.type.startsWith("auth/")) return;
-        state.fieldErrors =
-          (action.payload as shared.ErrorPayload | undefined)?.fields ?? null;
+        const payload = action.payload as shared.ErrorPayload | undefined;
+        state.fieldErrors = payload?.fields ?? null;
+        state.errorCode = payload?.code ?? null;
       })
       .addMatcher(isPending, (state, action) => {
         if (!action.type.startsWith("auth/")) return;
         state.fieldErrors = null;
+        state.errorCode = null;
       })
       .addMatcher(isFulfilled, (state, action) => {
         if (!action.type.startsWith("auth/")) return;
         state.fieldErrors = null;
+        state.errorCode = null;
       });
   },
 });

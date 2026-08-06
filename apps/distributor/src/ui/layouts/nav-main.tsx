@@ -90,9 +90,7 @@ function NavMainItem({ item }: { item: NavItem }) {
     <Collapsible open={open} onOpenChange={setOpen} asChild className="group/collapsible">
       <SidebarMenuItem className="flex flex-row items-center gap-x-2 relative">
         <div
-          className={`${isActivePath ? 'flex' : 'hidden'} ${
-            state === 'expanded' ? 'flex' : 'hidden'
-          } bg-[#FBC02D] w-1.5 h-8 rounded-r-lg absolute -left-2`}
+          className={`${isActivePath && state === 'expanded' ? 'flex' : 'hidden'} bg-[#FBC02D] w-[3px] h-[51px] absolute left-0 top-0`}
         />
         <div className="flex flex-col w-full">
           <CollapsibleTrigger asChild>
@@ -100,7 +98,7 @@ function NavMainItem({ item }: { item: NavItem }) {
               isActive={isActivePath}
               onClick={handleParentClick}
               tooltip={item.title}
-              className={`tap-effect h-[42px]! ${state === 'expanded' ? 'ml-4' : 'ml-0'}`}
+              className={`tap-effect h-[51px]! data-[active=true]:bg-[#FFFFFF1A]! ${state === 'expanded' ? 'ml-4' : 'ml-0'}`}
             >
               {item.icon && (
                 <item.icon
@@ -114,8 +112,8 @@ function NavMainItem({ item }: { item: NavItem }) {
                 />
               )}
               <span
-                className={`text-sm font-normal leading-6 transition-colors ${
-                  item.accent ? 'text-[#FBC02D]' : !isActivePath ? 'text-gray-400' : ''
+                className={`text-base font-semibold leading-6 transition-colors ${
+                  item.accent ? 'text-[#FBC02D]' : 'text-[#FAFAFA]'
                 }`}
               >
                 {item.title}
@@ -137,7 +135,9 @@ function NavMainItem({ item }: { item: NavItem }) {
                       <SidebarMenuSubButton
                         asChild
                         isActive={isSubActive}
-                        className="[&>svg]:size-3.5 text-gray-400 data-[active=true]:bg-[#FBC02D]/10 data-[active=true]:text-[#FBC02D] data-[active=true]:font-medium"
+                        className={`[&>svg]:size-3.5 text-sm font-medium w-full ml-8! ${
+                          isSubActive ? 'text-[#FBC02D]' : 'text-gray-400'
+                        } data-[active=true]:bg-[#FBC02D]/10! data-[active=true]:text-[#FBC02D]! data-[active=true]:font-semibold`}
                       >
                         <button
                           type="button"

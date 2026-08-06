@@ -207,6 +207,56 @@ export interface EditOrderFixture {
   contact: CreateOrderDeliveryContact;
 }
 
+// --- Draft + validation -----------------------------------------------------
+// The UI-shaped draft the create-order form builds locally, distinct from the
+// wire-shaped OrderCreateRequest/OrderUpdateRequest it's mapped to on submit.
+export interface NewOrderDraft {
+  lineItems: { productId: string; quantity: number }[];
+  supplierId: string;
+  deliveryDate: string;
+  deliveryMethodId: string;
+  contact: CreateOrderDeliveryContact;
+}
+
+export interface OrderDraftErrors {
+  lineItems?: string;
+  deliveryDate?: string;
+  contact?: string;
+}
+
+/**
+ * Validates the fields the backend create/update endpoints actually require
+ * (at least one line item with a positive quantity, per the OrderItem schema's
+ * `minItems: 1` / `quantity` constraint) plus the delivery details the form
+ * collects, before the request is submitted — mirrors validateProductDraft's
+ * role in apps/supplier/src/ui/pages/product/mocks.ts.
+ */
+export function validateOrderDraft(draft: NewOrderDraft): OrderDraftErrors {
+  const errors: OrderDraftErrors = {};
+
+  if (draft.lineItems.length === 0) {
+    errors.lineItems = 'Add at least one product to the order.';
+  } else if (draft.lineItems.some((item) => !item.productId || item.quantity <= 0)) {
+    errors.lineItems = 'Every product needs a quantity greater than 0.';
+  }
+
+  if (!draft.deliveryDate) {
+    errors.deliveryDate = 'Delivery date is required.';
+  } else if (draft.deliveryDate < new Date().toISOString().slice(0, 10)) {
+    errors.deliveryDate = 'Delivery date cannot be in the past.';
+  }
+
+  if (
+    !draft.contact.contactPerson.trim() ||
+    !draft.contact.email.trim() ||
+    !draft.contact.address.trim()
+  ) {
+    errors.contact = 'Contact person, email, and address are required for delivery.';
+  }
+
+  return errors;
+}
+
 export function getEditOrder(orderId: string): EditOrderFixture {
   return {
     // The route id stands in for the real order reference until the API lands.

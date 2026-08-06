@@ -112,7 +112,7 @@ export function VerifyForm() {
 
   const onSubmit = async (data: VerifyFormData) => {
     clearError();
-    const success = await complete(data.otp);
+    const { success } = await complete(data.otp);
     if (success) navigate(slug ? `/${slug}/dashboard` : '/dashboard');
   };
 

@@ -8,6 +8,8 @@ interface RegisterOtpStepProps {
   accountEmail: string;
   error: string | null;
   isLoading: boolean;
+  /** True for the entire duration of a submit (paste or click), ahead of isLoading's Redux round-trip. */
+  isVerifying: boolean;
   onOtpChange: (value: string, index: number) => void;
   onOtpPaste: (pastedDigits: string) => void;
   onResend: () => void;
@@ -21,6 +23,7 @@ export function RegisterOtpStep({
   accountEmail,
   error,
   isLoading,
+  isVerifying,
   onOtpChange,
   onOtpPaste,
   onResend,
@@ -85,10 +88,10 @@ export function RegisterOtpStep({
       <button
         type="button"
         onClick={onSubmit}
-        disabled={isLoading || !isOtpComplete}
+        disabled={isLoading || isVerifying || !isOtpComplete}
         className="tap-effect hover:opacity-90 w-full h-17.5 rounded-full bg-[#FBC02D] text-[#121212] text-base font-semibold disabled:opacity-50"
       >
-        {isLoading ? "Verifying..." : "Verify Code"}
+        {isLoading || isVerifying ? "Verifying..." : "Verify Code"}
       </button>
     </div>
   );

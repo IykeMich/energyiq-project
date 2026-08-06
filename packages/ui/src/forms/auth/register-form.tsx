@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "@energyiq/ui";
+import { shared } from "@energyiq/domain";
+import type { InitiateRequest } from "@energyiq/domain/auth";
 import {
   companySetupSchema,
   companySetupFormDefaultValues,
@@ -92,6 +94,23 @@ export function RegisterForm() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
+  // Mirrors otpSubmitInFlightRef below, but as state so the "Verify Code"
+  // button can reflect a paste-triggered submit immediately (disabled +
+  // "Verifying...") rather than waiting on a Redux round-trip for isLoading.
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+
+  // Re-entrancy guards for the OTP step: a rapid double-click, or a paste
+  // event that fires against more than one of the 6 boxes (seen with some
+  // mobile SMS-autofill/password-manager flows), can otherwise submit the
+  // same code twice concurrently — the first call consumes the
+  // registration_token server-side, so the second legitimately comes back
+  // "Invalid token" even though the flow already succeeded. Refs (not
+  // state) because the guard must block a second call arriving in the same
+  // tick, before a re-render could reflect `isLoading`/`currentStep`.
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
+  const otpSubmitInFlightRef = useRef(false);
+  const resendInFlightRef = useRef(false);
 
   const documentUpload = useOnboardingDocuments({
     presignOnboardingDocument,
@@ -127,19 +146,12 @@ export function RegisterForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fieldErrors]);
 
-  const handleCompanyNext = async () => {
-    const isValid = await companyForm.trigger();
-    if (isValid) goToStep(2);
-  };
-
-  const handleCreateAccount = async () => {
-    const isValid = await adminForm.trigger();
-    if (!isValid) return;
-
+  // Shared by the initial "Create Account" submit and the OTP-step self-heal
+  // (re-initiate to mint a fresh registration_token once the old one dies).
+  const buildInitiateRequest = (): InitiateRequest => {
     const company = companyForm.getValues();
     const account = adminForm.getValues();
-
-    const result = await initiate({
+    return {
       company: {
         name: company.company_name,
         business_type: company.business_type,
@@ -156,7 +168,19 @@ export function RegisterForm() {
         accepted_terms: account.accepted_terms,
         accepted_privacy_policy: account.accepted_privacy_policy,
       },
-    });
+    };
+  };
+
+  const handleCompanyNext = async () => {
+    const isValid = await companyForm.trigger();
+    if (isValid) goToStep(2);
+  };
+
+  const handleCreateAccount = async () => {
+    const isValid = await adminForm.trigger();
+    if (!isValid) return;
+
+    const result = await initiate(buildInitiateRequest());
 
     if (result.success) {
       goToStep(3);
@@ -165,6 +189,24 @@ export function RegisterForm() {
         description: error ?? "Please try again.",
       });
     }
+  };
+
+  // The registration_token behind the OTP step can go stale (expired, or
+  // superseded by a second initiate) — the server reports this as EIQ-1004
+  // "Invalid token" on both verify-otp and resend-otp. Since Company/Account
+  // form values are still in memory (this component never unmounts between
+  // steps), silently re-initiate to mint a fresh token + OTP instead of
+  // leaving the user stuck resubmitting against a dead one.
+  const recoverFromInvalidToken = async () => {
+    const result = await initiate(buildInitiateRequest());
+    if (result.success) {
+      setOtp(["", "", "", "", "", ""]);
+      toast.error("Your code expired", {
+        description: "We've sent a new verification code to your email.",
+      });
+      return true;
+    }
+    return false;
   };
 
   const handleOtpChange = (value: string, index: number) => {
@@ -191,31 +233,57 @@ export function RegisterForm() {
   };
 
   const handleOtpSubmit = async (otpOverride?: string) => {
+    // Already verifying, or a previous call already advanced past step 3 —
+    // a duplicate/late-arriving submit must be a no-op, not a resubmit.
+    if (otpSubmitInFlightRef.current || currentStepRef.current !== 3) return;
+
     const code = otpOverride ?? otp.join("");
     if (code.length !== 6) {
       setOtpError(true);
       return;
     }
 
+    otpSubmitInFlightRef.current = true;
+    setIsVerifyingOtp(true);
     clearError();
-    const success = await complete(code);
-    if (success) {
-      goToStep(4);
-    } else {
+    try {
+      const result = await complete(code);
+      if (result.success) {
+        goToStep(4);
+        return;
+      }
+
+      if (result.errorCode === shared.ResponseCodes.TOKEN_INVALID && (await recoverFromInvalidToken())) {
+        return;
+      }
       setOtpError(true);
+    } finally {
+      otpSubmitInFlightRef.current = false;
+      setIsVerifyingOtp(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (resendInFlightRef.current) return;
+
+    resendInFlightRef.current = true;
     clearError();
-    const success = await resendOtp();
-    if (success) {
-      setOtpResent(true);
-      toast.success("OTP resent", { description: "A new code has been sent to your email." });
-    } else {
+    try {
+      const result = await resendOtp();
+      if (result.success) {
+        setOtpResent(true);
+        toast.success("OTP resent", { description: "A new code has been sent to your email." });
+        return;
+      }
+
+      if (result.errorCode === shared.ResponseCodes.TOKEN_INVALID && (await recoverFromInvalidToken())) {
+        return;
+      }
       toast.error("Failed to resend code", {
         description: error ?? "Please try again later.",
       });
+    } finally {
+      resendInFlightRef.current = false;
     }
   };
 
@@ -260,6 +328,7 @@ export function RegisterForm() {
             accountEmail={adminForm.watch("account_email")}
             error={error}
             isLoading={isLoading}
+            isVerifying={isVerifyingOtp}
             onOtpChange={handleOtpChange}
             onOtpPaste={handleOtpPaste}
             onResend={handleResendOtp}

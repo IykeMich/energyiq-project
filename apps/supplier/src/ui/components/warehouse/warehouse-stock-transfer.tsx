@@ -141,6 +141,7 @@ export function WarehouseStockTransfer({
           value={quantity}
           onChange={setQuantity}
           placeholder="Enter quantity..."
+          className="w-full"
         />
 
         <TextAreaField

@@ -1,4 +1,5 @@
 import { SidebarTrigger } from '@energyiq/ui';
+import { HeaderNotificationBell } from './header-notification-bell';
 import { HeaderUserMenu } from './header-user-menu';
 import { PageHeaderSlot } from './page-header';
 
@@ -22,7 +23,10 @@ export function LayoutHeader() {
           <div className="min-w-0 flex-1">
             <PageHeaderSlot className="empty:hidden" />
           </div>
-          <HeaderUserMenu />
+          <div className="flex items-center gap-2">
+            <HeaderNotificationBell />
+            <HeaderUserMenu />
+          </div>
         </div>
       </div>
     </header>

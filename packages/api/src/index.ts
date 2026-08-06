@@ -8,6 +8,7 @@ export { ComplaintApiAdapter } from './complaint';
 export { EmployeeApiAdapter } from './employee';
 export { DistributorApiAdapter } from './distributor';
 export { OrderApiAdapter } from './order';
+export { DistributorOrderApiAdapter } from './distributor-order';
 export { ProductApiAdapter } from './product';
 export { WarehouseApiAdapter } from './warehouse';
 export { TierApiAdapter } from './tier';

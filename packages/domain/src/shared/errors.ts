@@ -48,11 +48,16 @@ export class NetworkError extends DomainError {
 export interface ErrorPayload {
   message: string;
   fields: ErrorFieldMessage[] | null;
+  /** The server's `responseCode` (e.g. "EIQ-1004"), when the error came from `DomainError`. */
+  code?: string;
 }
 
 export function toErrorPayload(err: unknown): ErrorPayload {
   if (err instanceof ValidationError) {
-    return { message: err.message, fields: err.fields };
+    return { message: err.message, fields: err.fields, code: err.code };
+  }
+  if (err instanceof DomainError) {
+    return { message: err.message, fields: null, code: err.code };
   }
   if (err instanceof Error) {
     return { message: err.message, fields: null };

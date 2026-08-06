@@ -75,7 +75,13 @@ export function useAuth() {
   const handleComplete = useCallback(
     async (otpCode: string) => {
       const result = await dispatch(completeThunk(otpCode));
-      return result.meta.requestStatus === "fulfilled";
+      if (completeThunk.fulfilled.match(result)) {
+        return { success: true, errorCode: undefined as string | undefined };
+      }
+      return {
+        success: false,
+        errorCode: (result.payload as shared.ErrorPayload | undefined)?.code,
+      };
     },
     [dispatch],
   );
@@ -103,7 +109,13 @@ export function useAuth() {
 
   const handleResendOtp = useCallback(async () => {
     const result = await dispatch(resendOtpThunk());
-    return result.meta.requestStatus === "fulfilled";
+    if (resendOtpThunk.fulfilled.match(result)) {
+      return { success: true, errorCode: undefined as string | undefined };
+    }
+    return {
+      success: false,
+      errorCode: (result.payload as shared.ErrorPayload | undefined)?.code,
+    };
   }, [dispatch]);
 
   const handleResetPassword = useCallback(
@@ -304,6 +316,7 @@ export function useAuth() {
     isAuthenticated: auth.isAuthenticated,
     isLoading: auth.isLoading,
     error: auth.error,
+    errorCode: auth.errorCode,
     fieldErrors: auth.fieldErrors,
     registrationToken: auth.registrationToken,
     accountNumber: auth.accountNumber,

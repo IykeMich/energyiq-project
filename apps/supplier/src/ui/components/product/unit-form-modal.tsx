@@ -49,6 +49,7 @@ export function UnitFormModal({ open, onOpenChange, initial, onSave, saving }: U
           value={form.unit_name}
           onChange={(v) => setForm((p) => ({ ...p, unit_name: v }))}
           placeholder="e.g. Litre"
+          className="w-full"
         />
         <TextField
           label="Short Code:"
@@ -56,6 +57,7 @@ export function UnitFormModal({ open, onOpenChange, initial, onSave, saving }: U
           value={form.short_code}
           onChange={(v) => setForm((p) => ({ ...p, short_code: v }))}
           placeholder="e.g. L"
+          className="w-full"
         />
         <SelectField
           label="Type:"
@@ -68,6 +70,7 @@ export function UnitFormModal({ open, onOpenChange, initial, onSave, saving }: U
           value={form.description ?? ''}
           onChange={(v) => setForm((p) => ({ ...p, description: v }))}
           placeholder="Short summary"
+          className="w-full"
         />
 
         <div className="flex justify-end gap-3 mt-2">

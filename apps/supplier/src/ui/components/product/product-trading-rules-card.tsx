@@ -21,7 +21,7 @@ interface ProductTradingRulesCardProps {
   onNext: () => void;
 }
 
-const FIELD_CLASSNAME = 'h-[47px] rounded-[33px]';
+const FIELD_CLASSNAME = 'h-[47px] w-full rounded-[33px]';
 
 /** Right-panel "Trading Rules" card for step 5 of the "Add New Product" wizard. */
 export function ProductTradingRulesCard({ draft, onChange, onCancel, onNext }: ProductTradingRulesCardProps) {

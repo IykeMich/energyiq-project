@@ -57,14 +57,14 @@ export class AuthUseCases {
 
     this.tokens.setTokens(result.access_token, result.refresh_token);
     this.user.setUser({
-      id: result.supplier.id,
+      id: result.id,
       name: "",
       email: "",
       role: "owner",
       entity_type: "supplier",
-      entity_id: result.supplier.id,
-      account_number: result.supplier.account_number,
-      slug: result.supplier.slug,
+      entity_id: result.id,
+      account_number: result.account_number,
+      slug: result.slug,
     });
 
     return result;

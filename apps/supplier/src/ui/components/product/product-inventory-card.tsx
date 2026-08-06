@@ -19,7 +19,7 @@ interface ProductInventoryCardProps {
   onNext: () => void;
 }
 
-const FIELD_CLASSNAME = 'h-[47px] rounded-[33px]';
+const FIELD_CLASSNAME = 'h-[47px] w-full rounded-[33px]';
 
 /** Right-panel "Inventory" card for step 3 of the "Add New Product" wizard. */
 export function ProductInventoryCard({ draft, onChange, onCancel, onNext }: ProductInventoryCardProps) {

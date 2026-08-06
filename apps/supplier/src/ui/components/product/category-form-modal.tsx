@@ -41,6 +41,7 @@ export function CategoryFormModal({ open, onOpenChange, initial, onSave, saving 
           value={form.name}
           onChange={(v) => setForm((p) => ({ ...p, name: v }))}
           placeholder="e.g. Fuel"
+          className="w-full"
         />
         <TextField
           label="No of Products"
@@ -48,12 +49,14 @@ export function CategoryFormModal({ open, onOpenChange, initial, onSave, saving 
           onChange={(v) => setForm((p) => ({ ...p, noOfProducts: v }))}
           placeholder="e.g. 10"
           disabled
+          className="w-full"
         />
         <TextField
           label="Description:"
           value={form.description ?? ''}
           onChange={(v) => setForm((p) => ({ ...p, description: v }))}
           placeholder="Short summary"
+          className="w-full"
         />
         <ToggleSwitch
           label="Status:"
